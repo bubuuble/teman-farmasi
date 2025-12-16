@@ -16,18 +16,18 @@ export default function NotFound() {
       </div>
 
       <h2 className="font-heading text-3xl md:text-4xl font-bold text-brand-dark mb-4">
-        Oops! Page Not Found
+        Oops! Halaman Tidak Ditemukan
       </h2>
       
       <p className="text-gray-500 text-lg max-w-md mb-10">
-        It seems like the research topic you are looking for hasn&apos;t been discovered yet.
+        Sepertinya topik riset yang Anda cari belum ditemukan.
       </p>
 
       <Link 
         href="/"
         className="inline-flex items-center gap-2 bg-brand-dark text-white px-8 py-4 rounded-full font-bold hover:bg-brand-pink hover:text-brand-dark transition-all shadow-lg"
       >
-        <FaHome /> Back to Home
+        <FaHome /> Kembali ke Beranda
       </Link>
       
     </div>

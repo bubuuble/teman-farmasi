@@ -28,24 +28,24 @@ export default function Navbar() {
             <FaSearch className="text-brand-pink mr-3" />
             <input 
                 type="text" 
-                placeholder="Search research tracks..." 
+                placeholder="Cari track riset..." 
                 className="bg-transparent outline-none text-sm w-full placeholder-gray-400 text-brand-dark"
             />
         </div>
 
         {/* 3. Links & Button */}
         <div className="hidden lg:flex items-center gap-8 font-bold text-sm text-gray-500">
-          <Link href="/" className="hover:text-brand-pink transition">Home</Link>
-          <Link href="/about" className="hover:text-brand-pink transition">About</Link>
-          <Link href="/programs" className="hover:text-brand-pink transition">Programs</Link>
-          <Link href="/mentors" className="hover:text-brand-pink transition">Mentors</Link>
-          <Link href="/testimonials" className="hover:text-brand-pink transition">Testimonials</Link>
-          <Link href="/blog" className="hover:text-brand-pink transition">Blogs</Link>
+          <Link href="/" className="hover:text-brand-pink transition">Beranda</Link>
+          <Link href="/about" className="hover:text-brand-pink transition">Tentang</Link>
+          <Link href="/programs" className="hover:text-brand-pink transition">Program</Link>
+          <Link href="/mentors" className="hover:text-brand-pink transition">Mentor</Link>
+          <Link href="/testimonials" className="hover:text-brand-pink transition">Testimoni</Link>
+          <Link href="/blog" className="hover:text-brand-pink transition">Blog</Link>
           
           
           {/* Button: Vibrant Pink */}
           <button className="bg-brand-pink text-white px-8 py-3 rounded-full font-bold hover:bg-brand-yellow hover:text-brand-dark transition-all shadow-lg shadow-brand-pink/30">
-             Login
+             Masuk
           </button>
         </div>
 
@@ -62,9 +62,9 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-gray-100 p-6 shadow-xl">
              <div className="flex flex-col gap-4 text-center">
-                <Link href="/programs" className="font-bold text-gray-600">Programs</Link>
-                <Link href="/mentors" className="font-bold text-gray-600">Mentors</Link>
-                <button className="bg-brand-pink text-white px-6 py-3 rounded-full font-bold">Login</button>
+                <Link href="/programs" className="font-bold text-gray-600">Program</Link>
+                <Link href="/mentors" className="font-bold text-gray-600">Mentor</Link>
+                <button className="bg-brand-pink text-white px-6 py-3 rounded-full font-bold">Masuk</button>
              </div>
         </div>
       )}

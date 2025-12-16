@@ -11,7 +11,8 @@ const config: Config = {
       colors: {
         brand: {
           cream: "#FDF8EE",      // Background
-          dark: "#2D2D2D",       // Neutral Dark Grey (Not Navy)
+          dark: "#3a6478ff",       // Neutral Dark Grey (Not Navy)
+          darkblue: "#3a6478ff",
           
           // Logo-inspired Palette
           yellow: "#f9e7bbff",     // Warm Yellow (Action)
@@ -20,6 +21,7 @@ const config: Config = {
           purple: "#D0BFFF",     // Soft Purple
           teal: "#63E6BE",       // Soft Mint
           gray: "#9A9EA6",
+          white: "#FFFFFF",
         }
       },
       fontFamily: {

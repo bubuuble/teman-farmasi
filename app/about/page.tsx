@@ -10,13 +10,13 @@ export default function AboutPage() {
       {/* Header */}
       <div className="pt-40 pb-20 px-6 text-center max-w-4xl mx-auto">
          <span className="inline-block px-4 py-2 rounded-full bg-brand-pink/20 text-brand-dark font-bold text-sm mb-6 uppercase tracking-wider">
-            About Teman Farmasi
+            Tentang Teman Farmasi
          </span>
          <h1 className="font-heading text-5xl md:text-6xl font-extrabold text-brand-dark mb-6 tracking-tight">
-            Empowering the Next Generation of <span className="text-brand-pink">Pharmacists</span>
+            Memberdayakan Generasi Penerus <span className="text-brand-pink">Apoteker</span>
          </h1>
          <p className="text-gray-500 text-lg md:text-xl leading-relaxed">
-            We are the largest pharmacy research coaching platform in Indonesia, bridging the gap between academic theory and practical research skills.
+            Kami adalah platform bimbingan riset farmasi terbesar di Indonesia, menjembatani kesenjangan antara teori akademis dan keterampilan riset praktis.
          </p>
       </div>
 
@@ -24,10 +24,10 @@ export default function AboutPage() {
       <section className="py-16 bg-white border-y border-gray-100">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-transparent md:divide-gray-100">
             {[
-                { number: "2025", label: "Founded", color: "text-brand-pink" },
-                { number: "2,000+", label: "Students", color: "text-brand-blue" },
-                { number: "167+", label: "Campuses", color: "text-brand-yellow" },
-                { number: "50+", label: "Mentors", color: "text-brand-teal" }
+                { number: "2025", label: "Didirikan", color: "text-brand-pink" },
+                { number: "2,000+", label: "Mahasiswa", color: "text-brand-blue" },
+                { number: "167+", label: "Kampus", color: "text-brand-yellow" },
+                { number: "50+", label: "Mentor", color: "text-brand-teal" }
             ].map((stat, i) => (
                 <div key={i} className="group cursor-default">
                     <h3 className={`font-heading text-5xl font-extrabold mb-2 ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
@@ -58,20 +58,20 @@ export default function AboutPage() {
 
             <div>
                 <h2 className="font-heading text-4xl md:text-5xl font-bold text-brand-dark mb-8">
-                    Our <span className="text-brand-blue">Mission</span>
+                    <span className="text-brand-blue">Misi</span> Kami
                 </h2>
                 <div className="space-y-6 text-gray-500 text-lg leading-relaxed">
                     <p>
-                        Teman Farmasi was born from a simple observation: many pharmacy students struggle not because they lack knowledge, but because they lack <strong className="text-brand-dark">practical guidance</strong> in research methodology and data analysis.
+                        Teman Farmasi lahir dari pengamatan sederhana: banyak mahasiswa farmasi kesulitan bukan karena kurang pengetahuan, tetapi karena kurang <strong className="text-brand-dark">bimbingan praktis</strong> dalam metodologi riset dan analisis data.
                     </p>
                     <p>
-                        We provide a supportive ecosystem where students can access private coaching, e-books, and a community of peers to ensure they graduate on time with <strong className="text-brand-dark">high-quality research</strong>.
+                        Kami menyediakan ekosistem pendukung di mana mahasiswa dapat mengakses bimbingan privat, e-book, dan komunitas sesama untuk memastikan mereka lulus tepat waktu dengan <strong className="text-brand-dark">riset berkualitas tinggi</strong>.
                     </p>
                 </div>
                 
                 {/* Checkmarks */}
                 <ul className="mt-8 space-y-4">
-                    {["Personalized Mentorship", "Comprehensive E-Library", "24/7 Support Group"].map((item, i) => (
+                    {["Bimbingan Personalisasi", "Perpustakaan Digital Lengkap", "Grup Dukungan 24/7"].map((item, i) => (
                         <li key={i} className="flex items-center gap-3 font-bold text-brand-dark">
                             <div className="w-6 h-6 rounded-full bg-brand-teal flex items-center justify-center text-white text-xs">✓</div>
                             {item}

@@ -2,17 +2,17 @@ import { FaUserTie, FaFlask, FaBook, FaWhatsapp } from 'react-icons/fa';
 
 // Mapped from PDF Features to Edtech Category Style
 const features = [
-    { name: "Private Coaching", icon: FaUserTie, color: "bg-brand-yellow" },
-    { name: "Research Tracks", icon: FaFlask, color: "bg-brand-blue" },
-    { name: "E-Book Access", icon: FaBook, color: "bg-brand-pink" },
-    { name: "Instant Booking", icon: FaWhatsapp, color: "bg-brand-yellow" },
+    { name: "Bimbingan Privat", icon: FaUserTie, color: "bg-brand-yellow" },
+    { name: "Track Riset", icon: FaFlask, color: "bg-brand-blue" },
+    { name: "Akses E-Book", icon: FaBook, color: "bg-brand-pink" },
+    { name: "Booking Instan", icon: FaWhatsapp, color: "bg-brand-yellow" },
 ];
 
 export default function Categories() {
     return (
         <section className="py-20 px-6 max-w-7xl mx-auto">
             <h2 className="text-center font-heading text-3xl font-bold text-brand-dark mb-12">
-                Priority Features
+                Fitur Prioritas
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {features.map((feat, i) => (

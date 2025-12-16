@@ -1,61 +1,56 @@
 import Image from 'next/image';
 import { FaStar, FaArrowRight } from 'react-icons/fa';
+import { urlFor } from '@/lib/sanity';
 
-const tracks = [
-  {
-    title: "Clinical Pharmacy & Data Analysis",
-    description: "Guidance on clinical methodologies and hospital data analysis using SPSS.",
-    rating: 5.0,
-    students: "850+",
-    price: "Rp 350k",
-    tagColor: "bg-brand-pink",
-    image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    title: "Pharmaceutical Technology",
-    description: "Formulation development, stability testing, and lab research support.",
-    rating: 4.9,
-    students: "620+",
-    price: "Rp 400k",
-    tagColor: "bg-brand-blue",
-    image: "https://images.unsplash.com/photo-1563213126-a4273aed2016?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    title: "Social Pharmacy & Management",
-    description: "Qualitative research, survey design, and pharmacy management studies.",
-    rating: 4.8,
-    students: "450+",
-    price: "Rp 350k",
-    tagColor: "bg-brand-yellow",
-    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    title: "Scientific Publication",
-    description: "Turn your thesis into an international journal. Writing and submission guidance.",
-    rating: 5.0,
-    students: "300+",
-    price: "Rp 500k",
-    tagColor: "bg-brand-teal",
-    image: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=2068&auto=format&fit=crop"
-  }
-];
+type SanityImage = {
+  _type: 'image';
+  asset: {
+    _ref: string;
+    _type: 'reference';
+  };
+};
 
-export default function Programs() {
+interface Program {
+  _id: string;
+  title: string;
+  description: string;
+  rating: number;
+  students: string | number;
+  duration?: string;
+  sessions?: number;
+  features?: string[];
+  price: string;
+  tagColor: string;
+  bgColor?: string;
+  featured?: boolean;
+  image?: SanityImage;
+}
+
+interface ProgramsProps {
+  programs?: Program[];
+}
+
+export default function Programs({ programs = [] }: ProgramsProps) {
   return (
     <section className="py-20 px-6 max-w-7xl mx-auto">
       <div className="text-center mb-12">
-        <h2 className="font-heading text-3xl font-bold text-brand-dark">Specialization Tracks</h2>
-        <p className="text-gray-500 mt-2">Choose the path that fits your thesis topic.</p>
+        <h2 className="font-heading text-3xl font-bold text-brand-dark">Track Spesialisasi</h2>
+        <p className="text-gray-500 mt-2">Pilih jalur yang sesuai dengan topik skripsi Anda.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {tracks.map((track, idx) => {
-            const bgColors = ['bg-brand-yellow', 'bg-brand-pink', 'bg-brand-blue', 'bg-brand-yellow'];
+        {programs.map((track, idx) => {
+            const imageUrl = track.image ? urlFor(track.image).width(600).height(400).url() : null;
+            const bgColor = track.bgColor || 'bg-brand-yellow';
             return (
-            <div key={idx} className={`${bgColors[idx]} p-4 rounded-[2rem] shadow-lg border border-transparent hover:shadow-card hover:-translate-y-1 transition-all duration-300 group`}>
+            <div key={track._id} className={`${bgColor} p-4 rounded-[2rem] shadow-lg border border-transparent hover:shadow-card hover:-translate-y-1 transition-all duration-300 group`}>
                 {/* Image Container with White Border for contrast against yellow */}
-                <div className="relative h-40 rounded-[1.5rem] overflow-hidden mb-4 border-4 border-white">
-                    <Image src={track.image} alt={track.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="relative h-40 rounded-[1.5rem] overflow-hidden mb-4 border-4 border-white bg-gray-200">
+                    {imageUrl ? (
+                      <Image src={imageUrl} alt={track.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>
+                    )}
                     <span className={`absolute top-3 left-3 ${track.tagColor} text-[10px] font-bold px-3 py-1.5 rounded-full text-brand-dark uppercase shadow-sm`}>
                         Popular
                     </span>

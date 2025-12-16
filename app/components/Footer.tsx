@@ -15,7 +15,7 @@ export default function Footer() {
                     </div>
                     <p className="text-gray-500 text-sm mb-6 leading-relaxed">
                         PT. Generasi Farma Kreatif.<br/>
-                        The largest pharmacy research coaching platform in Indonesia.
+                        Platform bimbingan riset farmasi terbesar di Indonesia.
                     </p>
                     <div className="flex gap-3">
                         <a href="#" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brand-dark hover:bg-brand-pink hover:text-white transition-all shadow-sm">
@@ -32,46 +32,46 @@ export default function Footer() {
 
                 {/* Links */}
                 <div>
-                    <h3 className="font-bold text-brand-dark mb-4">Programs</h3>
+                    <h3 className="font-bold text-brand-dark mb-4">Program</h3>
                     <ul className="space-y-3 text-gray-500 text-sm">
-                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Clinical Pharmacy</Link></li>
-                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Pharm Technology</Link></li>
-                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Social Pharmacy</Link></li>
-                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Publications</Link></li>
+                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Farmasi Klinis</Link></li>
+                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Teknologi Farmasi</Link></li>
+                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Farmasi Sosial</Link></li>
+                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Publikasi</Link></li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 className="font-bold text-brand-dark mb-4">Company</h3>
+                    <h3 className="font-bold text-brand-dark mb-4">Perusahaan</h3>
                     <ul className="space-y-3 text-gray-500 text-sm">
-                        <li><Link href="/about" className="hover:text-brand-pink transition-colors">About Us</Link></li>
-                        <li><Link href="/" className="hover:text-brand-pink transition-colors">Partner Campuses</Link></li>
-                        <li><Link href="/mentors" className="hover:text-brand-pink transition-colors">Mentors</Link></li>
-                        <li><Link href="/contact" className="hover:text-brand-pink transition-colors">Contact</Link></li>
+                        <li><Link href="/about" className="hover:text-brand-pink transition-colors">Tentang Kami</Link></li>
+                        <li><Link href="/" className="hover:text-brand-pink transition-colors">Kampus Mitra</Link></li>
+                        <li><Link href="/mentors" className="hover:text-brand-pink transition-colors">Mentor</Link></li>
+                        <li><Link href="/contact" className="hover:text-brand-pink transition-colors">Kontak</Link></li>
                     </ul>
                 </div>
 
                 {/* Newsletter */}
                 <div>
-                    <h3 className="font-bold text-brand-dark mb-4">Stay Updated</h3>
+                    <h3 className="font-bold text-brand-dark mb-4">Tetap Terhubung</h3>
                     <div className="flex flex-col gap-3">
                         <input 
                             type="email" 
-                            placeholder="Enter your email" 
+                            placeholder="Masukkan email Anda" 
                             className="px-4 py-3 rounded-full bg-white border-2 border-transparent text-sm outline-none focus:border-brand-pink transition-colors"
                         />
                         <button className="bg-brand-pink text-white font-bold py-3 rounded-full hover:bg-brand-yellow hover:text-brand-dark transition-all shadow-lg">
-                            Subscribe
+                            Berlangganan
                         </button>
                     </div>
                 </div>
             </div>
             
             <div className="border-t border-brand-pink/10 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-400">
-                <p>© 2024 PT. Generasi Farma Kreatif. All rights reserved.</p>
+                <p>© 2024 PT. Generasi Farma Kreatif. Hak cipta dilindungi.</p>
                 <div className="flex gap-6 mt-4 md:mt-0">
-                    <Link href="#" className="hover:text-brand-dark">Privacy Policy</Link>
-                    <Link href="#" className="hover:text-brand-dark">Terms of Service</Link>
+                    <Link href="#" className="hover:text-brand-dark">Kebijakan Privasi</Link>
+                    <Link href="#" className="hover:text-brand-dark">Syarat Layanan</Link>
                 </div>
             </div>
         </div>

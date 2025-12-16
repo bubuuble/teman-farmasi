@@ -1,58 +1,51 @@
 import Image from 'next/image';
 import { FaStar } from 'react-icons/fa';
+import { urlFor } from '@/lib/sanity';
 
-const mentors = [
-  {
-    name: "Apt. Sarah J.",
-    role: "Clinical Specialist",
-    rating: 5.0,
-    reviews: "1.2k",
-    cardColor: "bg-brand-pink",
-    borderColor: "border-white",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976&auto=format&fit=crop"
-  },
-  {
-    name: "Dr. William Hope",
-    role: "Formulation Tech",
-    rating: 4.9,
-    reviews: "850",
-    cardColor: "bg-brand-blue",
-    borderColor: "border-white",
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1974&auto=format&fit=crop"
-  },
-  {
-    name: "Apt. Olivia Mia",
-    role: "Social Pharmacy",
-    rating: 4.8,
-    reviews: "920",
-    cardColor: "bg-brand-yellow",
-    borderColor: "border-white",
-    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=1961&auto=format&fit=crop"
-  },
-  {
-    name: "Dr. Darrell S.",
-    role: "Bio-Statistics",
-    rating: 5.0,
-    reviews: "2k+",
-    cardColor: "bg-brand-blue",
-    borderColor: "border-white",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"
-  }
-];
+type SanityImage = {
+  _type: 'image';
+  asset: {
+    _ref: string;
+    _type: 'reference';
+  };
+};
 
-export default function Mentors() {
+interface Mentor {
+  _id: string;
+  name: string;
+  role: string;
+  rating: number;
+  reviews: string;
+  cardColor: string;
+  borderColor?: string;
+  expertise?: string[];
+  featured?: boolean;
+  image?: SanityImage;
+  bio?: string;
+}
+
+interface MentorsProps {
+  mentors?: Mentor[];
+}
+
+export default function Mentors({ mentors = [] }: MentorsProps) {
   return (
     <section className="py-20 px-6 max-w-7xl mx-auto">
-       <h2 className="text-center font-heading text-3xl font-bold text-brand-dark mb-12">Meet Our Mentors</h2>
+       <h2 className="text-center font-heading text-3xl font-bold text-brand-dark mb-12">Kenali Para Mentor Kami</h2>
        
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mentors.map((mentor, i) => (
-             // Using pastel cardColor instead of white
-             <div key={i} className={`${mentor.cardColor} p-6 rounded-[2rem] text-center border-2 border-white shadow-sm hover:shadow-card hover:-translate-y-1 transition-all duration-300 group`}>
+          {mentors.map((mentor, i) => {
+             const imageUrl = mentor.image ? urlFor(mentor.image).width(400).height(400).url() : null;
+             return (
+             <div key={mentor._id} className={`${mentor.cardColor} p-6 rounded-[2rem] text-center border-2 border-white shadow-sm hover:shadow-card hover:-translate-y-1 transition-all duration-300 group`}>
                 
-                <div className={`w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-[3px] ${mentor.borderColor} p-1 bg-white`}>
-                    <div className="w-full h-full rounded-full overflow-hidden relative">
-                        <Image src={mentor.image} alt={mentor.name} fill className="object-cover" />
+                <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-[3px] border-white p-1 bg-white">
+                    <div className="w-full h-full rounded-full overflow-hidden relative bg-gray-200">
+                        {imageUrl ? (
+                          <Image src={imageUrl} alt={mentor.name} fill className="object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">{mentor.name.charAt(0)}</div>
+                        )}
                     </div>
                 </div>
                 
@@ -66,7 +59,7 @@ export default function Mentors() {
                     <span className="text-gray-500">({mentor.reviews})</span>
                 </div>
              </div>
-          ))}
+          )})}
        </div>
     </section>
   );

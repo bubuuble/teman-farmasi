@@ -19,8 +19,8 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Teman Farmasi | Private Pharmacy Research Coaching",
-  description: "The largest pharmacy research coaching platform in Indonesia.",
+  title: "Teman Farmasi | Bimbingan Riset Farmasi Privat",
+  description: "Platform bimbingan riset farmasi terbesar di Indonesia.",
   icons: {
     icon: '/favicon.ico',
   }

@@ -1,0 +1,134 @@
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import { FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaPaperPlane } from 'react-icons/fa';
+
+export default function ContactPage() {
+  return (
+    <main className="min-h-screen bg-brand-cream selection:bg-brand-pink selection:text-white">
+      <Navbar />
+      
+      {/* Header Section */}
+      <div className="pt-40 pb-16 px-6 text-center max-w-4xl mx-auto">
+         <span className="inline-block px-4 py-1.5 rounded-full bg-brand-pink/20 text-brand-dark font-bold text-xs mb-6 uppercase tracking-wider">
+            Get In Touch
+         </span>
+         <h1 className="font-heading text-5xl md:text-6xl font-extrabold text-brand-dark mb-6 tracking-tight">
+            We&apos;re Here to Help <br/>
+            <span className="text-brand-pink">You Succeed</span>
+         </h1>
+         <p className="text-gray-500 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto">
+            Have questions about our programs or mentorship? Feel free to reach out. We are always ready to assist your research journey.
+         </p>
+      </div>
+
+      <section className="pb-24 px-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
+            
+            {/* Left Column: Contact Info Cards */}
+            <div className="space-y-8">
+                
+                {/* WhatsApp Card (Yellow) */}
+                <div className="bg-brand-yellow p-8 rounded-[2.5rem] shadow-lg hover:shadow-xl transition-all duration-300 group">
+                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-brand-dark text-2xl mb-6 shadow-sm group-hover:scale-110 transition-transform">
+                        <FaWhatsapp />
+                    </div>
+                    <h3 className="font-heading font-bold text-2xl text-brand-dark mb-2">Chat via WhatsApp</h3>
+                    <p className="text-brand-dark/80 mb-6">Fastest response for quick questions about enrollment.</p>
+                    <a href="#" className="inline-block bg-white text-brand-dark px-6 py-3 rounded-full font-bold text-sm hover:bg-brand-dark hover:text-white transition-all shadow-md">
+                        Chat Now
+                    </a>
+                </div>
+
+                {/* Email Card (Pink) */}
+                <div className="bg-brand-pink p-8 rounded-[2.5rem] shadow-lg hover:shadow-xl transition-all duration-300 group">
+                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-brand-pink text-2xl mb-6 shadow-sm group-hover:scale-110 transition-transform">
+                        <FaEnvelope />
+                    </div>
+                    <h3 className="font-heading font-bold text-2xl text-white mb-2">Email Support</h3>
+                    <p className="text-white/90 mb-6">Send us detailed inquiries or partnership proposals.</p>
+                    <a href="mailto:hello@temanfarmasi.com" className="inline-block bg-white text-brand-pink px-6 py-3 rounded-full font-bold text-sm hover:bg-brand-dark hover:text-white transition-all shadow-md">
+                        hello@temanfarmasi.com
+                    </a>
+                </div>
+
+                {/* Office Info (Blue) */}
+                <div className="bg-brand-blue p-8 rounded-[2.5rem] shadow-lg hover:shadow-xl transition-all duration-300 group">
+                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-brand-blue text-2xl mb-6 shadow-sm group-hover:scale-110 transition-transform">
+                        <FaMapMarkerAlt />
+                    </div>
+                    <h3 className="font-heading font-bold text-2xl text-white mb-2">Visit Our Office</h3>
+                    <p className="text-white/90">
+                        Jl. Farmasi Raya No. 123,<br/>
+                        Jakarta Selatan, Indonesia 12345
+                    </p>
+                </div>
+
+            </div>
+
+            {/* Right Column: Contact Form */}
+            <div className="bg-white p-8 md:p-10 rounded-[3rem] shadow-xl border-2 border-brand-pink/20 h-fit">
+                <h3 className="font-heading font-bold text-3xl text-brand-dark mb-2">Send a Message</h3>
+                <p className="text-gray-500 mb-8">Fill out the form below and we&apos;ll get back to you within 24 hours.</p>
+                
+                <form className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-brand-dark ml-2">First Name</label>
+                            <input 
+                                type="text" 
+                                placeholder="John" 
+                                className="w-full px-6 py-4 rounded-2xl bg-brand-cream border-2 border-transparent focus:border-brand-pink focus:bg-white outline-none transition-all text-brand-dark"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-brand-dark ml-2">Last Name</label>
+                            <input 
+                                type="text" 
+                                placeholder="Doe" 
+                                className="w-full px-6 py-4 rounded-2xl bg-brand-cream border-2 border-transparent focus:border-brand-pink focus:bg-white outline-none transition-all text-brand-dark"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-brand-dark ml-2">Email Address</label>
+                        <input 
+                            type="email" 
+                            placeholder="john@example.com" 
+                            className="w-full px-6 py-4 rounded-2xl bg-brand-cream border-2 border-transparent focus:border-brand-pink focus:bg-white outline-none transition-all text-brand-dark"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-brand-dark ml-2">Topic</label>
+                        <select className="w-full px-6 py-4 rounded-2xl bg-brand-cream border-2 border-transparent focus:border-brand-pink focus:bg-white outline-none transition-all text-brand-dark appearance-none">
+                            <option>General Inquiry</option>
+                            <option>Private Coaching</option>
+                            <option>Partnership</option>
+                            <option>Technical Issue</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-brand-dark ml-2">Message</label>
+                        <textarea 
+                            rows={5}
+                            placeholder="Tell us more about your research..." 
+                            className="w-full px-6 py-4 rounded-2xl bg-brand-cream border-2 border-transparent focus:border-brand-pink focus:bg-white outline-none transition-all text-brand-dark resize-none"
+                        ></textarea>
+                    </div>
+
+                    <button className="w-full bg-brand-dark text-white font-bold py-4 rounded-2xl hover:bg-brand-pink hover:text-brand-dark transition-all shadow-lg flex items-center justify-center gap-2 group">
+                        <FaPaperPlane className="group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
+                        Send Message
+                    </button>
+                </form>
+            </div>
+
+        </div>
+      </section>
+
+      <Footer />
+    </main>
+  );
+}

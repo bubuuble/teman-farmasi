@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
+import { FaTwitter, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
 
 export default function Footer() {
   return (

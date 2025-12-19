@@ -34,7 +34,7 @@ export default function Mentors({ mentors = [] }: MentorsProps) {
        <h2 className="text-center font-heading text-3xl font-bold text-brand-dark mb-12">Kenali Para Mentor Kami</h2>
        
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mentors.map((mentor, i) => {
+          {mentors.map((mentor) => {
              const imageUrl = mentor.image ? urlFor(mentor.image).width(400).height(400).url() : null;
              return (
              <div key={mentor._id} className={`${mentor.cardColor} p-6 rounded-[2rem] text-center border-2 border-white shadow-sm hover:shadow-card hover:-translate-y-1 transition-all duration-300 group`}>

@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+    /* config options here */
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb', // Naikkan limit upload ke 50MB (sesuaikan kebutuhan)
+    },
+  },
+
   images: {
     remotePatterns: [
       {

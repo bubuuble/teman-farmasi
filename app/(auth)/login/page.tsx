@@ -33,7 +33,7 @@ export default function LoginPage() {
                 type="text"       // Ubah type jadi text (bukan email) agar validasi HTML tidak protes
                 required
                 className="w-full px-4 py-3 rounded-xl border border-brand-gray/30 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none transition-all text-brand-dark placeholder:text-gray-400 bg-brand-cream/30"
-                placeholder="nama_user atau nama@email.com"
+                placeholder="Username atau Email"
               />
             </div>
 

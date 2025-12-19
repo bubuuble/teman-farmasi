@@ -125,7 +125,7 @@ export default function BatchList({ batch, classId }: { batch: Batch, classId: s
                             onClick={() => handleAbsen(session.id)}
                             className="flex items-center gap-2 px-4 py-2 bg-brand-pink text-white rounded-xl text-[10px] font-bold hover:bg-brand-dark transition-all disabled:opacity-50 shadow-lg shadow-brand-pink/20"
                         >
-                            {loadingId === session.id ? "Memproses..." : "✋ Klik Absen Mengajar"}
+                            {loadingId === session.id ? "Memproses..." : " Klik Absen Mengajar"}
                         </button>
                     )}
 

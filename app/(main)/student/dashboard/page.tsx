@@ -142,7 +142,7 @@ export default async function StudentDashboard() {
                 </div>
 
                 {nextSession ? (
-                    <div className="bg-brand-cream/30 rounded-[32px] p-8 border border-brand-yellow/20 relative overflow-hidden group">
+                    <div className="bg-brand-yellow/50 rounded-[32px] p-8 border border-brand-yellow/70 relative overflow-hidden group">
                         <div className="relative z-10">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
@@ -201,7 +201,7 @@ export default async function StudentDashboard() {
                                         : "bg-brand-yellow text-brand-dark hover:bg-brand-dark hover:text-white"
                                     }`}
                                 >
-                                    {nextSession.is_open ? "✋ Isi Absensi Sekarang" : "Lihat Detail Sesi"}
+                                    {nextSession.is_open ? " Isi Absensi Sekarang" : "Lihat Detail Sesi"}
                                 </Link>
                             </div>
                         </div>

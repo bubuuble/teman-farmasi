@@ -1,6 +1,8 @@
 import MentorSidebar from '../../components/mentors/Sidebar'
 import MentorHeader from '../../components/mentors/Header'
 
+export const dynamic = 'force-dynamic'
+
 export default function MentorLayout({
   children,
 }: {

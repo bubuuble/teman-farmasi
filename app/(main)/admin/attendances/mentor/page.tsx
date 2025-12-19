@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { Clock, CheckCircle2, AlertCircle } from "lucide-react"
 import MentorFilter from "../MentorFilter"
 
+export const dynamic = 'force-dynamic'
+
 type MentorSessionData = {
   id: string; title: string; date_time: string; mentor_status: string | null;
   batches: { name: string; classes: { title: string } | null; profiles: { full_name: string | null } | null } | null;

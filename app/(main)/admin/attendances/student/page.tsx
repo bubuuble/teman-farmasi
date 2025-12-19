@@ -4,6 +4,8 @@ import { Filter } from "lucide-react" // Perbaikan: Hapus FileSpreadsheet karena
 import FilterAttendance from "../FilterAttendance"
 import ExportAttendanceBtn from "../ExportAttendanceBtn"
 
+export const dynamic = 'force-dynamic'
+
 // --- DEFINISI TIPE DATA ---
 type Session = { id: string; title: string; date_time: string }
 type Student = { id: string; full_name: string; email: string }

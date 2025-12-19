@@ -1,6 +1,8 @@
 import StudentSidebar from '../../components/student/Sidebar'
 import StudentHeader from '../../components/student/Header'
 
+export const dynamic = 'force-dynamic'
+
 export default function StudentLayout({
   children,
 }: {

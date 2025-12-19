@@ -70,7 +70,7 @@ export default function SessionCard({ session }: { session: Session }) {
                 disabled={loading}
                 className="w-full py-3 rounded-2xl bg-brand-pink text-white font-bold text-[11px] hover:bg-brand-dark transition-all disabled:opacity-50 shadow-lg shadow-brand-pink/20"
             >
-                {loading ? "Memproses..." : "✋ Klik Absen Mengajar"}
+                {loading ? "Memproses..." : " Klik Absen Mengajar"}
             </button>
         )}
       </div>

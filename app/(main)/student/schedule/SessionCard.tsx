@@ -151,7 +151,7 @@ export default function SessionCard({
                                 disabled={loading}
                                 className="w-full p-5 rounded-3xl bg-brand-pink text-white font-bold flex items-center justify-center gap-3 hover:bg-brand-dark transition-all shadow-xl shadow-brand-pink/20"
                             >
-                                {loading ? "Sedang Memproses..." : "✋ Klik Untuk Absen Hadir"}
+                                {loading ? "Sedang Memproses..." : " Klik Untuk Absen Hadir"}
                             </button>
                         ) : (
                             <div className="w-full p-5 rounded-3xl bg-gray-50 border border-gray-200 text-gray-400 font-bold flex items-center justify-center gap-3 cursor-not-allowed">

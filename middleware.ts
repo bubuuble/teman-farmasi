@@ -31,19 +31,21 @@ export async function middleware(request: NextRequest) {
 
   // 1. Cek User
   const { data: { user } } = await supabase.auth.getUser();
+  const path = request.nextUrl.pathname;
+
+  // Helper untuk cek area (Gunakan pengecekan yang lebih spesifik agar tidak bentrok dengan /mentors)
+  const isAdminArea = path === '/admin' || path.startsWith('/admin/');
+  const isMentorArea = path === '/mentor' || path.startsWith('/mentor/');
+  const isStudentArea = path === '/student' || path.startsWith('/student/');
 
   // 2. Proteksi Halaman Login (Kalau udah login, jangan kasih masuk halaman login lagi)
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
+  if (user && path.startsWith('/login')) {
      // Cek role untuk redirect yang benar (opsional, default ke student atau ambil dari metadata)
      return NextResponse.redirect(new URL('/student/dashboard', request.url));
   }
 
   // 3. Proteksi Route Dashboard (Wajib Login)
-  if (!user && (
-      request.nextUrl.pathname.startsWith('/admin') || 
-      request.nextUrl.pathname.startsWith('/mentor') || 
-      request.nextUrl.pathname.startsWith('/student')
-  )) {
+  if (!user && (isAdminArea || isMentorArea || isStudentArea)) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
@@ -52,25 +54,24 @@ export async function middleware(request: NextRequest) {
     // Kita ambil role dari user_metadata (Ini diset saat login/signup)
     // CATATAN: Pastikan saat create user, metadata 'role' diisi.
     const userRole = user.user_metadata?.role; // 'admin' | 'mentor' | 'student'
-    const path = request.nextUrl.pathname;
 
     // A. Student coba masuk Admin/Mentor
-    if (userRole === 'student' && (path.startsWith('/admin') || path.startsWith('/mentor'))) {
+    if (userRole === 'student' && (isAdminArea || isMentorArea)) {
       return NextResponse.redirect(new URL('/student/dashboard', request.url));
     }
 
     // B. Mentor coba masuk Admin
-    if (userRole === 'mentor' && path.startsWith('/admin')) {
+    if (userRole === 'mentor' && isAdminArea) {
       return NextResponse.redirect(new URL('/mentor/dashboard', request.url));
     }
     
     // C. Admin nyasar ke Student Dashboard -> Pindahkan ke Admin Dashboard
-    if (userRole === 'admin' && path.startsWith('/student')) {
+    if (userRole === 'admin' && isStudentArea) {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
     
     // D. Admin nyasar ke Mentor Dashboard -> Pindahkan ke Admin Dashboard (Opsional)
-    if (userRole === 'admin' && path.startsWith('/mentor')) {
+    if (userRole === 'admin' && isMentorArea) {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
   }

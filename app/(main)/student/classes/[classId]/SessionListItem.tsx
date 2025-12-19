@@ -86,7 +86,7 @@ export default function SessionListItem({
                     </button>
                     <div className="relative z-10">
                         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-pink mb-3 block">{classTitle}</span>
-                        <h2 className="text-3xl font-bold font-heading leading-tight">{session.title}</h2>
+                        <h2 className="text-3xl font-bold font-heading leading-tight text-brand-cream">{session.title}</h2>
                         <div className="text-xs text-blue-200 mt-3 font-bold uppercase tracking-widest flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-brand-yellow rounded-full"></div>
                             {batchName}

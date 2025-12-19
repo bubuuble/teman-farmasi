@@ -24,13 +24,8 @@ export default function StudentSidebar() {
     <aside className="w-64 bg-white border-r border-brand-yellow/30 h-screen flex flex-col fixed left-0 top-0 z-50">
       {/* Logo Area */}
       <div className="h-24 flex items-center px-8">
-        <Link href="/student/dashboard" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 bg-brand-pink rounded-xl flex items-center justify-center shadow-lg shadow-brand-pink/20 group-hover:scale-105 transition-transform">
-            <span className="text-white font-bold text-xl">TF</span>
-          </div>
-          <h1 className="font-heading font-bold text-lg tracking-tight text-brand-dark">
-            TEMAN <span className="text-brand-pink">FARMASI</span>
-          </h1>
+        <Link href="/student/dashboard" className="flex items-center gap-5 group">
+            <img src="/images/logos/logo_5.png" alt="Teman Farmasi" className="w-32 h-auto object-contain group-hover:scale-105 transition-transform" />
         </Link>
       </div>
 

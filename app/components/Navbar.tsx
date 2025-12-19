@@ -143,6 +143,8 @@ export default function Navbar() {
           <Link href="/about" className="hover:text-brand-pink transition">Tentang</Link>
           <Link href="/programs" className="hover:text-brand-pink transition">Program</Link>
           <Link href="/mentors" className="hover:text-brand-pink transition">Mentor</Link>
+          <Link href="/testimonial" className="hover:text-brand-pink transition">Testimonial</Link>
+          <Link href="/blog" className="hover:text-brand-pink transition">Blog</Link>
           
           {/* LOGIC BUTTON */}
           {isLoading ? (

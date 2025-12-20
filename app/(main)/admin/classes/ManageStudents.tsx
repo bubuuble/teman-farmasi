@@ -3,6 +3,7 @@
 import { useState, useActionState } from 'react'
 import { GraduationCap, X, Plus, Trash2 } from 'lucide-react'
 import { assignStudent, removeStudent, type ActionState } from './actions'
+import ConfirmModal from '@/app/components/ConfirmModal'
 
 // Tipe Data
 type Student = {
@@ -37,9 +38,15 @@ export default function ManageStudents({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(assignStudent, initialState)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    enrollmentId: string;
+  }>({
+    isOpen: false,
+    enrollmentId: '',
+  });
 
   const handleRemove = async (enrollmentId: string) => {
-    if(!confirm("Keluarkan siswa ini dari kelas?")) return
     await removeStudent(enrollmentId)
   }
 
@@ -86,7 +93,7 @@ export default function ManageStudents({
                           <p className="text-xs text-gray-500">{item.profiles?.email || "-"}</p>
                         </div>
                         <button 
-                          onClick={() => handleRemove(item.id)}
+                          onClick={() => setConfirmModal({ isOpen: true, enrollmentId: item.id })}
                           className="text-gray-400 hover:text-red-500 transition-colors"
                           title="Keluarkan"
                         >
@@ -97,6 +104,18 @@ export default function ManageStudents({
                   )}
                 </div>
               </div>
+
+              <ConfirmModal 
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, enrollmentId: '' })}
+                onConfirm={() => {
+                    handleRemove(confirmModal.enrollmentId)
+                    setConfirmModal({ isOpen: false, enrollmentId: '' })
+                }}
+                title="Keluarkan Siswa"
+                message="Apakah kamu yakin ingin mengeluarkan siswa ini dari kelas?"
+                variant="danger"
+              />
 
               <hr className="border-gray-100" />
 

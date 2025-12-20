@@ -3,10 +3,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Calendar, Trash2, Video, Clock, CheckCircle } from 'lucide-react' // Pencil dihapus karena tidak terpakai
+import { Calendar, Trash2, Video, CheckCircle } from 'lucide-react' // Pencil dihapus karena tidak terpakai
 import { deleteBatch, deleteSession, submitMentorAttendance } from '../actions'
 import SessionForm from './SessionForm'
 import BatchForm from './BatchForm'
+import ConfirmModal from '@/app/components/ConfirmModal'
 
 // --- DEFINISI TIPE DATA ---
 type Session = {
@@ -28,32 +29,63 @@ type Batch = {
 export default function BatchList({ batch, classId }: { batch: Batch, classId: string }) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'primary';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   if (!batch) return null
 
   const handleDeleteBatch = async () => {
-    if(!confirm("Hapus Batch ini? Semua jadwal sesi di dalamnya akan hilang.")) return
-    setIsDeleting(true)
-    await deleteBatch(batch.id, classId)
-    setIsDeleting(false)
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Batch",
+      message: "Hapus Batch ini? Semua jadwal sesi di dalamnya akan hilang.",
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        setIsDeleting(true)
+        await deleteBatch(batch.id, classId)
+        setIsDeleting(false)
+      }
+    })
   }
 
   const handleDeleteSession = async (sessionId: string) => {
-    if(!confirm("Hapus sesi ini?")) return
-    await deleteSession(sessionId, classId)
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Sesi",
+      message: "Apakah kamu yakin ingin menghapus sesi ini?",
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        await deleteSession(sessionId, classId)
+      }
+    })
   }
 
   // NAMA FUNGSI DISERAGAMKAN: handleAbsen
   const handleAbsen = async (sessionId: string) => {
-    if(!confirm("Konfirmasi kehadiran mengajar untuk sesi ini?")) return
-    
-    setLoadingId(sessionId)
-    const res = await submitMentorAttendance(sessionId, classId)
-    setLoadingId(null)
-
-    if (res.error) {
-        alert(res.error)
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Konfirmasi Absen",
+      message: "Konfirmasi kehadiran mengajar untuk sesi ini?",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        setLoadingId(sessionId)
+        const res = await submitMentorAttendance(sessionId, classId)
+        setLoadingId(null)
+        if (res.error) alert(res.error)
+      }
+    })
   }
 
   return (
@@ -98,10 +130,6 @@ export default function BatchList({ batch, classId }: { batch: Batch, classId: s
                      <div>
                         <h5 className="font-bold text-brand-dark leading-tight">{session.title}</h5>
                         <div className="flex items-center gap-3 text-[11px] text-gray-500 mt-1">
-                           <span className="flex items-center gap-1 font-medium">
-                              <Clock className="w-3 h-3 text-brand-pink" />
-                              {new Date(session.date_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                           </span>
                            {session.zoom_link && (
                              <a href={session.zoom_link} target="_blank" className="flex items-center gap-1 text-brand-blue hover:underline font-bold">
                                 <Video className="w-3 h-3" /> Zoom
@@ -141,6 +169,15 @@ export default function BatchList({ batch, classId }: { batch: Batch, classId: s
           )}
         </div>
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+      />
     </div>
   )
 }

@@ -2,8 +2,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Calendar, Clock, CheckCircle, Lock, Video, X, ExternalLink } from 'lucide-react'
+import { Calendar, CheckCircle, Lock, Video, X, ExternalLink } from 'lucide-react'
 import { studentCheckIn } from './actions'
+import ConfirmModal from '@/app/components/ConfirmModal'
 
 // PERBAIKAN: Definisikan tipe Session secara detail sesuai data nested dari Supabase
 type Session = {
@@ -30,10 +31,9 @@ export default function SessionCard({
 }) {
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
-  const handleCheckIn = async (e: React.MouseEvent) => {
-    e.stopPropagation() 
-    if(!confirm("Konfirmasi kehadiran untuk sesi ini?")) return
+  const handleCheckIn = async () => {
     setLoading(true)
     const res = await studentCheckIn(session.id)
     setLoading(false)
@@ -42,8 +42,6 @@ export default function SessionCard({
   }
 
   const dateStr = new Date(session.date_time).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })
-  const timeStr = new Date(session.date_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-
   return (
     <>
       <div 
@@ -70,12 +68,6 @@ export default function SessionCard({
                     <Calendar className="w-4 h-4 text-brand-pink" />
                 </div>
                 <span>{dateStr}</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-gray-500 font-medium">
-                <div className="w-8 h-8 bg-brand-cream rounded-lg flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-brand-pink" />
-                </div>
-                <span>{timeStr} WIB</span>
             </div>
         </div>
 
@@ -110,12 +102,6 @@ export default function SessionCard({
                                 <Calendar className="w-4 h-4 text-brand-pink" /> {dateStr}
                             </div>
                         </div>
-                        <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Waktu Mulai</label>
-                            <div className="flex items-center gap-2 font-bold text-brand-dark text-sm">
-                                <Clock className="w-4 h-4 text-brand-pink" /> {timeStr} WIB
-                            </div>
-                        </div>
                     </div>
 
                     {session.zoom_link && session.zoom_link.trim() !== "" ? (
@@ -147,7 +133,7 @@ export default function SessionCard({
                         ) : session.is_open ? (
                             <button 
                                 type="button"
-                                onClick={handleCheckIn}
+                                onClick={() => setShowConfirm(true)}
                                 disabled={loading}
                                 className="w-full p-5 rounded-3xl bg-brand-pink text-white font-bold flex items-center justify-center gap-3 hover:bg-brand-dark transition-all shadow-xl shadow-brand-pink/20"
                             >
@@ -163,6 +149,18 @@ export default function SessionCard({
             </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => {
+            setShowConfirm(false)
+            handleCheckIn()
+        }}
+        title="Konfirmasi Kehadiran"
+        message="Apakah kamu yakin ingin melakukan absensi kehadiran untuk sesi ini?"
+        isLoading={loading}
+      />
     </>
   )
 }

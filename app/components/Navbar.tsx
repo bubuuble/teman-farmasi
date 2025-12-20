@@ -158,12 +158,6 @@ export default function Navbar() {
                     Dashboard
                   </button>
                 </Link>
-                <button 
-                  onClick={handleLogout} 
-                  className="text-brand-purple hover:text-brand-dark transition-colors px-2"
-                >
-                  <span className="text-xs font-bold uppercase">Logout</span>
-                </button>
               </div>
             ) : (
               <Link href="/login">
@@ -200,12 +194,6 @@ export default function Navbar() {
                       Dashboard
                     </button>
                   </Link>
-                  <button 
-                    onClick={handleLogout}
-                    className="w-full bg-brand-purple text-white px-6 py-3 rounded-full font-bold hover:bg-brand-dark transition-all"
-                  >
-                    Logout
-                  </button>
                 </div>
               ) : (
                 <Link href="/login" onClick={() => setIsMenuOpen(false)} className="w-full mt-4">

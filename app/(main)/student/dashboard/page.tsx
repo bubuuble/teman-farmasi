@@ -4,19 +4,19 @@ import { createClient } from "@/lib/supabase/server"
 import { BookOpen, Calendar, Clock, CheckCircle, Video } from "lucide-react"
 import Link from "next/link"
 
-// Tipe Data
 type Session = {
   id: string
   title: string
   date_time: string
-  zoom_link: string
+  zoom_link: string | null
   is_open: boolean
   batches: {
     name: string
     classes: { title: string }
   }
 }
-export const revalidate = 0; // Tambahkan ini agar data tidak dicache
+
+export const revalidate = 0;
 
 export default async function StudentDashboard() {
   const supabase = await createClient()
@@ -24,7 +24,7 @@ export default async function StudentDashboard() {
 
   if (!user) return null
 
-  // 1. Ambil Kelas yang Diikuti (Active Enrollments)
+  // 1. Ambil Kelas Aktif
   const { count: classCount, data: enrollments } = await supabase
     .from('enrollments')
     .select('class_id', { count: 'exact' })
@@ -32,47 +32,35 @@ export default async function StudentDashboard() {
     .eq('status', 'active')
 
   // 2. Hitung Statistik Kehadiran
-  // Ambil total sesi yang SUDAH LEWAT dari kelas yang diikuti
-  // (Logic sederhana: Ambil semua record 'present' / 'late')
   const { count: presentCount } = await supabase
     .from('attendance_records')
     .select('*', { count: 'exact', head: true })
     .eq('student_id', user.id)
     .in('status', ['present', 'late'])
 
-  // 3. Cari Jadwal Terdekat (Next Session)
-  // Logic: Cari sesi dari Batch yang terhubung dengan Class yang diikuti user
-  // Ini butuh join 3 tabel: attendance_sessions -> batches -> classes <- enrollments -> user
-  // Query Sederhana:
-  
+  // 3. Cari Jadwal Terdekat (Berdasarkan Tanggal Hari Ini)
   let nextSession: Session | null = null
   
   if (enrollments && enrollments.length > 0) {
       const classIds = enrollments.map(e => e.class_id)
       
-      // Ambil Batch IDs dari kelas-kelas tersebut
-      const { data: batches } = await supabase
-        .from('batches')
-        .select('id')
-        .in('class_id', classIds)
+      // LOGIKA TANGGAL: Set ke awal hari ini (00:00:00) agar sesi hari ini muncul
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { data: sessions } = await supabase
+        .from('attendance_sessions')
+        .select(`
+            id, title, date_time, zoom_link, is_open,
+            batches!inner ( name, class_id, classes ( title ) )
+        `)
+        .in('batches.class_id', classIds)
+        .gte('date_time', today.toISOString()) // Filter Sesi >= Hari ini
+        .order('date_time', { ascending: true })
+        .limit(1)
+        .maybeSingle()
       
-      if (batches && batches.length > 0) {
-          const batchIds = batches.map(b => b.id)
-          
-          const { data: sessions } = await supabase
-            .from('attendance_sessions')
-            .select(`
-                id, title, date_time, zoom_link, is_open,
-                batches ( name, classes ( title ) )
-            `)
-            .in('batch_id', batchIds)
-            .gte('date_time', new Date().toISOString()) // Yang akan datang
-            .order('date_time', { ascending: true })
-            .limit(1)
-            .maybeSingle()
-          
-          if(sessions) nextSession = sessions as unknown as Session
-      }
+      if(sessions) nextSession = sessions as unknown as Session
   }
 
   return (
@@ -92,17 +80,13 @@ export default async function StudentDashboard() {
                 Akses semua materi, cek jadwal, dan pantau progres belajarmu dalam satu tempat yang nyaman.
             </p>
          </div>
-         {/* Decorative Elements (Solid) */}
          <div className="absolute right-[-5%] top-[-10%] w-80 h-80 bg-brand-pink/10 rounded-full"></div>
          <div className="absolute right-[10%] bottom-[-20%] w-64 h-64 bg-brand-yellow/10 rounded-full"></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         
-        {/* LEFT COLUMN */}
         <div className="lg:col-span-2 space-y-10">
-            
-            {/* Stats Grid - Bento Style */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="bg-white p-8 rounded-[32px] shadow-sm border border-brand-yellow/20 flex items-center gap-6 hover:shadow-md transition-all hover:-translate-y-1">
                     <div className="w-16 h-16 bg-brand-yellow text-brand-dark rounded-2xl flex items-center justify-center shadow-inner">
@@ -127,7 +111,6 @@ export default async function StudentDashboard() {
                 </div>
             </div>
 
-            {/* Next Session Card */}
             <div className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-100 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-8 relative z-10">
                     <div className="flex items-center gap-3">
@@ -169,14 +152,13 @@ export default async function StudentDashboard() {
                             <div className="flex items-center gap-6 mb-10">
                                 <div className="flex items-center gap-3 text-brand-dark bg-white px-5 py-3 rounded-2xl text-sm font-bold shadow-sm border border-gray-50">
                                     <Clock className="w-5 h-5 text-brand-pink" />
-                                    {new Date(nextSession.date_time).toLocaleString('id-ID', {
-                                        weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
-                                    })} WIB
+                                    {new Date(nextSession.date_time).toLocaleDateString('id-ID', {
+                                        weekday: 'long', day: 'numeric', month: 'long'
+                                    })}
                                 </div>
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                                {/* Tombol Join Zoom */}
                                 {nextSession.zoom_link ? (
                                     <a 
                                         href={nextSession.zoom_link}
@@ -192,7 +174,6 @@ export default async function StudentDashboard() {
                                     </div>
                                 )}
                                 
-                                {/* Tombol Absensi */}
                                 <Link 
                                     href="/student/schedule"
                                     className={`flex-1 py-5 rounded-2xl font-bold text-center transition-all flex items-center justify-center gap-2 ${
@@ -205,65 +186,38 @@ export default async function StudentDashboard() {
                                 </Link>
                             </div>
                         </div>
-                        {/* Dekorasi Bg */}
-                        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-brand-pink/5 rounded-full blur-3xl"></div>
                     </div>
                 ) : (
                     <div className="py-20 text-center bg-brand-cream/20 rounded-[32px] border-2 border-dashed border-brand-yellow/30">
-                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                            <Calendar className="w-10 h-10 text-brand-yellow" />
-                        </div>
                         <p className="text-gray-500 font-medium">Tidak ada jadwal kelas dalam waktu dekat.</p>
-                        <p className="text-xs text-gray-400 mt-1">Istirahatlah sejenak, kamu sudah bekerja keras!</p>
                     </div>
                 )}
             </div>
         </div>
 
-        {/* RIGHT COLUMN */}
         <div className="space-y-10">
             <div className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-100">
                 <h3 className="font-heading font-bold text-xl text-brand-dark mb-8">Menu Cepat</h3>
                 <div className="space-y-4">
                     <Link href="/student/classes" className="flex items-center justify-between p-6 rounded-3xl bg-brand-cream/30 hover:bg-brand-yellow transition-all group border border-brand-yellow/10">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-pink shadow-sm group-hover:scale-110 transition-transform">
+                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-pink shadow-sm">
                                 <BookOpen className="w-6 h-6" />
                             </div>
                             <span className="font-bold text-brand-dark">Materi & E-Book</span>
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm">
-                            <span className="text-brand-pink font-bold">→</span>
-                        </div>
                     </Link>
                     <Link href="/student/schedule" className="flex items-center justify-between p-6 rounded-3xl bg-brand-cream/30 hover:bg-brand-pink hover:text-white transition-all group border border-brand-pink/10">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-blue shadow-sm group-hover:scale-110 transition-transform">
+                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-blue shadow-sm">
                                 <CheckCircle className="w-6 h-6" />
                             </div>
                             <span className="font-bold">Cek Kehadiran</span>
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm">
-                            <span className="text-brand-pink font-bold">→</span>
-                        </div>
                     </Link>
                 </div>
             </div>
-
-            {/* Info Card */}
-            <div className="bg-brand-pink p-10 rounded-[40px] text-white relative overflow-hidden shadow-xl shadow-brand-pink/20">
-                <div className="relative z-10">
-                    <h4 className="font-heading font-bold text-xl mb-3">Butuh Bantuan?</h4>
-                    <p className="text-sm text-white/80 mb-8 leading-relaxed">Hubungi admin jika kamu mengalami kendala akses materi atau absensi.</p>
-                    <button className="w-full py-4 bg-white text-brand-pink rounded-2xl font-bold shadow-lg hover:bg-brand-dark hover:text-white transition-all transform hover:-translate-y-1">
-                        Hubungi Admin
-                    </button>
-                </div>
-                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full"></div>
-                <div className="absolute left-[-10%] top-[-10%] w-20 h-20 bg-white/5 rounded-full"></div>
-            </div>
         </div>
-
       </div>
     </div>
   )

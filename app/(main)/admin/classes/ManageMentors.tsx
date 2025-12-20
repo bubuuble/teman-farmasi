@@ -3,6 +3,7 @@
 import { useState, useActionState } from 'react'
 import { Users, X, Plus, Trash2 } from 'lucide-react'
 import { assignMentor, removeMentor, type ActionState } from './actions'
+import ConfirmModal from '@/app/components/ConfirmModal'
 
 // Tipe Data
 type Mentor = {
@@ -37,9 +38,15 @@ export default function ManageMentors({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(assignMentor, initialState)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    assignmentId: string;
+  }>({
+    isOpen: false,
+    assignmentId: '',
+  });
 
   const handleRemove = async (assignmentId: string) => {
-    if(!confirm("Hapus mentor ini dari kelas?")) return
     await removeMentor(assignmentId)
   }
 
@@ -82,7 +89,7 @@ export default function ManageMentors({
                           <p className="text-xs text-gray-500">{item.profiles?.email || "-"}</p>
                         </div>
                         <button 
-                          onClick={() => handleRemove(item.id)}
+                          onClick={() => setConfirmModal({ isOpen: true, assignmentId: item.id })}
                           className="text-gray-400 hover:text-red-500 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -92,6 +99,18 @@ export default function ManageMentors({
                   )}
                 </div>
               </div>
+
+              <ConfirmModal 
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, assignmentId: '' })}
+                onConfirm={() => {
+                    handleRemove(confirmModal.assignmentId)
+                    setConfirmModal({ isOpen: false, assignmentId: '' })
+                }}
+                title="Hapus Mentor"
+                message="Apakah kamu yakin ingin menghapus mentor ini dari kelas?"
+                variant="danger"
+              />
 
               <hr className="border-gray-100" />
 

@@ -49,34 +49,25 @@ export async function deleteBatch(batchId: string, classId: string) {
 
 // --- SESSION ACTIONS (JADWAL) ---
 
-export async function createSession(prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function createSession(prevState: ActionState, formData: FormData) {
   const supabase = await createClient()
-
   const batchId = formData.get('batchId') as string
-  const classId = formData.get('classId') as string // Untuk revalidate
+  const classId = formData.get('classId') as string
   const title = formData.get('title') as string
-  const date = formData.get('date') as string
-  const time = formData.get('time') as string
-  const zoomLink = formData.get('zoomLink') as string
-
-  if (!title || !date || !time) return { error: "Judul dan Waktu wajib diisi" }
-
-  // Gabungkan Date & Time jadi Timestamp ISO
-  const dateTime = new Date(`${date}T${time}:00`).toISOString()
+  const date = formData.get('date') as string // Hanya ambil date
 
   const { error } = await supabase.from('attendance_sessions').insert({
     batch_id: batchId,
     title,
-    date_time: dateTime,
-    zoom_link: zoomLink,
-    is_open: true, // SET KE TRUE SECARA DEFAULT
+    date_time: date, // Supabase akan menganggap jam 00:00:00 secara otomatis
+    zoom_link: formData.get('zoomLink'),
+    is_open: true, // Otomatis terbuka
   })
 
   if (error) return { error: error.message }
   
   revalidatePath(`/mentor/classes/${classId}`)
-  revalidatePath(`/student/schedule`)
-  return { success: "Sesi berhasil dibuat dan absensi dibuka!" }
+  return { success: "Sesi berhasil dibuat!" }
 }
 
 export async function deleteSession(sessionId: string, classId: string) {

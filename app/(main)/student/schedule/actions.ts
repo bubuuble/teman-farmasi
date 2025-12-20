@@ -9,34 +9,27 @@ export async function studentCheckIn(sessionId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Unauthorized" }
 
+  // 1. Cek apakah sesi ada dan is_open (Tanpa cek jam lagi)
   const { data: session } = await supabase
     .from('attendance_sessions')
-    .select('date_time, title')
+    .select('is_open')
     .eq('id', sessionId)
     .single()
 
   if (!session) return { error: "Sesi tidak ditemukan" }
-
-  // --- LOGIKA BATAS WAKTU 1 JAM ---
-  const now = new Date();
-  const sessionStart = new Date(session.date_time);
-  const oneHourLater = new Date(sessionStart.getTime() + 60 * 60 * 1000);
-
-  if (now < sessionStart) {
-    return { error: "Sesi belum dimulai. Harap tunggu sesuai jadwal." }
+  
+  if (!session.is_open) {
+    return { error: "Maaf, absensi untuk sesi ini sudah ditutup oleh Mentor." }
   }
 
-  if (now > oneHourLater) {
-    return { error: "Absensi sudah ditutup. Batas waktu absen mandiri adalah 1 jam sejak sesi dimulai." }
-  }
-
-  // Cek apakah sudah absen...
+  // 2. Cek apakah sudah absen sebelumnya
   const { data: existing } = await supabase
     .from('attendance_records')
     .select('id').eq('session_id', sessionId).eq('student_id', user.id).single()
 
   if (existing) return { error: "Kamu sudah mengisi absensi." }
 
+  // 3. Simpan Kehadiran
   const { error } = await supabase.from('attendance_records').insert({
     session_id: sessionId,
     student_id: user.id,
@@ -45,6 +38,8 @@ export async function studentCheckIn(sessionId: string) {
   })
 
   if (error) return { error: error.message }
+
   revalidatePath('/student/schedule')
+  revalidatePath('/student/dashboard')
   return { success: "Berhasil! Kehadiran tercatat." }
 }

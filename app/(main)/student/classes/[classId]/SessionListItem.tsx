@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { Calendar, Clock, Video, ExternalLink, X, CheckCircle, Lock } from 'lucide-react'
 import { studentCheckIn } from '../../schedule/actions'
+import ConfirmModal from '@/app/components/ConfirmModal'
 
 type Session = {
   id: string; title: string; date_time: string; zoom_link: string | null; is_open: boolean;
@@ -21,11 +22,10 @@ export default function SessionListItem({
     classTitle: string
 }) {
   const [showModal, setShowModal] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const handleCheckIn = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if(!confirm("Konfirmasi kehadiran untuk sesi ini?")) return
+  const handleCheckIn = async () => {
     setLoading(true)
     const res = await studentCheckIn(session.id)
     setLoading(false)
@@ -35,7 +35,6 @@ export default function SessionListItem({
 
   const dateObj = new Date(session.date_time)
   const dateStr = dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })
-  const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 
   return (
     <>
@@ -52,10 +51,6 @@ export default function SessionListItem({
           <div>
             <h5 className="font-bold text-brand-dark text-base group-hover:text-brand-pink transition-colors">{session.title}</h5>
             <div className="flex items-center gap-3 text-xs text-gray-400 mt-2 font-bold">
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-brand-pink" />
-                {timeStr} WIB 
-              </div>
               {attendanceStatus && (
                  <span className="text-green-600 font-bold flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full text-[10px] border border-green-100">
                     <CheckCircle className="w-3 h-3" /> Hadir
@@ -108,9 +103,6 @@ export default function SessionListItem({
                         </div>
                         <div className="bg-brand-cream/30 p-6 rounded-[32px] border border-brand-cream shadow-sm">
                             <label className="text-[10px] font-bold text-gray-400 uppercase mb-3 block tracking-widest">Waktu Mulai</label>
-                            <div className="text-sm font-bold text-brand-dark flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-brand-pink" /> {timeStr} WIB
-                            </div>
                         </div>
                     </div>
 
@@ -156,7 +148,7 @@ export default function SessionListItem({
                             </div>
                         ) : session.is_open ? (
                             <button 
-                                onClick={handleCheckIn} 
+                                onClick={() => setShowConfirm(true)} 
                                 disabled={loading} 
                                 className="w-full p-6 rounded-[32px] bg-brand-pink text-white font-bold flex items-center justify-center gap-3 hover:bg-brand-dark transition-all shadow-xl shadow-brand-pink/20"
                             >
@@ -172,6 +164,18 @@ export default function SessionListItem({
             </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => {
+            setShowConfirm(false)
+            handleCheckIn()
+        }}
+        title="Konfirmasi Kehadiran"
+        message="Apakah kamu yakin ingin melakukan absensi kehadiran untuk sesi ini?"
+        isLoading={loading}
+      />
     </>
   )
 }

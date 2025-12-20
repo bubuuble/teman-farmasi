@@ -34,8 +34,6 @@ export default function SessionForm({
 
   // Helper untuk parsing ISO string ke format input date & time
   const getDefaultDate = () => existingData ? new Date(existingData.date_time).toISOString().split('T')[0] : ''
-  const getDefaultTime = () => existingData ? new Date(existingData.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''
-
   return (
     <>
       {existingData ? (
@@ -93,16 +91,6 @@ export default function SessionForm({
                       name="date" 
                       type="date" 
                       defaultValue={getDefaultDate()}
-                      className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue" 
-                      required 
-                    />
-                </div>
-                <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-dark uppercase">Jam Mulai</label>
-                    <input 
-                      name="time" 
-                      type="time" 
-                      defaultValue={getDefaultTime()}
                       className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue" 
                       required 
                     />

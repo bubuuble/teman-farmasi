@@ -3,6 +3,7 @@
 import { useState, useActionState } from 'react'
 import { FileText, X, Upload, Trash2, Download } from 'lucide-react'
 import { uploadResource, deleteResource, type ActionState } from './actions'
+import ConfirmModal from '@/app/components/ConfirmModal'
 
 // Tipe Data
 type Resource = {
@@ -26,9 +27,17 @@ export default function ManageResources({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(uploadResource, initialState)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    id: string;
+    path: string;
+  }>({
+    isOpen: false,
+    id: '',
+    path: '',
+  });
 
   const handleDelete = async (id: string, path: string) => {
-    if(!confirm("Hapus file ini permanen?")) return
     await deleteResource(id, path)
   }
 
@@ -90,7 +99,7 @@ export default function ManageResources({
                           </div>
                         </div>
                         <button 
-                          onClick={() => handleDelete(item.id, item.file_path)}
+                          onClick={() => setConfirmModal({ isOpen: true, id: item.id, path: item.file_path })}
                           className="text-gray-400 hover:text-red-500 transition-colors"
                           title="Hapus File"
                         >
@@ -101,6 +110,18 @@ export default function ManageResources({
                   )}
                 </div>
               </div>
+
+              <ConfirmModal 
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, id: '', path: '' })}
+                onConfirm={() => {
+                    handleDelete(confirmModal.id, confirmModal.path)
+                    setConfirmModal({ isOpen: false, id: '', path: '' })
+                }}
+                title="Hapus File"
+                message="Apakah kamu yakin ingin menghapus file ini secara permanen?"
+                variant="danger"
+              />
 
               <hr className="border-gray-100" />
 

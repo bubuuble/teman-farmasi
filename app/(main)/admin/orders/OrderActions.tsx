@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CheckCircle, XCircle, Trash2 } from 'lucide-react'
 import { updateOrderStatus, deleteOrder } from './actions'
+import ConfirmModal from '@/app/components/ConfirmModal'
 
 type OrderProps = {
   id: string
@@ -13,6 +14,7 @@ type OrderProps = {
 
 export default function OrderActions({ order }: { order: OrderProps }) {
   const [loading, setLoading] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const handleStatus = async (newStatus: string) => {
     setLoading(true)
@@ -21,7 +23,6 @@ export default function OrderActions({ order }: { order: OrderProps }) {
   }
 
   const handleDelete = async () => {
-    if(!confirm("Hapus history order ini?")) return
     setLoading(true)
     await deleteOrder(order.id)
     setLoading(false)
@@ -64,12 +65,25 @@ export default function OrderActions({ order }: { order: OrderProps }) {
 
       {/* Delete Button (Selalu ada buat bersih2 data) */}
       <button 
-        onClick={handleDelete}
+        onClick={() => setShowConfirm(true)}
         className="p-2 text-gray-300 hover:text-red-500 ml-2"
         title="Hapus Data"
       >
         <Trash2 className="w-4 h-4" />
       </button>
+
+      <ConfirmModal 
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => {
+            setShowConfirm(false)
+            handleDelete()
+        }}
+        title="Hapus Order"
+        message="Apakah kamu yakin ingin menghapus history order ini?"
+        variant="danger"
+        isLoading={loading}
+      />
     </div>
   )
 }

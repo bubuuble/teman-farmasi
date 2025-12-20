@@ -13,7 +13,7 @@ export default function SignOutButton() {
     setLoading(true)
     // Logout dari Supabase
     await supabase.auth.signOut()
-    // Refresh halaman agar middleware menendang ke login
+    // Refresh halaman agar proxy menendang ke login
     router.refresh() 
     router.push('/login')
     setLoading(false)

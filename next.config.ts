@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
     /* config options here */
+  serverExternalPackages: ['isomorphic-dompurify', 'jsdom'],
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb', // Naikkan limit upload ke 50MB (sesuaikan kebutuhan)

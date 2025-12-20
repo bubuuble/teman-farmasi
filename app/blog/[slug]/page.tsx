@@ -7,6 +7,7 @@ import { PortableText, PortableTextBlock } from '@portabletext/react';
 import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
 import { notFound } from 'next/navigation';
+export const revalidate = 60; // Revalidate setiap 60 detik
 
 type SanityImage = {
   _type: 'image';

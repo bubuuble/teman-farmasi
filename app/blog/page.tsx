@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FaArrowRight } from "react-icons/fa";
 import { getAllBlogPosts } from '@/lib/sanity-queries';
 import { urlFor } from '@/lib/sanity';
+export const revalidate = 60; // Revalidate setiap 60 detik
 
 type SanityImage = {
   _type: 'image';

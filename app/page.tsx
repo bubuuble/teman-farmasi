@@ -16,6 +16,8 @@ import {
   getHeroContent,
 } from "@/lib/sanity-queries";
 
+export const revalidate = 60; // Revalidate setiap 60 detik
+
 export default async function Home() {
   // Fetch featured content for homepage
   const [

@@ -2,6 +2,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getAllMentors } from '@/lib/sanity-queries';
 import MentorsGrid from './MentorsGrid';
+export const revalidate = 60; // Revalidate setiap 60 detik
 
 export default async function MentorsPage() {
   const allMentors = await getAllMentors();

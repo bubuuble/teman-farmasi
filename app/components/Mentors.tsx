@@ -57,7 +57,7 @@ export default function Mentors({ mentors = [] }: MentorsProps) {
                     <div className="flex items-center gap-1 text-brand-yellow bg-white px-2 py-1 rounded-full shadow-sm">
                         <FaStar /> <span className="text-brand-darkblue font-bold">{mentor.rating}</span>
                     </div>
-                    <span className="text-gray-500">({mentor.reviews})</span>
+                    <span className="text-brand-darkblue">({mentor.reviews})</span>
                 </div>
              </div>
           )})}

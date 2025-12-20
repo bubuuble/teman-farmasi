@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { FaStar, FaUserGraduate, FaFlask, FaCheckCircle, FaMicroscope } from 'react-icons/fa';
 import { GiDna2, GiChemicalDrop, GiMedicines, GiChemicalTank, GiMedicinePills } from 'react-icons/gi'; // Tambahan ikon farmasi
 import { urlFor } from '@/lib/sanity';
+export const revalidate = 60; // Revalidate setiap 60 detik
 
 interface HeroContent {
   title?: string;

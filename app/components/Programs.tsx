@@ -40,7 +40,7 @@ export default function Programs({ programs = [] }: ProgramsProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {programs.map((track, idx) => {
+        {programs.map((track) => {
             const imageUrl = track.image ? urlFor(track.image).width(600).height(400).url() : null;
             const bgColor = track.bgColor || 'bg-brand-yellow';
             return (

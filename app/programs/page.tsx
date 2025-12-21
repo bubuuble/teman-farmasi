@@ -29,8 +29,6 @@ const colorPalette = [
   'bg-brand-pink',   
   'bg-brand-blue',   
   'bg-brand-yellow', 
-  'bg-brand-purple', 
-  'bg-brand-teal',   
 ];
 
 const getStylesByColor = (colorClass: string) => {

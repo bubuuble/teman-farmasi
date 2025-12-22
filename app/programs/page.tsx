@@ -93,7 +93,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
            'PharmaPublish Academy'}
         </h1>
         <p className="text-brand-pink font-extrabold text-lg md:text-xl uppercase tracking-[0.3em] opacity-80">
-          {programData.category === 'pharmacore' ? 'Kelas Mata Kuliah Farmasi' : 'Bimbingan Riset Farmasi'}
+          {programData.category === 'pharmacore' ? 'Kelas Mata Kuliah Farmasi' : 'Kelas Manuskrip Jurnal Publikasi Ilmiah Farmasi'}
         </p>
       </div>
 

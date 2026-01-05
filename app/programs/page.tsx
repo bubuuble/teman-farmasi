@@ -126,7 +126,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
               <div className={`${s.footer} mt-auto rounded-[2rem] p-6 flex justify-between items-center transition-transform group-hover:scale-[1.02]`}>
                 <div>
                   <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Harga</p>
-                  <p className="text-xl font-extrabold text-brand-dark tracking-tighter">Rp 79.900 / Mata Kuliah</p>
+                  <p className="text-xl font-extrabold text-brand-dark tracking-tighter">Rp 99.900 / Mata Kuliah</p>
                 </div>
                 <button 
                   onClick={() => handleWaLink(title)}

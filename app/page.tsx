@@ -72,7 +72,7 @@ export default async function Home() {
               <div className="bg-white rounded-3xl p-6 shadow-sm border border-brand-dark/5">
                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Mulai Dari</p>
                  <div className="flex justify-between items-end">
-                    <p className="text-xl font-extrabold text-brand-dark leading-none">Rp 79.900</p>
+                    <p className="text-xl font-extrabold text-brand-dark leading-none">Rp 99.900</p>
                     <Link href="/programs?cat=pharmacore" className="p-3 bg-brand-dark text-white rounded-xl hover:bg-brand-pink transition-all shadow-md active:scale-95">
                        <FaArrowRight size={14} />
                     </Link>
@@ -151,19 +151,40 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* 5. TESTIMONIALS & BLOG */}
-      <Testimonials testimonials={featuredTestimonials} />
-      <div className="bg-white/50">
-        <Blog posts={featuredBlogs} />
-        <div className="text-center pb-24 -mt-16 relative z-10">
-          <Link
-            href="/blog"
-            className="inline-flex items-center gap-2 text-brand-dark font-extrabold border-b-2 border-brand-dark hover:text-brand-pink hover:border-brand-pink transition-all active:scale-95"
-          >
-            Baca Inspirasi Riset Lainnya <FaArrowRight size={14} />
-          </Link>
+      {/* 5. TESTIMONIALS (WITH BRIDGING) */}
+      <section className="py-24 bg-brand-cream overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Bridging Section */}
+          <div className="text-center mb-10">
+            <h3 className="text-brand-pink font-bold text-sm tracking-[0.2em] uppercase mb-4">
+              Real Chat, Real Results
+            </h3>
+            <h2 className="font-heading text-3xl md:text-4xl font-extrabold text-brand-dark max-w-2xl mx-auto leading-tight">
+              Bukan Sekadar Testimoni, Tapi <br/> 
+              <span className="text-brand-darkblue">Bukti Obrolan Asli Mahasiswa</span>
+            </h2>
+            <div className="w-20 h-1.5 bg-brand-yellow mx-auto mt-6 rounded-full"></div>
+          </div>
+
+          {/* Testimonials dalam bentuk Bukit */}
+          <div className="relative">
+            {/* Background Light Glow untuk efek fokus pada bukit */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100%] h-64 bg-brand-yellow/10 blur-[100px] rounded-full pointer-events-none"></div>
+            
+            <Testimonials testimonials={featuredTestimonials} isFullPage={false} />
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/testimonials"
+              className="inline-flex items-center gap-2 text-brand-dark/50 hover:text-brand-pink font-bold text-sm transition-all group"
+            >
+              Lihat Obrolan sukses lainnya 
+              <FaArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* 6. WHATSAPP CTA (REDESIGN MEWAH) */}
       <section className="py-24 px-6 bg-brand-cream">

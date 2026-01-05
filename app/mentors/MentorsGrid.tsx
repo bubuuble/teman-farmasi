@@ -61,10 +61,10 @@ export default function MentorsGrid({ mentors }: MentorsGridProps) {
                 <div 
                   key={mentor._id} 
                   onClick={() => setSelectedMentor(mentor)}
-                  className={`${mentor.cardColor} p-6 rounded-[2.5rem] text-center border-4 border-white hover:shadow-card hover:-translate-y-2 transition-all duration-300 group cursor-pointer`}
+                  className={`${mentor.cardColor} p-6 rounded-[2.5rem] text-center border-4 border-white hover:shadow-card hover:-translate-y-2 transition-all duration-300 group cursor-pointer flex flex-col h-full`}
                 >
                     {/* Image with Colorful Border Ring */}
-                    <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-[3px] border-white p-1 shadow-md bg-gray-200">
+                    <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-[3px] border-white p-1 shadow-md bg-gray-200 flex-shrink-0">
                         <div className="w-full h-full rounded-full overflow-hidden relative">
                            {imageUrl ? (
                              <Image src={imageUrl} alt={mentor.name} fill className="object-cover" />
@@ -75,15 +75,19 @@ export default function MentorsGrid({ mentors }: MentorsGridProps) {
                            )}
                         </div>
                     </div>
-                    <h3 className="font-heading font-bold text-xl text-brand-dark mb-1">{mentor.name}</h3>
-                    <p className="text-sm text-brand-dark/60 font-bold mb-4 uppercase tracking-wide">{mentor.role}</p>
                     
-                    {/* Rating Section with White Background */}
-                    <div className="flex justify-center items-center gap-4 pt-4 border-t border-white/30">
+                    {/* Text Content - grows to fill space */}
+                    <div className="flex-grow flex flex-col">
+                        <h3 className="font-heading font-bold text-xl text-brand-dark mb-1 min-h-[3.5rem] flex items-center justify-center">{mentor.name}</h3>
+                        <p className="text-sm text-brand-dark/60 font-bold mb-4 uppercase tracking-wide min-h-[3rem] flex items-center justify-center">{mentor.role}</p>
+                    </div>
+                    
+                    {/* Rating Section with White Background - fixed at bottom */}
+                    <div className="flex justify-center items-center gap-4 pt-4 border-t border-white/30 mt-auto">
                         <div className="flex items-center gap-1 text-brand-yellow bg-white px-3 py-1 rounded-full shadow-sm">
                             <FaStar /> <span className="text-brand-dark font-bold">{mentor.rating}</span>
                         </div>
-                        <span className="text-gray-400 text-sm">({mentor.reviews})</span>
+                        <span className="text-black text-sm">({mentor.reviews})</span>
                     </div>
                 </div>
             )})}
@@ -93,12 +97,16 @@ export default function MentorsGrid({ mentors }: MentorsGridProps) {
       {/* Modal */}
       {selectedMentor && (
         <div 
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm"
           onClick={() => setSelectedMentor(null)}
         >
           <div 
-            className={`${selectedMentor.cardColor} max-w-2xl w-full rounded-3xl p-8 relative shadow-2xl max-h-[90vh] overflow-y-auto`}
+            className={`${selectedMentor.cardColor} max-w-2xl w-full rounded-3xl p-8 relative shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-hide`}
             onClick={(e) => e.stopPropagation()}
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
           >
             {/* Close Button */}
             <button
@@ -163,7 +171,18 @@ export default function MentorsGrid({ mentors }: MentorsGridProps) {
               {selectedMentor.bio && (
                 <div className="w-full bg-white/50 rounded-2xl p-6 text-left">
                   <h4 className="font-bold text-brand-dark mb-3">Tentang Mentor</h4>
-                  <p className="text-brand-dark/80 leading-relaxed whitespace-pre-line">{selectedMentor.bio}</p>
+                  <ul className="space-y-2">
+                    {selectedMentor.bio.split('|').map((item, idx) => {
+                      const trimmedItem = item.trim();
+                      if (!trimmedItem) return null;
+                      return (
+                        <li key={idx} className="text-brand-dark/80 leading-relaxed flex items-start gap-2">
+                          <span className="text-brand-dark font-bold mt-1">•</span>
+                          <span>{trimmedItem}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               )}
 

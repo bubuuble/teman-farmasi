@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   title: "Teman Farmasi | Bimbingan Riset Farmasi Privat",
   description: "Platform bimbingan riset farmasi terbesar di Indonesia.",
   icons: {
-    icon: '/favicon.ico',
+    icon: '/images/logo3.png',
   }
 };
 

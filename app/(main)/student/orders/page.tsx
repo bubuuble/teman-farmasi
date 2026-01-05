@@ -77,7 +77,7 @@ export default async function StudentOrdersPage() {
                </p>
             </div>
             <Link 
-               href="https://wa.me/6288955876210" 
+               href="https://wa.me/628895587621" 
                target="_blank"
                className="bg-brand-yellow text-brand-dark px-10 py-4 rounded-2xl font-bold text-base hover:bg-white transition-all shadow-lg relative z-10 whitespace-nowrap"
             >

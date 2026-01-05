@@ -52,7 +52,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
   const [programData, setProgramData] = useState<Program | null>(null);
   const [loading, setLoading] = useState(!!categoryFilter);
 
-  const WA_NUMBER = "6288955876210"; 
+  const WA_NUMBER = "628895587621"; 
 
   useEffect(() => {
     if (!categoryFilter) return;

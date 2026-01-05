@@ -200,7 +200,7 @@ export default async function Home() {
                   Bingung pilih paket yang mana? Chat Admin untuk konsultasi gratis mengenai topik riset Anda hari ini.
                 </p>
                 <a
-                  href="https://wa.me/628123456789" // Ganti dengan nomor WhatsApp Anda
+                  href="https://wa.me/6288955876210"
                   target="_blank"
                   className="inline-flex items-center gap-4 bg-white text-brand-dark px-12 py-5 rounded-[2rem] font-extrabold text-xl hover:bg-brand-darkblue hover:text-white transition-all shadow-xl hover:scale-105 active:scale-95 transform"
                 >

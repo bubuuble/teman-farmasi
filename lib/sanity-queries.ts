@@ -211,3 +211,49 @@ export async function getHeroContent() {
   }`;
   return await client.fetch(query);
 }
+
+// ============================================
+// GALLERY QUERIES
+// ============================================
+
+export async function getAllGalleryItems() {
+  const query = `*[_type == "gallery"] | order(publishedAt desc) {
+    _id,
+    title,
+    instagramUrl,
+    image,
+    description,
+    category,
+    featured,
+    publishedAt,
+    order
+  }`;
+  return client.fetch(query);
+}
+
+export async function getFeaturedGalleryItems() {
+  const query = `*[_type == "gallery" && featured == true] | order(publishedAt desc) [0...6] {
+    _id,
+    title,
+    instagramUrl,
+    image,
+    description,
+    category,
+    featured,
+    publishedAt
+  }`;
+  return client.fetch(query);
+}
+
+export async function getGalleryByCategory(category: string) {
+  const query = `*[_type == "gallery" && category == $category] | order(publishedAt desc) {
+    _id,
+    title,
+    instagramUrl,
+    image,
+    description,
+    category,
+    publishedAt
+  }`;
+  return client.fetch(query, { category });
+}

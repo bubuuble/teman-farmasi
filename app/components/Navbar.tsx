@@ -78,6 +78,7 @@ export default function Navbar() {
 
           <Link href="/mentors" className="hover:text-brand-pink transition">Mentor</Link>
           <Link href="/testimonials" className="hover:text-brand-pink transition">Testimonial</Link>
+          <Link href="/gallery" className="hover:text-brand-pink transition">Gallery</Link>
           <Link href="/blog" className="hover:text-brand-pink transition">Blog</Link>
           
           {!isLoading && (
@@ -112,6 +113,7 @@ export default function Navbar() {
           </div>
           <Link href="/mentors" onClick={() => setIsMenuOpen(false)} className="font-bold text-brand-dark text-left">Mentor</Link>
           <Link href="/testimonials" onClick={() => setIsMenuOpen(false)} className="font-bold text-brand-dark text-left">Testimonial</Link>
+          <Link href="/gallery" onClick={() => setIsMenuOpen(false)} className="font-bold text-brand-dark text-left">Gallery</Link>
           <Link href="/blog" onClick={() => setIsMenuOpen(false)} className="font-bold text-brand-dark text-left">Blog</Link>
           <Link href="/login" onClick={() => setIsMenuOpen(false)} className="w-full">
             <button className="w-full bg-brand-pink text-white py-4 rounded-2xl font-bold">Akses Dashboard</button>

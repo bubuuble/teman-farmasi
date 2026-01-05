@@ -18,7 +18,7 @@ export default function Footer() {
                         Platform bimbingan riset farmasi terbesar di Indonesia.
                     </p>
                     <div className="flex gap-3">
-                        <a href="#" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brand-dark hover:bg-brand-pink hover:text-white transition-all shadow-sm">
+                        <a href="https://www.instagram.com/temanfarmasi/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brand-dark hover:bg-brand-pink hover:text-white transition-all shadow-sm">
                             <FaInstagram />
                         </a>
                          <a href="#" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brand-dark hover:bg-brand-blue hover:text-white transition-all shadow-sm">

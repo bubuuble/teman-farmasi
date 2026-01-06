@@ -80,29 +80,7 @@ export default async function Home() {
               </div>
            </div>
 
-           {/* PILAR 2: PHARMAPUBLISH */}
-           <div className="bg-brand-darkblue rounded-[3rem] p-10 shadow-sm border border-white/10 flex flex-col hover:shadow-2xl transition-all group hover:-translate-y-2 duration-500 text-white relative overflow-hidden">
-              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-8 shadow-inner text-brand-yellow group-hover:bg-brand-yellow group-hover:text-brand-dark transition-colors duration-500">
-                 <FaPenNib size={32} />
-              </div>
-              <h3 className="font-heading font-bold text-3xl mb-4 tracking-tighter uppercase leading-tight text-brand-yellow">
-                PharmaPublish <br/> Academy
-              </h3>
-              <p className="text-white/60 font-bold text-sm mb-8 flex-1 leading-relaxed">
-                 Persiapan manuskrip jurnal untuk publikasi ilmiah farmasi tingkat nasional (SINTA) maupun internasional.
-              </p>
-              <div className="bg-white rounded-3xl p-6 shadow-sm relative z-10">
-                 <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Mulai Dari</p>
-                 <div className="flex justify-between items-end">
-                    <p className="text-xl font-extrabold text-brand-dark leading-none">Rp. 300.000</p>
-                    <Link href="/programs?cat=publish" className="p-3 bg-brand-darkblue text-white rounded-xl hover:bg-brand-pink transition-all shadow-md active:scale-95">
-                       <FaArrowRight size={14} />
-                    </Link>
-                 </div>
-              </div>
-           </div>
-
-           {/* PILAR 3: PHARMA RESEARCH */}
+           {/* PILAR 2: PHARMA RESEARCH */}
            <div className="bg-brand-pink rounded-[3rem] p-10 shadow-sm border border-brand-pink/30 flex flex-col hover:shadow-2xl transition-all group hover:-translate-y-2 duration-500 text-white relative overflow-hidden">
               <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-8 shadow-inner text-white group-hover:bg-white group-hover:text-brand-pink transition-colors duration-500">
                  <FaFlask size={32} />
@@ -123,6 +101,27 @@ export default async function Home() {
                  </div>
               </div>
               <div className="absolute right-[-20%] top-[-10%] w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
+           </div>
+           {/* PILAR 3: PHARMAPUBLISH */}
+           <div className="bg-brand-darkblue rounded-[3rem] p-10 shadow-sm border border-white/10 flex flex-col hover:shadow-2xl transition-all group hover:-translate-y-2 duration-500 text-white relative overflow-hidden">
+              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-8 shadow-inner text-brand-yellow group-hover:bg-brand-yellow group-hover:text-brand-dark transition-colors duration-500">
+                 <FaPenNib size={32} />
+              </div>
+              <h3 className="font-heading font-bold text-3xl mb-4 tracking-tighter uppercase leading-tight text-brand-yellow">
+                PharmaPublish <br/> Academy
+              </h3>
+              <p className="text-white/60 font-bold text-sm mb-8 flex-1 leading-relaxed">
+                 Persiapan manuskrip jurnal untuk publikasi ilmiah farmasi tingkat nasional (SINTA) maupun internasional.
+              </p>
+              <div className="bg-white rounded-3xl p-6 shadow-sm relative z-10">
+                 <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Mulai Dari</p>
+                 <div className="flex justify-between items-end">
+                    <p className="text-xl font-extrabold text-brand-dark leading-none">Rp. 300.000</p>
+                    <Link href="/programs?cat=publish" className="p-3 bg-brand-darkblue text-white rounded-xl hover:bg-brand-pink transition-all shadow-md active:scale-95">
+                       <FaArrowRight size={14} />
+                    </Link>
+                 </div>
+              </div>
            </div>
 
         </div>

@@ -23,7 +23,7 @@ export default async function GalleryPage() {
           </div>
 
           <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-brand-dark mb-6 leading-tight tracking-tighter">
-            Gallery <span className="text-brand-pink underline decoration-brand-yellow/50 underline-offset-8">Instagram</span>
+            Gallery <span className="text-brand-pink underline decoration-brand-yellow/50 underline-offset-8">Farmasi</span>
           </h1>
           
           <p className="text-gray-500 text-lg md:text-xl max-w-2xl mx-auto mb-8 font-medium leading-relaxed">

@@ -34,7 +34,7 @@ export default function ContactPage() {
                     </div>
                     <h3 className="font-heading font-bold text-2xl text-brand-dark mb-2">Chat via WhatsApp</h3>
                     <p className="text-brand-dark/80 mb-6">Respons tercepat untuk pertanyaan cepat tentang pendaftaran.</p>
-                    <a href="#" className="inline-block bg-white text-brand-dark px-6 py-3 rounded-full font-bold text-sm hover:bg-brand-dark hover:text-white transition-all shadow-md">
+                    <a href="https://wa.me/+628895587621" className="inline-block bg-white text-brand-dark px-6 py-3 rounded-full font-bold text-sm hover:bg-brand-dark hover:text-white transition-all shadow-md">
                         Chat Sekarang
                     </a>
                 </div>

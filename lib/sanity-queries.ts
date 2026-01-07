@@ -259,3 +259,83 @@ export async function getGalleryByCategory(category: string) {
   }`;
   return client.fetch(query, { category });
 }
+
+// ============================================
+// E-BOOK QUERIES
+// ============================================
+
+export async function getAllEBooks() {
+  const query = `*[_type == "ebook"] | order(publishedAt desc) {
+    _id,
+    title,
+    slug,
+    description,
+    category,
+    author,
+    coverImage,
+    pdfFile,
+    pages,
+    fileSize,
+    publishedAt,
+    featured,
+    downloads
+  }`;
+  return await client.fetch(query);
+}
+
+export async function getFeaturedEBooks() {
+  const query = `*[_type == "ebook" && featured == true] | order(publishedAt desc) [0...6] {
+    _id,
+    title,
+    slug,
+    description,
+    category,
+    author,
+    coverImage,
+    pdfFile,
+    pages,
+    fileSize,
+    publishedAt,
+    featured,
+    downloads
+  }`;
+  return await client.fetch(query);
+}
+
+export async function getEBookBySlug(slug: string) {
+  const query = `*[_type == "ebook" && slug.current == $slug][0] {
+    _id,
+    title,
+    slug,
+    description,
+    category,
+    author,
+    coverImage,
+    pdfFile,
+    pages,
+    fileSize,
+    publishedAt,
+    featured,
+    downloads
+  }`;
+  return await client.fetch(query, { slug });
+}
+
+export async function getEBooksByCategory(category: string) {
+  const query = `*[_type == "ebook" && category == $category] | order(publishedAt desc) {
+    _id,
+    title,
+    slug,
+    description,
+    category,
+    author,
+    coverImage,
+    pdfFile,
+    pages,
+    fileSize,
+    publishedAt,
+    featured,
+    downloads
+  }`;
+  return await client.fetch(query, { category });
+}

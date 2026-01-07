@@ -4,5 +4,6 @@ import mentor from './mentor';
 import testimonial from './testimonial';
 import hero from './hero';
 import gallery from './gallery';
+import ebook from './ebook';
 
-export const schemaTypes = [hero, blog, program, mentor, testimonial, gallery];
+export const schemaTypes = [hero, blog, program, mentor, testimonial, gallery, ebook];

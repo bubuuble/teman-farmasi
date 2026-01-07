@@ -47,7 +47,7 @@ export default function ContactPage() {
                     <h3 className="font-heading font-bold text-2xl text-white mb-2">Dukungan Email</h3>
                     <p className="text-white/90 mb-6">Kirimkan pertanyaan detail atau proposal kemitraan.</p>
                     <a href="mailto:hello@temanfarmasi.com" className="inline-block bg-white text-brand-pink px-6 py-3 rounded-full font-bold text-sm hover:bg-brand-dark hover:text-white transition-all shadow-md">
-                        hello@temanfarmasi.com
+                        temanfarmasikamu@gmail.com
                     </a>
                 </div>
 
@@ -58,8 +58,7 @@ export default function ContactPage() {
                     </div>
                     <h3 className="font-heading font-bold text-2xl text-white mb-2">Kunjungi Kantor Kami</h3>
                     <p className="text-white/90">
-                        Jl. Farmasi Raya No. 123,<br/>
-                        Jakarta Selatan, Indonesia 12345
+                        Depok, Indonesia
                     </p>
                 </div>
 

@@ -100,15 +100,15 @@ export default function Hero({ content }: HeroProps) {
                 </svg>
             </div>
 
-            <h1 className="font-heading font-extrabold text-brand-darkblue text-5xl sm:text-6xl lg:text-[5.2rem] leading-[1.05] mb-8 tracking-tight">
+            <h1 className="font-heading font-extrabold text-brand-darkblue text-4xl sm:text-5xl lg:text-6xl leading-[1.05] mb-8 tracking-tight">
               {heroData.title} <br />
               {heroData.titleLine2 && <>{heroData.titleLine2} <br /></>}
               <span className="text-brand-pink relative inline-block pb-3">
-                {heroData.highlightedText}
-                {/* Artistic Brush Stroke (Existing) */}
-                <svg className="absolute w-[105%] h-5 -bottom-1 -left-[2%] text-brand-yellow" viewBox="0 0 300 20" preserveAspectRatio="none">
-                    <path d="M5 10 Q 30 8, 50 11 Q 80 14, 120 9 Q 160 7, 200 12 Q 240 10, 280 11 L 285 13 Q 260 15, 220 13 Q 180 11, 140 14 Q 100 16, 60 13 Q 30 12, 8 14 Z" fill="currentColor" />
-                </svg>
+              {heroData.highlightedText}
+              {/* Artistic Brush Stroke (Existing) */}
+              <svg className="absolute w-[105%] h-5 -bottom-1 -left-[2%] text-brand-yellow" viewBox="0 0 300 20" preserveAspectRatio="none">
+                <path d="M5 10 Q 30 8, 50 11 Q 80 14, 120 9 Q 160 7, 200 12 Q 240 10, 280 11 L 285 13 Q 260 15, 220 13 Q 180 11, 140 14 Q 100 16, 60 13 Q 30 12, 8 14 Z" fill="currentColor" />
+              </svg>
               </span> <br />
               {heroData.titleLine3}
             </h1>

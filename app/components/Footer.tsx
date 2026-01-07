@@ -34,10 +34,9 @@ export default function Footer() {
                 <div>
                     <h3 className="font-bold text-brand-dark mb-4">Program</h3>
                     <ul className="space-y-3 text-gray-500 text-sm">
-                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Farmasi Klinis</Link></li>
-                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Teknologi Farmasi</Link></li>
-                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Farmasi Sosial</Link></li>
-                        <li><Link href="#" className="hover:text-brand-pink transition-colors">Publikasi</Link></li>
+                        <li><Link href="/programs?cat=pharmacore" className="hover:text-brand-pink transition-colors">PharmaCore Class</Link></li>
+                        <li><Link href="/programs?cat=research" className="hover:text-brand-pink transition-colors">Pharma Research</Link></li>
+                        <li><Link href="/programs?cat=publish" className="hover:text-brand-pink transition-colors">PharmaPublish Academy</Link></li>
                     </ul>
                 </div>
 

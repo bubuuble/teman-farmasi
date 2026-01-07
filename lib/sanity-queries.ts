@@ -113,6 +113,7 @@ export async function getAllTestimonials() {
     role,
     text,
     image,
+    screenshotImage,
     cardColor,
     featured,
     order
@@ -186,6 +187,7 @@ export async function getFeaturedTestimonials() {
     role,
     text,
     image,
+    screenshotImage,
     cardColor,
     featured,
     order

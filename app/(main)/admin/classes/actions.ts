@@ -146,21 +146,48 @@ export async function uploadResource(prevState: ActionState, formData: FormData)
 
   if (!classId || !title || !file) return { error: "Lengkapi data file!" }
 
+  console.log(`[Upload] Memulai upload file: ${file.name}`)
+  console.log(`[Upload] Ukuran file: ${(file.size / 1024 / 1024).toFixed(2)} MB`)
+  console.log(`[Upload] Class ID: ${classId}`)
+  console.log(`[Upload] Tipe file: ${file.type}`)
+
+  // Validasi ukuran file di server (safety check)
+  const maxSize = 50 * 1024 * 1024 // 50MB
+  if (file.size > maxSize) {
+    const fileSizeMB = (file.size / 1024 / 1024).toFixed(2)
+    console.error(`[Upload] File terlalu besar: ${fileSizeMB}MB (max: 50MB)`)
+    return { error: `File terlalu besar! Maksimal 50MB, file Anda ${fileSizeMB}MB` }
+  }
+
   // 1. Upload ke Supabase Storage
-  // Nama file dibuat unik dengan timestamp
-  const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '-')}`
+  // Nama file dibuat unik dengan timestamp dan sanitize karakter khusus
+  const sanitizedFileName = file.name
+    .replace(/\s+/g, '-')           // Ganti spasi dengan dash
+    .replace(/['"&]/g, '')          // Hapus tanda petik dan ampersand
+    .replace(/[^a-zA-Z0-9.\-_]/g, '') // Hapus karakter khusus lainnya
+  const fileName = `${Date.now()}_${sanitizedFileName}`
   const filePath = `${classId}/${fileName}` // Folder per classId
+
+  console.log(`[Upload] Sanitized filename: ${sanitizedFileName}`)
+  console.log(`[Upload] File path: ${filePath}`)
 
   const { error: uploadError } = await supabase.storage
     .from('ebooks')
     .upload(filePath, file)
 
-  if (uploadError) return { error: "Gagal upload: " + uploadError.message }
+  if (uploadError) {
+    console.error(`[Upload] Error: ${uploadError.message}`)
+    return { error: "Gagal upload: " + uploadError.message }
+  }
+
+  console.log(`[Upload] Upload ke storage berhasil`)
 
   // 2. Dapatkan Public URL
   const { data: { publicUrl } } = supabase.storage
     .from('ebooks')
     .getPublicUrl(filePath)
+
+  console.log(`[Upload] Public URL: ${publicUrl}`)
 
   // 3. Simpan ke Database
   const { error: dbError } = await supabase.from('class_resources').insert({
@@ -170,7 +197,12 @@ export async function uploadResource(prevState: ActionState, formData: FormData)
     file_path: filePath
   })
 
-  if (dbError) return { error: dbError.message }
+  if (dbError) {
+    console.error(`[Upload] Database error: ${dbError.message}`)
+    return { error: dbError.message }
+  }
+
+  console.log(`[Upload] File berhasil disimpan ke database`)
 
   revalidatePath('/admin/classes')
   return { success: "E-Book berhasil diupload!" }

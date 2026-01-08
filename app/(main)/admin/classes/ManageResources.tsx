@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useActionState } from 'react'
-import { FileText, X, Upload, Trash2, Download } from 'lucide-react'
+import { useState, useActionState, useRef } from 'react'
+import { FileText, X, Upload, Trash2, Download, Loader2 } from 'lucide-react'
 import { uploadResource, deleteResource, type ActionState } from './actions'
 import ConfirmModal from '@/app/components/ConfirmModal'
 
@@ -27,6 +27,8 @@ export default function ManageResources({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(uploadResource, initialState)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     id: string;
@@ -37,8 +39,53 @@ export default function ManageResources({
     path: '',
   });
 
+  // Compute upload message directly (tidak perlu state)
+  const uploadMessage = selectedFile 
+    ? `Mengupload "${selectedFile.name}" (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)...`
+    : ''
+
+  const handleCloseModal = () => {
+    console.log('Modal ditutup')
+    setIsOpen(false)
+    setSelectedFile(null)
+  }
+
+  const handleFormAction = async (formData: FormData) => {
+    await formAction(formData)
+    // Reset setelah action selesai
+    setSelectedFile(null)
+    formRef.current?.reset()
+  }
+
   const handleDelete = async (id: string, path: string) => {
     await deleteResource(id, path)
+  }
+
+  const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+
+  const handleFileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const formElement = e.currentTarget
+    const fileInput = formElement.querySelector('input[name="file"]') as HTMLInputElement
+    const file = fileInput?.files?.[0]
+
+    if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        e.preventDefault()
+        alert(`File terlalu besar! Maksimal ukuran adalah 50MB. File Anda: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+        return
+      }
+      setSelectedFile(file)
+      console.log(`✅ Validasi file lokal berhasil`)
+      console.log(`File: ${file.name}`)
+      console.log(`Ukuran: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+    }
   }
 
   return (
@@ -62,7 +109,10 @@ export default function ManageResources({
                 <h3 className="font-heading font-bold text-lg text-brand-dark">E-Book & Materi</h3>
                 <p className="text-xs text-brand-gray">{classTitle}</p>
               </div>
-              <button onClick={() => setIsOpen(false)} className="text-brand-gray hover:text-red-500">
+              <button 
+                onClick={handleCloseModal} 
+                className="text-brand-gray hover:text-red-500"
+              >
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -126,10 +176,13 @@ export default function ManageResources({
               <hr className="border-gray-100" />
 
               {/* FORM UPLOAD */}
-              <form action={formAction} className="space-y-3">
+              <form ref={formRef} action={handleFormAction} onSubmit={handleFileSubmit} className="space-y-3">
                 <input type="hidden" name="classId" value={classId} />
                 
-                <h4 className="text-xs font-bold text-brand-dark uppercase">Upload File Baru (PDF)</h4>
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-bold text-brand-dark uppercase">Upload File Baru (PDF)</h4>
+                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-md font-semibold">Maks 50 MB</span>
+                </div>
                 
                 <div className="space-y-2">
                     <input 
@@ -138,6 +191,7 @@ export default function ManageResources({
                         placeholder="Judul Materi (Misal: Modul Bab 1)" 
                         className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue text-sm"
                         required
+                        disabled={isPending}
                     />
                     
                     <div className="flex gap-2">
@@ -145,21 +199,65 @@ export default function ManageResources({
                             name="file" 
                             type="file" 
                             accept=".pdf,.doc,.docx,.ppt,.pptx"
-                            className="flex-1 p-2 rounded-xl border border-gray-200 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                            onChange={handleFileChange}
+                            className="flex-1 p-2 rounded-xl border border-gray-200 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
                             required
+                            disabled={isPending}
                         />
                         <button 
                             type="submit"
-                            disabled={isPending} 
-                            className="bg-brand-darkblue text-white p-3 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50"
+                            disabled={isPending}
+                            onClick={() => {
+                              console.log('Submit button diklik')
+                              console.log('isPending:', isPending)
+                              console.log('Form sedang diproses...')
+                            }}
+                            className="bg-brand-darkblue text-white p-3 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50 min-w-[48px] flex items-center justify-center"
                         >
-                            {isPending ? "..." : <Upload className="w-5 h-5" />}
+                            {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
                         </button>
                     </div>
+
+                    {/* Selected File Info */}
+                    {selectedFile && !isPending && (
+                      <p className="text-xs text-gray-500">
+                        📎 File terpilih: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
                 </div>
 
-                {state?.error && <p className="text-xs text-red-500">{state.error}</p>}
-                {state?.success && <p className="text-xs text-green-500">Upload berhasil!</p>}
+                {/* Upload Progress Indicator */}
+                {isPending && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-blue-700">Sedang mengupload...</p>
+                        <p className="text-xs text-blue-600">{uploadMessage}</p>
+                        <p className="text-[10px] text-blue-500 mt-1">Mohon tunggu, jangan tutup halaman ini</p>
+                      </div>
+                    </div>
+                    {/* Progress bar animation */}
+                    <div className="mt-3 h-1.5 bg-blue-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-600 rounded-full animate-[progress_2s_ease-in-out_infinite]" 
+                           style={{ width: '100%', animation: 'progress 2s ease-in-out infinite' }} />
+                    </div>
+                    <style jsx>{`
+                      @keyframes progress {
+                        0% { transform: translateX(-100%); }
+                        50% { transform: translateX(0%); }
+                        100% { transform: translateX(100%); }
+                      }
+                    `}</style>
+                  </div>
+                )}
+
+                {state?.error && <p className="text-xs text-red-500 bg-red-50 p-2 rounded-lg">❌ {state.error}</p>}
+                {state?.success && isOpen && (
+                  <p className="text-xs text-green-600 bg-green-50 p-2 rounded-lg">✅ Upload berhasil!</p>
+                )}
               </form>
 
             </div>

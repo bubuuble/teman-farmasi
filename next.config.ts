@@ -5,8 +5,13 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['isomorphic-dompurify', 'jsdom'],
   experimental: {
     serverActions: {
-      bodySizeLimit: '50mb', // Naikkan limit upload ke 50MB (sesuaikan kebutuhan)
+      bodySizeLimit: '50mb', // Naikkan limit upload ke 50MB untuk file besar
     },
+    proxyClientMaxBodySize: '50mb', // Limit untuk middleware/proxy
+  },
+  // Tambahan config untuk middleware dan API routes
+  httpAgentOptions: {
+    keepAlive: true,
   },
 
   images: {

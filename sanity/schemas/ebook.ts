@@ -41,7 +41,6 @@ export default {
           { title: 'Cosmetic Formulation', value: 'Cosmetic Formulation' },
           { title: 'Cosmetic Sciences', value: 'Cosmetic Sciences' },
           { title: 'Farmasetika', value: 'Farmasetika' },
-          { title: 'Farmakologi', value: 'Farmakologi' },
           { title: 'Farmasi Klinik', value: 'Farmasi Klinik' },
           { title: 'International Programs', value: 'International Programs' },
           { title: 'Kimia Farmasi', value: 'Kimia Farmasi' },
@@ -98,7 +97,7 @@ export default {
       name: 'publishedAt',
       title: 'Published Year',
       type: 'number',
-      validation: (Rule: any) => Rule.required().min(2000).max(2100),
+      validation: (Rule: any) => Rule.required().min(0).max(2100),
       description: 'e.g., 2024',
     },
     {

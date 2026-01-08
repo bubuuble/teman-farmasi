@@ -68,8 +68,8 @@ export default {
       name: 'order',
       title: 'Display Order',
       type: 'number',
-      initialValue: () => Math.floor(Date.now() / 1000),
-      description: 'Urutan tampilan (otomatis berdasarkan waktu dibuat)',
+      initialValue: 0,
+      description: 'Urutan tampilan (semakin tinggi semakin awal tampil, 1 tampil terakhir)',
     },
   ],
   preview: {

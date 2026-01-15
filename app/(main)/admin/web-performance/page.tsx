@@ -284,35 +284,6 @@ export default async function WebPerformancePage({
             ))}
           </div>
         </div>
-
-        {/* Integration Notice */}
-        <div className="bg-gradient-to-br from-brand-darkblue to-brand-blue rounded-3xl p-8 shadow-card text-white">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
-            <BarChart3 className="w-7 h-7 text-white" />
-          </div>
-          <h3 className="font-heading font-bold text-xl mb-3">Integrasi Analytics</h3>
-          <p className="text-white/80 text-sm mb-6 leading-relaxed">
-            Untuk data real-time yang lebih akurat, hubungkan website dengan layanan analytics seperti Google Analytics, Vercel Analytics, atau Plausible.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <a 
-              href="https://analytics.google.com" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-medium transition-colors"
-            >
-              Google Analytics
-            </a>
-            <a 
-              href="https://vercel.com/analytics" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-medium transition-colors"
-            >
-              Vercel Analytics
-            </a>
-          </div>
-        </div>
       </div>
     </div>
   )

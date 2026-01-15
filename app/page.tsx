@@ -13,7 +13,7 @@ import Link from "next/link";
 import { FaArrowRight, FaWhatsapp, FaGraduationCap, FaFlask, FaPenNib } from "react-icons/fa6";
 
 import {
-  getFeaturedBlogPosts,
+  getPopularBlogPosts,
   getFeaturedMentors,
   getFeaturedTestimonials,
   getHeroContent,
@@ -27,12 +27,12 @@ export default async function Home() {
     heroContent,
     featuredMentors,
     featuredTestimonials,
-    featuredBlogs,
+    popularBlogs,
   ] = await Promise.all([
     getHeroContent(),
     getFeaturedMentors(),
     getFeaturedTestimonials(),
-    getFeaturedBlogPosts(),
+    getPopularBlogPosts(),
   ]);
 
   return (
@@ -218,6 +218,14 @@ export default async function Home() {
             <div className="absolute right-[-10%] top-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
         </div>
       </section>
+
+      {/* 7. BLOG POPULER */}
+      <Blog 
+        posts={popularBlogs} 
+        title="Blog Populer" 
+        subtitle="Artikel pilihan yang paling banyak dibaca oleh mahasiswa farmasi"
+        showViewAll={true}
+      />
 
       <Footer />
     </main>

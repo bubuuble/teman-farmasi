@@ -71,6 +71,13 @@ export default {
       initialValue: false,
     },
     {
+      name: 'popular',
+      title: 'Popular Post',
+      type: 'boolean',
+      description: 'Tandai sebagai post populer untuk ditampilkan di landing page',
+      initialValue: false,
+    },
+    {
       name: 'image',
       title: 'Featured Image',
       type: 'image',

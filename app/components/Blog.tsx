@@ -22,25 +22,33 @@ interface BlogPost {
     readTime?: number;
     publishedAt?: string;
     featured?: boolean;
+    popular?: boolean;
     image?: SanityImage;
 }
 
 interface BlogProps {
     posts?: BlogPost[];
+    title?: string;
+    subtitle?: string;
+    showViewAll?: boolean;
 }
 
 const colorRotation = ['bg-brand-yellow', 'bg-brand-pink', 'bg-brand-blue'];
 
-export default function Blog({ posts = [] }: BlogProps) {
+export default function Blog({ posts = [], title = "Baca Blog Harian Kami", subtitle, showViewAll = false }: BlogProps) {
     return (
         <section className="py-20 px-6 max-w-7xl mx-auto border-t border-gray-200">
-            <h2 className="text-center font-heading text-3xl font-bold text-brand-dark mb-12">Baca Blog Harian Kami</h2>
+            <div className="text-center mb-12">
+                <h2 className="font-heading text-3xl font-bold text-brand-dark mb-3">{title}</h2>
+                {subtitle && <p className="text-gray-500 text-lg max-w-xl mx-auto">{subtitle}</p>}
+            </div>
             
             {posts && posts.length === 0 ? (
                 <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">Belum ada blog post yang ditampilkan. Tandai blog sebagai &quot;Featured&quot; di Studio.</p>
+                    <p className="text-gray-500 text-lg">Belum ada blog post yang ditampilkan. Tandai blog sebagai &quot;Popular&quot; di Studio.</p>
                 </div>
             ) : (
+            <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {posts.slice(0, 3).map((post, i) => {
                     const cardBg = colorRotation[i % 3];
@@ -78,6 +86,17 @@ export default function Blog({ posts = [] }: BlogProps) {
                     );
                 })}
             </div>
+            {showViewAll && (
+                <div className="text-center mt-10">
+                    <Link 
+                        href="/blog" 
+                        className="inline-flex items-center gap-2 bg-brand-dark text-white px-8 py-3 rounded-full font-bold hover:bg-brand-pink transition-all shadow-lg"
+                    >
+                        Lihat Semua Blog <FaArrowRight className="text-sm" />
+                    </Link>
+                </div>
+            )}
+            </>
             )}
         </section>
     );

@@ -140,6 +140,24 @@ export async function getFeaturedBlogPosts() {
   return await client.fetch(query);
 }
 
+export async function getPopularBlogPosts() {
+  const query = `*[_type == "blog" && popular == true] | order(date desc) [0...3] {
+    _id,
+    title,
+    slug,
+    date,
+    category,
+    excerpt,
+    author,
+    readTime,
+    publishedAt,
+    popular,
+    image,
+    content
+  }`;
+  return await client.fetch(query);
+}
+
 export async function getFeaturedPrograms() {
   const query = `*[_type == "program" && featured == true] | order(order asc) [0...4] {
     _id,

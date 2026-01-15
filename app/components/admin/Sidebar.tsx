@@ -9,6 +9,7 @@ import {
   FileSpreadsheet, 
   CreditCard, 
   Settings,
+  BarChart3,
 } from 'lucide-react'
 import SignOutButton from '../SignOutButton' // Pastikan path ini benar sesuai file sebelumnya
 
@@ -18,6 +19,7 @@ const menuItems = [
   { label: 'Manajemen User', href: '/admin/users', icon: Users },
   { label: 'Rekap Absensi', href: '/admin/attendances', icon: FileSpreadsheet }, // Menu 1
   { label: 'Keuangan / Order', href: '/admin/orders', icon: CreditCard },
+  { label: 'Web Performance', href: '/admin/web-performance', icon: BarChart3 },
   { label: 'Pengaturan Sistem', href: '/admin/settings', icon: Settings },
 ]
 

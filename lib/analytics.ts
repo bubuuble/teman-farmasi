@@ -82,7 +82,23 @@ export async function fetchGoogleAnalyticsData(dateRange: string = '7d'): Promis
   }
 
   try {
+    // Parse credentials - handle potential JSON parsing issues
+    let parsedCredentials
+    try {
+      parsedCredentials = JSON.parse(credentials)
+    } catch (parseError) {
+      console.error('Failed to parse Google credentials JSON. Make sure the JSON is valid and properly escaped.')
+      return null
+    }
+
+    const { BetaAnalyticsDataClient } = await import('@google-analytics/data')
+    
+    const analyticsDataClient = new BetaAnalyticsDataClient({
+      credentials: parsedCredentials
+    })
+
     // Calculate date range
+    const endDate = new Date()
     const startDate = new Date()
     
     switch (dateRange) {
@@ -99,20 +115,12 @@ export async function fetchGoogleAnalyticsData(dateRange: string = '7d'): Promis
         startDate.setDate(startDate.getDate() - 7)
     }
 
-    // For production, you would use the Google Analytics Data API
-    // This requires setting up a service account and the @google-analytics/data package
-    // Example implementation:
-    /*
-    const { BetaAnalyticsDataClient } = await import('@google-analytics/data')
-    
-    const analyticsDataClient = new BetaAnalyticsDataClient({
-      credentials: JSON.parse(credentials)
-    })
+    const formatDate = (date: Date) => date.toISOString().split('T')[0]
 
-    const [response] = await analyticsDataClient.runReport({
+    // Fetch main metrics
+    const [metricsResponse] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: formatDate(startDate), endDate: formatDate(endDate) }],
-      dimensions: [{ name: 'pagePath' }],
       metrics: [
         { name: 'activeUsers' },
         { name: 'screenPageViews' },
@@ -121,12 +129,110 @@ export async function fetchGoogleAnalyticsData(dateRange: string = '7d'): Promis
       ],
     })
 
-    // Process response and return formatted data
-    */
+    // Fetch top pages
+    const [pagesResponse] = await analyticsDataClient.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [{ startDate: formatDate(startDate), endDate: formatDate(endDate) }],
+      dimensions: [{ name: 'pagePath' }],
+      metrics: [
+        { name: 'screenPageViews' },
+        { name: 'averageSessionDuration' }
+      ],
+      limit: 5,
+      orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }]
+    })
 
-    // For now, return null to use sample data
-    // Once you set up the Google Analytics Data API, implement the actual fetching here
-    return null
+    // Fetch traffic sources
+    const [sourcesResponse] = await analyticsDataClient.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [{ startDate: formatDate(startDate), endDate: formatDate(endDate) }],
+      dimensions: [{ name: 'sessionSource' }],
+      metrics: [{ name: 'sessions' }],
+      limit: 4,
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }]
+    })
+
+    // Fetch device categories
+    const [devicesResponse] = await analyticsDataClient.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [{ startDate: formatDate(startDate), endDate: formatDate(endDate) }],
+      dimensions: [{ name: 'deviceCategory' }],
+      metrics: [{ name: 'activeUsers' }],
+    })
+
+    // Process metrics
+    const metricsRow = metricsResponse.rows?.[0]
+    const totalVisitors = parseInt(metricsRow?.metricValues?.[0]?.value || '0')
+    const pageViews = parseInt(metricsRow?.metricValues?.[1]?.value || '0')
+    const avgSessionSeconds = parseFloat(metricsRow?.metricValues?.[2]?.value || '0')
+    const bounceRate = parseFloat(metricsRow?.metricValues?.[3]?.value || '0')
+
+    // Format session duration
+    const minutes = Math.floor(avgSessionSeconds / 60)
+    const seconds = Math.floor(avgSessionSeconds % 60)
+    const avgSessionDuration = `${minutes}m ${seconds}s`
+
+    // Process top pages
+    const topPages: TopPage[] = pagesResponse.rows?.map(row => {
+      const avgTime = parseFloat(row.metricValues?.[1]?.value || '0')
+      const mins = Math.floor(avgTime / 60)
+      const secs = Math.floor(avgTime % 60)
+      return {
+        path: row.dimensionValues?.[0]?.value || '/',
+        views: parseInt(row.metricValues?.[0]?.value || '0'),
+        avgTime: `${mins}m ${secs}s`
+      }
+    }) || []
+
+    // Process traffic sources
+    const colors = ['bg-brand-blue', 'bg-brand-pink', 'bg-brand-yellow', 'bg-brand-teal']
+    const totalSessions = sourcesResponse.rows?.reduce((sum, row) => 
+      sum + parseInt(row.metricValues?.[0]?.value || '0'), 0) || 1
+    
+    const trafficSources: TrafficSource[] = sourcesResponse.rows?.map((row, index) => {
+      const visits = parseInt(row.metricValues?.[0]?.value || '0')
+      return {
+        source: row.dimensionValues?.[0]?.value || 'Direct',
+        visits,
+        percentage: Math.round((visits / totalSessions) * 100),
+        color: colors[index % colors.length]
+      }
+    }) || []
+
+    // Process devices
+    const deviceMap: Record<string, 'smartphone' | 'monitor' | 'tablet'> = {
+      mobile: 'smartphone',
+      desktop: 'monitor',
+      tablet: 'tablet'
+    }
+    const totalDeviceUsers = devicesResponse.rows?.reduce((sum, row) => 
+      sum + parseInt(row.metricValues?.[0]?.value || '0'), 0) || 1
+
+    const deviceStats: DeviceStat[] = devicesResponse.rows?.map(row => {
+      const device = row.dimensionValues?.[0]?.value?.toLowerCase() || 'desktop'
+      const users = parseInt(row.metricValues?.[0]?.value || '0')
+      return {
+        device: device.charAt(0).toUpperCase() + device.slice(1),
+        percentage: Math.round((users / totalDeviceUsers) * 100),
+        icon: deviceMap[device] || 'monitor'
+      }
+    }) || []
+
+    return {
+      stats: {
+        totalVisitors,
+        pageViews,
+        avgSessionDuration,
+        bounceRate: `${(bounceRate * 100).toFixed(1)}%`,
+        visitorsChange: '-',
+        pageViewsChange: '-',
+        sessionChange: '-',
+        bounceChange: '-'
+      },
+      trafficSources: trafficSources.length > 0 ? trafficSources : sampleAnalyticsData.trafficSources,
+      topPages: topPages.length > 0 ? topPages : sampleAnalyticsData.topPages,
+      deviceStats: deviceStats.length > 0 ? deviceStats : sampleAnalyticsData.deviceStats
+    }
 
   } catch (error) {
     console.error('Error fetching Google Analytics data:', error)
@@ -182,7 +288,9 @@ export async function fetchVercelAnalyticsData(dateRange: string = '7d'): Promis
     )
 
     if (!pageViewsRes.ok) {
-      throw new Error(`Vercel API error: ${pageViewsRes.status}`)
+      // Vercel Analytics API might not be available or requires different setup
+      console.log(`Vercel Analytics API returned ${pageViewsRes.status}. Make sure Vercel Analytics is enabled for this project.`)
+      return null
     }
 
     const pageViewsData = await pageViewsRes.json()
@@ -298,18 +406,23 @@ export async function fetchVercelAnalyticsData(dateRange: string = '7d'): Promis
 
 // Main function to get analytics data from available sources
 export async function getAnalyticsData(dateRange: string = '7d'): Promise<AnalyticsData> {
-  // Try Vercel Analytics first
-  const vercelData = await fetchVercelAnalyticsData(dateRange)
-  if (vercelData) {
-    return vercelData
-  }
-
-  // Try Google Analytics
+  // Try Google Analytics first (more reliable for our setup)
+  console.log('Attempting to fetch Google Analytics data...')
   const gaData = await fetchGoogleAnalyticsData(dateRange)
   if (gaData) {
+    console.log('✅ Google Analytics data fetched successfully')
     return gaData
   }
 
+  // Try Vercel Analytics as fallback
+  console.log('Attempting to fetch Vercel Analytics data...')
+  const vercelData = await fetchVercelAnalyticsData(dateRange)
+  if (vercelData) {
+    console.log('✅ Vercel Analytics data fetched successfully')
+    return vercelData
+  }
+
   // Fall back to sample data
+  console.log('⚠️ Using sample data (no analytics configured)')
   return sampleAnalyticsData
 }

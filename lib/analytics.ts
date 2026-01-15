@@ -191,8 +191,17 @@ export async function fetchGoogleAnalyticsData(dateRange: string = '7d'): Promis
     
     const trafficSources: TrafficSource[] = sourcesResponse.rows?.map((row, index) => {
       const visits = parseInt(row.metricValues?.[0]?.value || '0')
+      let sourceName = row.dimensionValues?.[0]?.value || 'Direct'
+      
+      // Replace "(not set)" with more user-friendly label
+      if (sourceName === '(not set)' || sourceName === '(direct)') {
+        sourceName = 'Direct'
+      } else if (sourceName === '(not provided)') {
+        sourceName = 'Organic Search'
+      }
+      
       return {
-        source: row.dimensionValues?.[0]?.value || 'Direct',
+        source: sourceName,
         visits,
         percentage: Math.round((visits / totalSessions) * 100),
         color: colors[index % colors.length]

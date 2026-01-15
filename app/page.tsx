@@ -185,6 +185,14 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* 7. BLOG POPULER */}
+      <Blog 
+        posts={popularBlogs} 
+        title="Blog Populer" 
+        subtitle="Artikel pilihan yang paling banyak dibaca oleh mahasiswa farmasi"
+        showViewAll={true}
+      />
+
       {/* 6. WHATSAPP CTA (REDESIGN MEWAH) */}
       <section className="py-24 px-6 bg-brand-cream">
         <div className="max-w-5xl mx-auto bg-brand-pink rounded-[4rem] p-12 lg:p-20 text-white relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center gap-12">
@@ -218,15 +226,6 @@ export default async function Home() {
             <div className="absolute right-[-10%] top-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
         </div>
       </section>
-
-      {/* 7. BLOG POPULER */}
-      <Blog 
-        posts={popularBlogs} 
-        title="Blog Populer" 
-        subtitle="Artikel pilihan yang paling banyak dibaca oleh mahasiswa farmasi"
-        showViewAll={true}
-      />
-
       <Footer />
     </main>
   );

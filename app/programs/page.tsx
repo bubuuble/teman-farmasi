@@ -14,7 +14,7 @@ interface Tier { name: string; price: string; features: string[]; }
 interface Program {
   _id: string; title: string; category: string;
   description: string; price: string;
-  subjects?: string[]; tiers?: Tier[];
+  subjects?: string[]; tiers?: Tier[]; benefits?: string[];
 }
 
 const client = createClient({
@@ -90,10 +90,16 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
         <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-brand-dark mb-4 tracking-tighter uppercase leading-tight">
           {programData.category === 'pharmacore' ? 'PharmaCore Class' : 
            programData.category === 'research' ? 'Pharma Research Mentoring' : 
-           'PharmaPublish Academy'}
+           programData.category === 'publish' ? 'PharmaPublish Academy' :
+           programData.category === 'impact' ? 'Pharma Impact' :
+           programData.category === 'obatin' ? 'OBATIN Class' : programData.title}
         </h1>
         <p className="text-brand-pink font-extrabold text-lg md:text-xl uppercase tracking-[0.3em] opacity-80">
-          {programData.category === 'pharmacore' ? 'Kelas Mata Kuliah Farmasi' : 'Kelas Manuskrip Jurnal Publikasi Ilmiah Farmasi'}
+          {programData.category === 'pharmacore' ? 'Kelas Mata Kuliah Farmasi' : 
+           programData.category === 'research' ? 'Kelas Riset & Skripsi Farmasi' :
+           programData.category === 'publish' ? 'Kelas Manuskrip Jurnal Publikasi Ilmiah Farmasi' :
+           programData.category === 'impact' ? 'Kelas Pendampingan PKM-RE, P2MW, PPK Ormawa, & Lomba' :
+           programData.category === 'obatin' ? 'OBrolan Asik Tentang Ilmu Farmasi' : programData.description}
         </p>
       </div>
 
@@ -139,8 +145,8 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
           );
         })}
 
-        {/* CASE RESEARCH & PUBLISH */}
-        {(programData.category === 'research' || programData.category === 'publish') && 
+        {/* CASE RESEARCH & PUBLISH & IMPACT */}
+        {(programData.category === 'research' || programData.category === 'publish' || programData.category === 'impact') && 
          programData.tiers?.map((tier, i) => {
           const s = getStylesByColor(colorPalette[i % colorPalette.length]);
 
@@ -191,6 +197,59 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
             </div>
           );
         })}
+
+        {/* CASE OBATIN CLASS */}
+        {programData.category === 'obatin' && (
+          <div className="col-span-full">
+            <div className="bg-brand-pink rounded-[3rem] p-10 shadow-sm hover:shadow-xl transition-all group animate-in zoom-in-95 duration-500">
+              <div className="flex flex-col lg:flex-row gap-10">
+                {/* Left Content */}
+                <div className="flex-1">
+                  <div className="w-14 h-14 bg-white/20 text-white rounded-2xl flex items-center justify-center mb-8 shadow-inner">
+                    <FaBookOpen size={24} />
+                  </div>
+                  <h3 className="font-heading font-bold text-3xl mb-4 text-white tracking-tighter leading-tight">
+                    OBATIN Class
+                  </h3>
+                  <p className="text-white/80 font-bold text-sm mb-6">
+                    OBrolan Asik Tentang Ilmu Farmasi - Kelas webinar dengan berbagai topik menarik seputar dunia farmasi.
+                  </p>
+                  <div className="inline-block bg-white/20 text-white px-6 py-3 rounded-2xl font-extrabold text-lg mb-8">
+                    Harga Variatif
+                  </div>
+                </div>
+
+                {/* Right Content - Benefits */}
+                <div className="flex-1">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-6 text-white opacity-60">Benefit:</p>
+                  <ul className="space-y-4">
+                    {programData.benefits?.map((b, idx) => (
+                      <li key={`benefit-${idx}`} className="flex items-start gap-4 text-[14px] font-bold leading-snug text-white/90">
+                        <div className="mt-0.5 p-1 rounded-full shrink-0 bg-white/20 text-white border border-white/20">
+                          <FaCheck size={10} />
+                        </div>
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-white shadow-lg border border-gray-100 mt-8 rounded-[2rem] p-6 flex flex-col sm:flex-row justify-between items-center gap-4 transition-transform group-hover:scale-[1.02]">
+                <p className="text-brand-dark font-bold text-sm text-center sm:text-left">
+                  Pilih kelas webinar sesuai minatmu dan tingkatkan insight tentang dunia farmasi!
+                </p>
+                <button 
+                  onClick={() => handleWaLink('OBATIN Class')}
+                  className="bg-green-500 text-white px-8 py-4 rounded-2xl font-extrabold text-xs flex items-center gap-2 hover:bg-brand-dark transition-all shadow-md active:scale-95 whitespace-nowrap"
+                >
+                  <FaWhatsapp size={16}/> Lihat Kelas Tersedia
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

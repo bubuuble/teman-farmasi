@@ -15,6 +15,8 @@ export default {
           { title: 'PharmaCore Class', value: 'pharmacore' },
           { title: 'Pharma Research Mentoring', value: 'research' },
           { title: 'PharmaPublish Academy', value: 'publish' },
+          { title: 'Pharma Impact', value: 'impact' },
+          { title: 'OBATIN Class', value: 'obatin' },
         ],
       },
       validation: (Rule: any) => Rule.required()
@@ -40,8 +42,16 @@ export default {
           { name: 'features', title: 'Tier Features', type: 'array', of: [{ type: 'string' }] }
         ]
       }],
-      // REVISI: Tiers sekarang muncul untuk kategori 'research' DAN 'publish'
-      hidden: ({ document }: any) => !['research', 'publish'].includes(document?.category)
+      // Tiers muncul untuk kategori 'research', 'publish', dan 'impact'
+      hidden: ({ document }: any) => !['research', 'publish', 'impact'].includes(document?.category)
+    },
+    
+    {
+      name: 'benefits',
+      title: 'Benefits (untuk OBATIN Class)',
+      type: 'array',
+      of: [{ type: 'string' }],
+      hidden: ({ document }: any) => document?.category !== 'obatin'
     },
     
     { name: 'price', title: 'Starting Price (Label)', type: 'string' },

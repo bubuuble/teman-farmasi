@@ -9,7 +9,7 @@ const client = createClient({
 });
 
 const newPrograms = [
-  // 5. PHARMA IMPACT
+  // 4. PHARMA IMPACT
   {
     _type: 'program',
     title: 'Pharma Impact',
@@ -57,7 +57,7 @@ const newPrograms = [
     ]
   },
 
-  // 6. PHARMACAMP - FORMULATION COSMETICS CLASS
+  // 5. PHARMACAMP - FORMULATION COSMETICS CLASS
   {
     _type: 'program',
     title: 'Pharmacamp - Formulation Cosmetics Class',

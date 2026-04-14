@@ -2,9 +2,18 @@
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import Image from "next/image";
+import PageWithSpinner from "@/app/components/PageWithSpinner";
 import { FaMicroscope, FaBrain, FaGraduationCap, FaCheck, FaUsers, FaUserTie } from "react-icons/fa";
 
 export default function AboutPage() {
+  return (
+    <PageWithSpinner>
+      <AboutContent />
+    </PageWithSpinner>
+  );
+}
+
+function AboutContent() {
   return (
     <main className="min-h-screen bg-brand-cream selection:bg-brand-pink selection:text-white overflow-hidden">
       <Navbar />

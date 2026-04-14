@@ -1,10 +1,19 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getAllMentors } from '@/lib/sanity-queries';
+import PageWithSpinner from "../components/PageWithSpinner";
 import MentorsGrid from './MentorsGrid';
 export const revalidate = 60; // Revalidate setiap 60 detik
 
 export default async function MentorsPage() {
+  return (
+    <PageWithSpinner>
+      <MentorsContent />
+    </PageWithSpinner>
+  );
+}
+
+async function MentorsContent() {
   const allMentors = await getAllMentors();
   return (
     <main className="min-h-screen bg-brand-cream">

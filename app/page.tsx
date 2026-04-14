@@ -8,6 +8,7 @@ import Testimonials from "./components/Testimonials";
 import Blog from "./components/Blog";
 import Footer from "./components/Footer";
 import Link from "next/link";
+import PageWithSpinner from "./components/PageWithSpinner";
 
 // Optimasi Ikon
 import { FaArrowRight, FaWhatsapp, FaGraduationCap, FaFlask, FaPenNib } from "react-icons/fa6";
@@ -22,6 +23,14 @@ import {
 export const revalidate = 60; // Revalidate setiap 60 detik
 
 export default async function Home() {
+  return (
+    <PageWithSpinner>
+      <HomeContent />
+    </PageWithSpinner>
+  );
+}
+
+async function HomeContent() {
   // Fetch data secara paralel untuk performa maksimal
   const [
     heroContent,

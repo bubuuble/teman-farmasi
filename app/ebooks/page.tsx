@@ -3,6 +3,7 @@ import Footer from "../components/Footer";
 import FilterableEBooks from "./FilterableEBooks";
 import CTASection from "./CTASection";
 import { getAllEBooks } from "@/lib/sanity-queries";
+import PageWithSpinner from "../components/PageWithSpinner";
 import { FaBook } from "react-icons/fa";
 
 export const revalidate = 60; // Revalidate every 60 seconds
@@ -43,6 +44,14 @@ interface EBook {
 }
 
 export default async function EBooksPage() {
+  return (
+    <PageWithSpinner>
+      <EBooksContent />
+    </PageWithSpinner>
+  );
+}
+
+async function EBooksContent() {
   const ebooks = await getAllEBooks() as EBook[];
 
   // Get unique categories for filter display - flatten array since category is now an array

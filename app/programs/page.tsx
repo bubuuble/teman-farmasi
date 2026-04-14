@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import LoadingSpinner from "@/app/components/LoadingSpinner";
 
 // Optimasi Ikon (Satu per satu)
 import { FaWhatsapp, FaCheck, FaBookOpen, FaLayerGroup, FaStar } from "react-icons/fa6";
@@ -72,11 +73,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
     window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
   };
 
-  if (loading) return (
-    <div className="min-h-[60vh] flex items-center justify-center font-bold text-brand-pink animate-pulse">
-      Menyiapkan Spesialisasi...
-    </div>
-  );
+  if (loading) return <LoadingSpinner />;
 
   if (!programData) return (
     <div className="text-center py-40 bg-white rounded-[3rem] border-2 border-dashed border-gray-100 mx-6 font-bold text-gray-400">Kategori belum tersedia.</div>
@@ -92,14 +89,14 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
            programData.category === 'research' ? 'Pharma Research Mentoring' : 
            programData.category === 'publish' ? 'PharmaPublish Academy' :
            programData.category === 'impact' ? 'Pharma Impact' :
-           programData.category === 'obatin' ? 'OBATIN Class' : programData.title}
+           programData.category === 'pharmacamp' ? 'Pharmacamp' : programData.title}
         </h1>
         <p className="text-brand-pink font-extrabold text-lg md:text-xl uppercase tracking-[0.3em] opacity-80">
           {programData.category === 'pharmacore' ? 'Kelas Mata Kuliah Farmasi' : 
            programData.category === 'research' ? 'Kelas Riset & Skripsi Farmasi' :
            programData.category === 'publish' ? 'Kelas Manuskrip Jurnal Publikasi Ilmiah Farmasi' :
            programData.category === 'impact' ? 'Kelas Pendampingan PKM-RE, P2MW, PPK Ormawa, & Lomba' :
-           programData.category === 'obatin' ? 'OBrolan Asik Tentang Ilmu Farmasi' : programData.description}
+           programData.category === 'pharmacamp' ? 'Formulation Cosmetics Class' : programData.description}
         </p>
       </div>
 
@@ -198,8 +195,8 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
           );
         })}
 
-        {/* CASE OBATIN CLASS */}
-        {programData.category === 'obatin' && (
+        {/* CASE PHARMACAMP */}
+        {programData.category === 'pharmacamp' && (
           <div className="col-span-full">
             <div className="bg-brand-pink rounded-[3rem] p-10 shadow-sm hover:shadow-xl transition-all group animate-in zoom-in-95 duration-500">
               <div className="flex flex-col lg:flex-row gap-10">
@@ -209,10 +206,10 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
                     <FaBookOpen size={24} />
                   </div>
                   <h3 className="font-heading font-bold text-3xl mb-4 text-white tracking-tighter leading-tight">
-                    OBATIN Class
+                    Pharmacamp
                   </h3>
                   <p className="text-white/80 font-bold text-sm mb-6">
-                    OBrolan Asik Tentang Ilmu Farmasi - Kelas webinar dengan berbagai topik menarik seputar dunia farmasi.
+                    Formulation Cosmetics Class - Kelas praktis tentang formulasi kosmetik dan science of beauty.
                   </p>
                   <div className="inline-block bg-white/20 text-white px-6 py-3 rounded-2xl font-extrabold text-lg mb-8">
                     Harga Variatif
@@ -241,7 +238,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
                   Pilih kelas webinar sesuai minatmu dan tingkatkan insight tentang dunia farmasi!
                 </p>
                 <button 
-                  onClick={() => handleWaLink('OBATIN Class')}
+                  onClick={() => handleWaLink('Pharmacamp')}
                   className="bg-green-500 text-white px-8 py-4 rounded-2xl font-extrabold text-xs flex items-center gap-2 hover:bg-brand-dark transition-all shadow-md active:scale-95 whitespace-nowrap"
                 >
                   <FaWhatsapp size={16}/> Lihat Kelas Tersedia

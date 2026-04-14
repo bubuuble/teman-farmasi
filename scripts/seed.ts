@@ -186,7 +186,35 @@ const programs = [
     bgColor: 'bg-brand-blue',
     featured: false,
   },
-];
+] as any;
+
+const pharmacampProgram = {
+  _type: 'program',
+  title: 'Pharmacamp - Formulation Cosmetics Class',
+  slug: { current: 'pharmacamp' },
+  category: 'pharmacamp',
+  description: 'Program edukasi intensif formulasi kosmetik yang menjembatani gap antara teori kuliah dan praktik nyata industri. Kombinasi teori, praktik lab hands-on, dan riset terapan untuk mahasiswa farmasi dan fresh graduate.',
+  rating: 5.0,
+  students: 250,
+  price: 'Rp 300.000 - Rp 3.000.000',
+  duration: 'Fleksibel',
+  sessions: 5,
+  features: ['Praktik langsung di mini lab', 'Mentoring dari praktisi industri', 'Akses formula dan bahan', 'Sertifikat resmi'],
+  bgColor: 'bg-brand-pink',
+  featured: true,
+  benefits: [
+    'Scientific-based learning - formulasi aman, stabil, dan efektif berdasarkan ilmu',
+    'Integrasi teori + praktik hands-on + riset terapan',
+    'Sesuai kebutuhan industri kosmetik modern',
+    'Kolaborasi dengan kampus, industri, dan komunitas farmasi',
+    'Format fleksibel - online/offline/hybrid sesuai kebutuhan',
+    'Pengembangan karier awal melalui skill praktis dan networking',
+    'Akses ke mini lab di Depok untuk praktik langsung',
+    'Bahan dan formula siap pakai untuk pembelajaran',
+    'Mentoring dari praktisi industri berpengalaman',
+    'Sertifikat resmi Teman Farmasi setelah menyelesaikan program'
+  ]
+};
 
 const mentors = [
   {
@@ -344,6 +372,10 @@ async function seedData() {
       await client.create(program);
       console.log(`✅ Created: ${program.title}`);
     }
+    
+    // Create Pharmacamp program
+    await client.create(pharmacampProgram);
+    console.log(`✅ Created: ${pharmacampProgram.title}`);
     console.log('\n');
 
     // Create mentors

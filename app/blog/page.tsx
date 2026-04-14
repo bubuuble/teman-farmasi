@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FaArrowRight } from "react-icons/fa";
 import { getAllBlogPosts } from '@/lib/sanity-queries';
 import { urlFor } from '@/lib/sanity';
+import PageWithSpinner from "../components/PageWithSpinner";
 export const revalidate = 60; // Revalidate setiap 60 detik
 
 type SanityImage = {
@@ -32,6 +33,14 @@ interface BlogPost {
 const colorRotation = ['bg-brand-yellow', 'bg-brand-pink', 'bg-brand-blue'];
 
 export default async function BlogPage() {
+  return (
+    <PageWithSpinner>
+      <BlogContent />
+    </PageWithSpinner>
+  );
+}
+
+async function BlogContent() {
   const posts = await getAllBlogPosts();
   return (
     <main className="min-h-screen bg-brand-cream">

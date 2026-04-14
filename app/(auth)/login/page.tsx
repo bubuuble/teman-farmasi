@@ -1,6 +1,7 @@
 'use client'
 
-import { useActionState } from 'react' // Next.js 15/16 hook for server actions
+import { useActionState, useState, useEffect } from 'react'
+import LoadingSpinner from "@/app/components/LoadingSpinner"
 import { login } from "./actions"
 
 // Initial state harus sesuai format return action
@@ -10,6 +11,13 @@ const initialState = {
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(login, initialState)
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+
+  if (!isHydrated) return <LoadingSpinner />
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-brand-cream">

@@ -1,11 +1,20 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Testimonials from "../components/Testimonials";
+import PageWithSpinner from "../components/PageWithSpinner";
 import { getAllTestimonials } from '@/lib/sanity-queries';
 
 export const revalidate = 60;
 
 export default async function TestimonialsPage() {
+  return (
+    <PageWithSpinner>
+      <TestimonialsContent />
+    </PageWithSpinner>
+  );
+}
+
+async function TestimonialsContent() {
   const testimonials = await getAllTestimonials();
 
   return (

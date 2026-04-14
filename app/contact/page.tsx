@@ -1,8 +1,17 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import PageWithSpinner from "../components/PageWithSpinner";
 import { FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaPaperPlane } from 'react-icons/fa';
 
 export default function ContactPage() {
+  return (
+    <PageWithSpinner>
+      <ContactContent />
+    </PageWithSpinner>
+  );
+}
+
+function ContactContent() {
   return (
     <main className="min-h-screen bg-brand-cream selection:bg-brand-pink selection:text-white">
       <Navbar />

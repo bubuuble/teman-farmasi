@@ -16,7 +16,7 @@ export default {
           { title: 'Pharma Research Mentoring', value: 'research' },
           { title: 'PharmaPublish Academy', value: 'publish' },
           { title: 'Pharma Impact', value: 'impact' },
-          { title: 'OBATIN Class', value: 'obatin' },
+          { title: 'Pharmacamp', value: 'pharmacamp' },
         ],
       },
       validation: (Rule: any) => Rule.required()
@@ -48,10 +48,10 @@ export default {
     
     {
       name: 'benefits',
-      title: 'Benefits (untuk OBATIN Class)',
+      title: 'Benefits (untuk Pharmacamp)',
       type: 'array',
       of: [{ type: 'string' }],
-      hidden: ({ document }: any) => document?.category !== 'obatin'
+      hidden: ({ document }: any) => document?.category !== 'pharmacamp'
     },
     
     { name: 'price', title: 'Starting Price (Label)', type: 'string' },

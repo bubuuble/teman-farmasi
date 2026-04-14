@@ -57,24 +57,29 @@ const newPrograms = [
     ]
   },
 
-  // 6. OBATIN CLASS
+  // 6. PHARMACAMP - FORMULATION COSMETICS CLASS
   {
     _type: 'program',
-    title: 'OBATIN Class',
-    slug: { _type: 'slug', current: 'obatin-class' },
-    category: 'obatin',
-    description: 'OBrolan Asik Tentang Ilmu Farmasi - Kelas webinar dengan berbagai topik menarik seputar dunia farmasi. Harga variatif sesuai kelas yang dipilih.',
-    price: 'Harga Variatif',
+    title: 'Pharmacamp - Formulation Cosmetics Class',
+    slug: { _type: 'slug', current: 'pharmacamp' },
+    category: 'pharmacamp',
+    description: 'Program edukasi intensif formulasi kosmetik yang menjembatani gap antara teori kuliah dan praktik nyata industri. Kombinasi teori, praktik lab hands-on, dan riset terapan untuk mahasiswa farmasi dan fresh graduate.',
+    price: 'Rp 300.000 - Rp 3.000.000',
     rating: 5,
-    students: 0,
+    students: 250,
     benefits: [
-      'Akses webinar gratis',
-      'Materi edukatif & aplikatif',
-      'E-sertifikat',
-      'Insight Kuliah, Riset, dan Karier',
-      'Networking sesama Mahasiswa Farmasi'
+      'Scientific-based learning - formulasi aman, stabil, dan efektif berdasarkan ilmu',
+      'Integrasi teori + praktik hands-on + riset terapan',
+      'Sesuai kebutuhan industri kosmetik modern',
+      'Kolaborasi dengan kampus, industri, dan komunitas farmasi',
+      'Format fleksibel - online/offline/hybrid sesuai kebutuhan',
+      'Pengembangan karier awal melalui skill praktis dan networking',
+      'Akses ke mini lab di Depok untuk praktik langsung',
+      'Bahan dan formula siap pakai untuk pembelajaran',
+      'Mentoring dari praktisi industri berpengalaman',
+      'Sertifikat resmi Teman Farmasi setelah menyelesaikan program'
     ]
-  }
+  },
 ];
 
 async function seedNewPrograms() {

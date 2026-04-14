@@ -77,10 +77,12 @@ export default function GalleryGrid({ items }: GalleryGridProps) {
 
       {/* Gallery Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map((item) => {
-          const imageUrl = urlFor(item.image).width(600).height(600).url();
-          
-          return (
+        {filteredItems
+          .filter((item) => item.image) // Only show items with images
+          .map((item) => {
+            const imageUrl = urlFor(item.image).width(600).height(600).url();
+            
+            return (
             <div
               key={item._id}
               onClick={() => setSelectedItem(item)}

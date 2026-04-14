@@ -2,11 +2,20 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import GalleryGrid from './GalleryGrid';
 import { getAllGalleryItems } from '@/lib/sanity-queries';
+import PageWithSpinner from '../components/PageWithSpinner';
 import { FaInstagram, FaHeart } from 'react-icons/fa';
 
 export const revalidate = 60;
 
 export default async function GalleryPage() {
+  return (
+    <PageWithSpinner>
+      <GalleryContent />
+    </PageWithSpinner>
+  );
+}
+
+async function GalleryContent() {
   const galleryItems = await getAllGalleryItems();
 
   return (

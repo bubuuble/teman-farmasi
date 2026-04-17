@@ -204,11 +204,11 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
       duration: '±1 jam',
       pricing: [
         { label: 'Private (1 orang)', price: 'Rp 300.000 / orang' },
-        { label: 'Berdua (2 orang)', price: 'Rp 275.000 / grup' },
+        { label: 'Berdua (2 orang)', price: 'Rp 275.000 / orang' },
       ],
       features: [
         'Materi teori formulasi (basic)',
-        'Hands-on formulation (praktik langsung)',
+        'Hands-on formulation (praktik langsung) : 1 Formula',
         'Pengenalan & fungsi bahan baku kosmetik/farmasi',
         'Diskusi troubleshooting formula',
         'E-modul / materi ringkas PDF',
@@ -219,12 +219,12 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
     {
       title: 'Research Mentorship',
       duration: null,
-      pricing: [{ label: 'Private (1 orang)', price: 'Rp 500.000 / orang' }],
+      pricing: [{ label: 'Private (1 orang)', price: 'Rp 750.000 / orang' }],
       features: [
         'Konsultasi judul & arah penelitian',
         'Pendampingan desain penelitian & variabel',
         'Arahan metode penelitian & analisis data',
-        'Akses formula basis (sesuai topik riset)',
+        'Akses formula basis (sesuai topik riset) : F0, F1, F2, dan F3',
         'Diskusi teknis pelaksanaan penelitian',
         'Sertifikat',
       ],
@@ -277,10 +277,8 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
   ];
 
   const labPhotos = [
-    { src: '/images/dummy1.jpg', label: 'Area Kerja & Timbangan' },
-    { src: '/images/dummy1.jpg', label: 'Rak Peralatan Gelas' },
-    { src: '/images/dummy1.jpg', label: 'Mixer & Homogenizer' },
-    { src: '/images/dummy1.jpg', label: 'Stok Bahan Baku & Fragrance' },
+    { src: '/images/lab1.jpeg', label: 'Area Kerja & Timbangan' },
+    { src: '/images/lab2.jpeg', label: 'Area Kerja & Timbangan' },
   ];
 
   return (
@@ -448,7 +446,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
         </div>
 
         {/* Photo Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
           {labPhotos.map((photo, i) => (
             <div key={i} className="group relative overflow-hidden rounded-3xl aspect-square bg-brand-cream">
               <img

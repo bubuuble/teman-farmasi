@@ -277,8 +277,8 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
   ];
 
   const labPhotos = [
-    { src: '/images/lab1.jpeg', label: 'Area Kerja & Timbangan' },
-    { src: '/images/lab2.jpeg', label: 'Area Kerja & Timbangan' },
+    { src: '/images/lab1.jpeg', label: 'Area Kerja' },
+    { src: '/images/lab2.jpeg', label: 'Area Kerja' },
   ];
 
   return (

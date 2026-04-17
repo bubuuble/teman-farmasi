@@ -37,6 +37,7 @@ export default function Footer() {
                         <li><Link href="/programs?cat=pharmacore" className="hover:text-brand-pink transition-colors">PharmaCore Class</Link></li>
                         <li><Link href="/programs?cat=research" className="hover:text-brand-pink transition-colors">Pharma Research</Link></li>
                         <li><Link href="/programs?cat=publish" className="hover:text-brand-pink transition-colors">PharmaPublish Academy</Link></li>
+                        <li><Link href="/programs?cat=pharmacamp" className="hover:text-brand-pink transition-colors">PharmaCamp</Link></li>
                     </ul>
                 </div>
 

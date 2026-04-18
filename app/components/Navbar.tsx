@@ -20,7 +20,7 @@ export default function Navbar() {
     { title: 'Pharma Research', desc: 'Monitoring Riset & Skripsi', href: '/programs?cat=research' },
     { title: 'PharmaPublish Academy', desc: 'Publikasi Ilmiah & Jurnal', href: '/programs?cat=publish' },
     { title: 'PharmaImpact', desc: 'Program Pengabdian Masyarakat', href: '/programs?cat=impact' },
-    { title: 'Pharmacamp', desc: 'Kelas Kesehatan Masyarakat', href: '/programs?cat=pharmacamp' },
+    { title: 'Pharmacamp', desc: 'Kelas Kosmetik dan PKRT Offline', href: '/programs?cat=pharmacamp' },
   ];
 
   useEffect(() => {

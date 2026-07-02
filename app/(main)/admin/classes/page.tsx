@@ -55,7 +55,7 @@ export default async function AdminClassesPage() {
                   <BookOpen className="w-6 h-6" />
                </div>
                <span className="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-500 rounded-full uppercase tracking-wider">
-                 {item.level}
+                 {item.level ? `${item.level}x Pertemuan` : '-'}
                </span>
             </div>
 

@@ -12,7 +12,7 @@ const initialState: ActionState = {
   success: ''
 }
 
-export default function AddUserForm({ customTrigger }: { customTrigger?: React.ReactNode }) {
+export default function AddUserForm({ customTrigger, currentUserRole }: { customTrigger?: React.ReactNode, currentUserRole?: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(createUser, initialState)
 
@@ -58,6 +58,10 @@ export default function AddUserForm({ customTrigger }: { customTrigger?: React.R
                         <option value="student">Student</option>
                         <option value="mentor">Mentor</option>
                         <option value="admin">Admin</option>
+                        {/* Hanya superadmin yang bisa tambah superadmin baru */}
+                        {currentUserRole === 'superadmin' && (
+                          <option value="superadmin">Superadmin</option>
+                        )}
                     </select>
                 </div>
                 <div className="space-y-1">

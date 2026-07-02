@@ -49,7 +49,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={`${plusJakarta.variable} ${montserrat.variable} font-sans bg-brand-cream text-brand-dark antialiased`}>
+      <body suppressHydrationWarning className={`${plusJakarta.variable} ${montserrat.variable} font-sans bg-brand-cream text-brand-dark antialiased`}>
         {children}
         <Analytics />
       </body>

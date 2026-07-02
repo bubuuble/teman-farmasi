@@ -40,8 +40,14 @@ export async function proxy(request: NextRequest) {
 
   // 2. Proteksi Halaman Login (Kalau udah login, jangan kasih masuk halaman login lagi)
   if (user && path.startsWith('/login')) {
-     // Cek role untuk redirect yang benar (opsional, default ke student atau ambil dari metadata)
-     return NextResponse.redirect(new URL('/student/dashboard', request.url));
+    const userRole = user.user_metadata?.role;
+    if (userRole === 'admin' || userRole === 'superadmin') {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    }
+    if (userRole === 'mentor') {
+      return NextResponse.redirect(new URL('/mentor/dashboard', request.url));
+    }
+    return NextResponse.redirect(new URL('/student/dashboard', request.url));
   }
 
   // 3. Proteksi Route Dashboard (Wajib Login)
@@ -53,7 +59,7 @@ export async function proxy(request: NextRequest) {
   if (user) {
     // Kita ambil role dari user_metadata (Ini diset saat login/signup)
     // CATATAN: Pastikan saat create user, metadata 'role' diisi.
-    const userRole = user.user_metadata?.role; // 'admin' | 'mentor' | 'student'
+    const userRole = user.user_metadata?.role; // 'superadmin' | 'admin' | 'mentor' | 'student'
 
     // A. Student coba masuk Admin/Mentor
     if (userRole === 'student' && (isAdminArea || isMentorArea)) {
@@ -65,13 +71,13 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/mentor/dashboard', request.url));
     }
     
-    // C. Admin nyasar ke Student Dashboard -> Pindahkan ke Admin Dashboard
-    if (userRole === 'admin' && isStudentArea) {
+    // C. Admin/Superadmin nyasar ke Student Dashboard -> Pindahkan ke Admin Dashboard
+    if ((userRole === 'admin' || userRole === 'superadmin') && isStudentArea) {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
     
-    // D. Admin nyasar ke Mentor Dashboard -> Pindahkan ke Admin Dashboard (Opsional)
-    if (userRole === 'admin' && isMentorArea) {
+    // D. Admin/Superadmin nyasar ke Mentor Dashboard -> Pindahkan ke Admin Dashboard
+    if ((userRole === 'admin' || userRole === 'superadmin') && isMentorArea) {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
   }

@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 // Import tipe data resmi dari Supabase
 import { type AdminUserAttributes } from "@supabase/supabase-js"
@@ -24,6 +25,21 @@ export async function createUser(prevState: ActionState, formData: FormData): Pr
   // Validasi Input
   if (!email || !password || !fullName || !role) {
     return { error: "Semua field wajib diisi!" }
+  }
+
+  // Guard: hanya superadmin yang boleh membuat akun superadmin
+  if (role === 'superadmin') {
+    const supabase = await createClient()
+    const { data: { user: caller } } = await supabase.auth.getUser()
+    if (caller) {
+      const { data: callerProfile } = await supabase
+        .from('profiles').select('role').eq('id', caller.id).single()
+      if (callerProfile?.role !== 'superadmin') {
+        return { error: "Tidak diizinkan: hanya Superadmin yang dapat membuat akun Superadmin." }
+      }
+    } else {
+      return { error: "Sesi tidak valid." }
+    }
   }
 
   // Create User
@@ -57,7 +73,24 @@ export async function createUser(prevState: ActionState, formData: FormData): Pr
 }
 
 export async function deleteUser(userId: string) {
+  const supabase = await createClient()
   const supabaseAdmin = createAdminClient()
+
+  // Guard: cek role caller
+  const { data: { user: caller } } = await supabase.auth.getUser()
+  if (!caller) return { error: "Sesi tidak valid." }
+
+  const { data: callerProfile } = await supabase
+    .from('profiles').select('role').eq('id', caller.id).single()
+
+  // Guard: cek role target yang akan dihapus
+  const { data: targetProfile } = await supabaseAdmin
+    .from('profiles').select('role').eq('id', userId).single()
+
+  // Admin biasa tidak boleh menghapus akun superadmin
+  if (callerProfile?.role !== 'superadmin' && targetProfile?.role === 'superadmin') {
+    return { error: "Tidak diizinkan: hanya Superadmin yang dapat menghapus akun Superadmin." }
+  }
 
   const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
@@ -81,6 +114,31 @@ export async function updateUser(prevState: ActionState, formData: FormData): Pr
 
   if (!userId || !email || !fullName || !role) {
     return { error: "Data utama tidak boleh kosong!" }
+  }
+
+  // Guard: hanya superadmin yang boleh mengubah ke/dari role superadmin
+  {
+    const supabase = await createClient()
+    const { data: { user: caller } } = await supabase.auth.getUser()
+    if (!caller) return { error: "Sesi tidak valid." }
+
+    const { data: callerProfile } = await supabase
+      .from('profiles').select('role').eq('id', caller.id).single()
+
+    // Cek target user — admin tidak boleh edit akun superadmin
+    const { data: targetProfile } = await supabaseAdmin
+      .from('profiles').select('role').eq('id', userId).single()
+
+    if (callerProfile?.role !== 'superadmin') {
+      // Tidak boleh set role jadi superadmin
+      if (role === 'superadmin') {
+        return { error: "Tidak diizinkan: hanya Superadmin yang dapat mengubah role menjadi Superadmin." }
+      }
+      // Tidak boleh edit akun yang rolenya superadmin
+      if (targetProfile?.role === 'superadmin') {
+        return { error: "Tidak diizinkan: hanya Superadmin yang dapat mengedit akun Superadmin." }
+      }
+    }
   }
 
   // 1. Siapkan object update untuk Auth

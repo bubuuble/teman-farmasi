@@ -1,15 +1,43 @@
 import { createClient } from "@/lib/supabase/server"
 import AddUserForm from "./AddUserForm"
 import DeleteUserButton from "./DeleteUserButton"
-import EditUserForm from "./EditUserForm" // Import baru
+import EditUserForm from "./EditUserForm"
+import { redirect } from "next/navigation"
 
 export default async function AdminUsersPage() {
   const supabase = await createClient()
 
-  const { data: users } = await supabase
+  // 1. Ambil data user yang sedang login
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  // 2. Ambil role user yang login dari tabel profiles
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const currentUserRole = currentProfile?.role ?? ''
+  const isSuperAdmin = currentUserRole === 'superadmin'
+
+  // Hanya admin dan superadmin yang boleh mengakses halaman ini
+  if (currentUserRole !== 'admin' && currentUserRole !== 'superadmin') {
+    redirect('/')
+  }
+
+  // 3. Query users — superadmin TIDAK ditampilkan ke admin biasa
+  let query = supabase
     .from('profiles')
     .select('*')
     .order('created_at', { ascending: false })
+
+  if (!isSuperAdmin) {
+    // Admin biasa tidak bisa melihat akun superadmin
+    query = query.neq('role', 'superadmin')
+  }
+
+  const { data: users } = await query
 
   return (
     <div className="space-y-6">
@@ -20,7 +48,7 @@ export default async function AdminUsersPage() {
           <h1 className="font-heading font-bold text-2xl text-brand-dark">Manajemen User</h1>
           <p className="text-brand-gray text-sm">Kelola akun Siswa, Mentor, dan Admin.</p>
         </div>
-        <AddUserForm />
+        <AddUserForm currentUserRole={currentUserRole} />
       </div>
 
       {/* Tabel User */}
@@ -44,6 +72,7 @@ export default async function AdminUsersPage() {
                   </td>
                   <td className="p-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
+                      ${user.role === 'superadmin' ? 'bg-red-100 text-red-600' : ''}
                       ${user.role === 'admin' ? 'bg-purple-100 text-purple-600' : ''}
                       ${user.role === 'mentor' ? 'bg-blue-100 text-blue-600' : ''}
                       ${user.role === 'student' ? 'bg-green-100 text-green-600' : ''}
@@ -62,11 +91,15 @@ export default async function AdminUsersPage() {
                   </td>
                   <td className="p-6 text-right">
                     <div className="flex justify-end gap-1">
-                        {/* Tombol Edit: Kirim data user ke komponen */}
-                        <EditUserForm user={user} />
-                        
-                        {/* Tombol Delete */}
-                        <DeleteUserButton userId={user.id} />
+                      {/* Tombol Edit & Delete HANYA tampil jika:
+                          - User yang diedit BUKAN superadmin, ATAU
+                          - Yang login adalah superadmin (bisa edit semua) */}
+                      {(isSuperAdmin || user.role !== 'superadmin') && (
+                        <>
+                          <EditUserForm user={user} currentUserRole={currentUserRole} />
+                          <DeleteUserButton userId={user.id} />
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

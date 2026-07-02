@@ -16,7 +16,7 @@ export async function createClass(prevState: ActionState, formData: FormData): P
   const price = formData.get('price') as string
   const level = formData.get('level') as string
 
-  if (!title) return { error: "Judul kelas wajib diisi!" }
+  if (!title) return { error: "Pilih program terlebih dahulu!" }
 
   const { error } = await supabase.from('classes').insert({
     title,

@@ -18,7 +18,7 @@ const initialState: ActionState = {
   success: ''
 }
 
-export default function EditUserForm({ user }: { user: UserProps }) {
+export default function EditUserForm({ user, currentUserRole }: { user: UserProps, currentUserRole?: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(updateUser, initialState)
 
@@ -67,6 +67,10 @@ export default function EditUserForm({ user }: { user: UserProps }) {
                         <option value="student">Student</option>
                         <option value="mentor">Mentor</option>
                         <option value="admin">Admin</option>
+                        {/* Hanya superadmin yang bisa set role superadmin */}
+                        {currentUserRole === 'superadmin' && (
+                          <option value="superadmin">Superadmin</option>
+                        )}
                     </select>
                 </div>
                 <div className="space-y-1">

@@ -52,6 +52,7 @@ export async function login(prevState: LoginState, formData: FormData): Promise<
 
     const role = profile?.role
 
+    if (role === 'superadmin') redirect('/admin/dashboard')
     if (role === 'admin') redirect('/admin/dashboard')
     if (role === 'mentor') redirect('/mentor/dashboard')
     if (role === 'student') redirect('/student/dashboard')

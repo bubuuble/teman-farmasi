@@ -108,17 +108,13 @@ export async function updateSession(prevState: ActionState, formData: FormData):
   const classId = formData.get('classId') as string // Penting untuk revalidate
   const title = formData.get('title') as string
   const date = formData.get('date') as string
-  const time = formData.get('time') as string
   const zoomLink = formData.get('zoomLink') as string
 
-  if (!sessionId || !title || !date || !time) return { error: "Data wajib diisi" }
-
-  // Gabungkan Date & Time
-  const dateTime = new Date(`${date}T${time}:00`).toISOString()
+  if (!sessionId || !title || !date) return { error: "Data wajib diisi" }
 
   const { error } = await supabase.from('attendance_sessions').update({
     title,
-    date_time: dateTime,
+    date_time: date,
     zoom_link: zoomLink
   }).eq('id', sessionId)
 
@@ -147,7 +143,7 @@ export async function updateSession(prevState: ActionState, formData: FormData):
           toEmails: studentEmails,
           classTitle: classData.title,
           sessionTitle: title,
-          sessionDateTime: dateTime,
+          sessionDateTime: date,
           zoomLink: zoomLink,
           isRevision: true,
         })

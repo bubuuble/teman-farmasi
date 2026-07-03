@@ -30,12 +30,12 @@ export default function SessionForm({
     window.location.reload()
   }
 
-  // Helper untuk parsing ISO string ke format input datetime-local dengan timezone lokal
-  const getDefaultDateTime = () => {
+  // Helper untuk parsing ISO string ke format input date dengan timezone lokal
+  const getDefaultDate = () => {
     if (!existingData) return ''
     const d = new Date(existingData.date_time)
     const tzOffset = d.getTimezoneOffset() * 60000 // offset dalam milidetik
-    return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16)
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0, 10)
   }
   return (
     <>
@@ -85,15 +85,17 @@ export default function SessionForm({
                 />
               </div>
 
-              <div className="space-y-1">
-                  <label className="text-xs font-bold text-brand-dark uppercase">Tanggal & Waktu Pertemuan</label>
-                  <input 
-                    name="date" 
-                    type="datetime-local" 
-                    defaultValue={getDefaultDateTime()}
-                    className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue" 
-                    required 
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-brand-dark uppercase">Tanggal</label>
+                    <input 
+                      name="date" 
+                      type="date" 
+                      defaultValue={getDefaultDate()}
+                      className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue" 
+                      required 
+                    />
+                </div>
               </div>
 
               <div className="space-y-1">

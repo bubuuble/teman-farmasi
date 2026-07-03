@@ -25,9 +25,8 @@ export async function sendNewSessionNotification({
 }: SendSessionEmailParams) {
   if (toEmails.length === 0) return { success: true, message: 'No recipients.' }
 
-  // Format date and time nicely
+  // Format date nicely
   let formattedDate = sessionDateTime
-  let formattedTime = ''
   try {
     const d = new Date(sessionDateTime)
     formattedDate = d.toLocaleDateString('id-ID', {
@@ -36,26 +35,11 @@ export async function sendNewSessionNotification({
       month: 'long',
       day: 'numeric',
     })
-    formattedTime = d.toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }) + ' WIB'
   } catch (e) {
     // Fallback
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://temanfarmasi.com'
-  
-  let timeRow = ''
-  if (formattedTime) {
-    timeRow = `
-              <tr>
-                <td style="padding: 6px 0; color: #64748b; font-weight: 500; width: 120px; vertical-align: top;">Waktu / Jam</td>
-                <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${formattedTime}</td>
-              </tr>
-    `
-  }
 
   let sessionNumberRow = ''
   if (sessionNumber) {
@@ -109,7 +93,6 @@ export async function sendNewSessionNotification({
                 <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Hari & Tanggal</td>
                 <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${formattedDate}</td>
               </tr>
-              ${timeRow}
               ${sessionNumberRow}
               ${zoomRow}
             </table>

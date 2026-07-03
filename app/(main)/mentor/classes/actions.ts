@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
+import { sendNewSessionNotification } from "@/lib/email"
 
 export type ActionState = {
   error?: string
@@ -25,6 +27,37 @@ export async function createSession(prevState: ActionState, formData: FormData) 
   })
 
   if (error) return { error: error.message }
+
+  // Send email notifications asynchronously in the background
+  after(async () => {
+    try {
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('title')
+        .eq('id', classId)
+        .single()
+
+      const { data: enrolledStudents } = await supabase
+        .from('enrollments')
+        .select('profiles ( email )')
+        .eq('class_id', classId)
+
+      const studentEmails = enrolledStudents
+        ?.map((item: any) => item.profiles?.email)
+        .filter((email: any): email is string => !!email) || []
+
+      if (studentEmails.length > 0 && classData?.title) {
+        await sendNewSessionNotification({
+          toEmails: studentEmails,
+          classTitle: classData.title,
+          sessionTitle: title,
+          sessionDateTime: date,
+        })
+      }
+    } catch (err) {
+      console.error('Failed to send session notifications in background:', err)
+    }
+  })
 
   revalidatePath(`/mentor/classes/${classId}`)
   return { success: "Sesi berhasil dibuat!" }

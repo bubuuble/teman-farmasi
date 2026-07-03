@@ -99,6 +99,23 @@ export async function deleteUser(userId: string) {
     return { error: "Tidak diizinkan: hanya Superadmin yang dapat menghapus akun Superadmin." }
   }
 
+  // --- CLEANUP REFERENCING RECORDS ---
+  // 1. Hapus records absensi
+  const { error: attErr } = await supabaseAdmin.from('attendance_records').delete().eq('student_id', userId)
+  if (attErr) console.error("Gagal hapus attendance_records:", attErr)
+
+  // 2. Hapus enrollments
+  const { error: enrolErr } = await supabaseAdmin.from('enrollments').delete().eq('student_id', userId)
+  if (enrolErr) console.error("Gagal hapus enrollments:", enrolErr)
+
+  // 3. Hapus orders
+  const { error: orderErr } = await supabaseAdmin.from('orders').delete().eq('student_id', userId)
+  if (orderErr) console.error("Gagal hapus orders:", orderErr)
+
+  // 4. Hapus class_mentors
+  const { error: mentorErr } = await supabaseAdmin.from('class_mentors').delete().eq('mentor_id', userId)
+  if (mentorErr) console.error("Gagal hapus class_mentors:", mentorErr)
+
   const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
   if (error) {

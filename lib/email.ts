@@ -7,6 +7,8 @@ interface SendSessionEmailParams {
   classTitle: string
   sessionTitle: string
   sessionDateTime: string
+  zoomLink?: string | null
+  isRevision?: boolean
 }
 
 export async function sendNewSessionNotification({
@@ -14,6 +16,8 @@ export async function sendNewSessionNotification({
   classTitle,
   sessionTitle,
   sessionDateTime,
+  zoomLink,
+  isRevision = false,
 }: SendSessionEmailParams) {
   if (toEmails.length === 0) return { success: true, message: 'No recipients.' }
 
@@ -49,6 +53,20 @@ export async function sendNewSessionNotification({
     `
   }
 
+  let zoomRow = ''
+  if (zoomLink) {
+    zoomRow = `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Link Sesi</td>
+                <td style="padding: 6px 0; color: #0d9488; font-weight: 600; vertical-align: top;">: <a href="${zoomLink}" style="color: #0d9488; text-decoration: underline;">${zoomLink}</a></td>
+              </tr>
+    `
+  }
+
+  const introText = isRevision
+    ? 'Mentor Anda baru saja memperbarui detail jadwal untuk sesi belajar berikut. Silakan periksa kembali detail terbarunya:'
+    : 'Mentor Anda baru saja menjadwalkan sesi belajar baru untuk kelas yang Anda ikuti. Berikut adalah detail jadwal sesinya:'
+
   const htmlContent = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
           <div style="text-align: center; margin-bottom: 24px;">
@@ -60,7 +78,7 @@ export async function sendNewSessionNotification({
           
           <h2 style="font-size: 18px; font-weight: bold; color: #0f172a; margin-top: 0; margin-bottom: 12px;">Halo Rekan Apoteker,</h2>
           <p style="font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 20px;">
-            Mentor Anda baru saja menjadwalkan sesi belajar baru untuk kelas yang Anda ikuti. Berikut adalah detail jadwal sesinya:
+            ${introText}
           </p>
           
           <div style="background-color: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
@@ -78,6 +96,7 @@ export async function sendNewSessionNotification({
                 <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${formattedDate}</td>
               </tr>
               ${timeRow}
+              ${zoomRow}
             </table>
           </div>
           
@@ -87,10 +106,17 @@ export async function sendNewSessionNotification({
           
           <div style="text-align: center; margin-bottom: 24px;">
             <a href="${appUrl}" 
-               style="background-color: #0d9488; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block;"
+               style="background-color: #0d9488; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block; margin-right: 8px; margin-bottom: 8px;"
             >
               Buka Dashboard Kelas
             </a>
+            ${zoomLink ? `
+            <a href="${zoomLink}" 
+               style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block; margin-bottom: 8px;"
+            >
+              Gabung Pertemuan
+            </a>
+            ` : ''}
           </div>
           
           <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 24px; margin-bottom: 16px;" />
@@ -100,11 +126,13 @@ export async function sendNewSessionNotification({
         </div>
   `
 
+  const subjectPrefix = isRevision ? 'REVISI JADWAL SESI' : 'Sesi Baru Dijadwalkan'
+
   try {
     const { data, error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'Teman Farmasi <onboarding@resend.dev>',
       to: toEmails,
-      subject: `[Teman Farmasi] Sesi Baru Dijadwalkan: ${sessionTitle} - ${classTitle}`,
+      subject: `[Teman Farmasi] ${subjectPrefix}: ${sessionTitle} - ${classTitle}`,
       html: htmlContent,
     })
 

@@ -17,12 +17,13 @@ export async function createSession(prevState: ActionState, formData: FormData) 
   const classId = formData.get('classId') as string
   const title = formData.get('title') as string
   const date = formData.get('date') as string
+  const zoomLink = formData.get('zoomLink') as string | null
 
   const { error } = await supabase.from('attendance_sessions').insert({
     class_id: classId,
     title,
     date_time: date,
-    zoom_link: formData.get('zoomLink'),
+    zoom_link: zoomLink,
     is_open: true,
   })
 
@@ -52,6 +53,7 @@ export async function createSession(prevState: ActionState, formData: FormData) 
           classTitle: classData.title,
           sessionTitle: title,
           sessionDateTime: date,
+          zoomLink: zoomLink,
         })
       }
     } catch (err) {
@@ -121,6 +123,39 @@ export async function updateSession(prevState: ActionState, formData: FormData):
   }).eq('id', sessionId)
 
   if (error) return { error: error.message }
+
+  // Send update email notifications asynchronously in the background
+  after(async () => {
+    try {
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('title')
+        .eq('id', classId)
+        .single()
+
+      const { data: enrolledStudents } = await supabase
+        .from('enrollments')
+        .select('profiles ( email )')
+        .eq('class_id', classId)
+
+      const studentEmails = enrolledStudents
+        ?.map((item: any) => item.profiles?.email)
+        .filter((email: any): email is string => !!email) || []
+
+      if (studentEmails.length > 0 && classData?.title) {
+        await sendNewSessionNotification({
+          toEmails: studentEmails,
+          classTitle: classData.title,
+          sessionTitle: title,
+          sessionDateTime: dateTime,
+          zoomLink: zoomLink,
+          isRevision: true,
+        })
+      }
+    } catch (err) {
+      console.error('Failed to send session update notifications in background:', err)
+    }
+  })
 
   revalidatePath(`/mentor/classes/${classId}`)
   return { success: "Sesi berhasil diperbarui!" }

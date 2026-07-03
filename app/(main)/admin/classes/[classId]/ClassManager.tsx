@@ -109,9 +109,23 @@ export default function ClassManager({
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
+  // Helper untuk parse title kelas yang sudah ada (misal: "Pharma Research Mentoring 3")
+  function parseTitleAndNumber(title: string): { program: string; number: string } {
+    const programs = PROGRAMS.map(p => p.value).sort((a, b) => b.length - a.length)
+    for (const p of programs) {
+      if (title.startsWith(p)) {
+        const rest = title.slice(p.length).trim()
+        return { program: p, number: rest }
+      }
+    }
+    return { program: title, number: '' }
+  }
+
   // Edit Mode state
   const [isEditMode, setIsEditMode] = useState(false)
-  const [editTitle, setEditTitle] = useState(kelas.title)
+  const parsedTitle = parseTitleAndNumber(kelas.title)
+  const [selectedProgram, setSelectedProgram] = useState(parsedTitle.program)
+  const [classNumber, setClassNumber] = useState(parsedTitle.number)
   const [editLevel, setEditLevel] = useState(kelas.level || '')
   const [editPrice, setEditPrice] = useState(kelas.price)
   const [editDescription, setEditDescription] = useState(kelas.description || '')
@@ -175,12 +189,16 @@ export default function ClassManager({
 
   // --- ACTIONS ---
 
+  const composedTitle = classNumber
+    ? `${selectedProgram} ${classNumber}`.trim()
+    : selectedProgram
+
   const handleEditClassSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     startTransition(async () => {
       const formData = new FormData()
       formData.append('id', kelas.id)
-      formData.append('title', editTitle)
+      formData.append('title', composedTitle)
       formData.append('description', editDescription)
       formData.append('price', String(editPrice))
       formData.append('level', editLevel)
@@ -193,6 +211,16 @@ export default function ClassManager({
         setIsEditMode(false)
       }
     })
+  }
+
+  const handleEnterEditMode = () => {
+    const parsed = parseTitleAndNumber(kelas.title)
+    setSelectedProgram(parsed.program)
+    setClassNumber(parsed.number)
+    setEditLevel(kelas.level || '')
+    setEditPrice(kelas.price)
+    setEditDescription(kelas.description || '')
+    setIsEditMode(true)
   }
 
   const handleDeleteClass = () => {
@@ -214,7 +242,7 @@ export default function ClassManager({
       if (res.error) {
         showFeedback('', res.error)
       } else {
-        showFeedback(res.success || 'Siswa berhasil didaftarkan!', '')
+        showFeedback(res.success || 'Student berhasil didaftarkan!', '')
         setSelectedStudentIds([])
         setStudentSearch('')
       }
@@ -227,7 +255,7 @@ export default function ClassManager({
       if (res.error) {
         showFeedback('', res.error)
       } else {
-        showFeedback('Siswa dikeluarkan dari kelas.', '')
+        showFeedback('Student dikeluarkan dari kelas.', '')
       }
     })
   }
@@ -340,7 +368,7 @@ export default function ClassManager({
             }`}
         >
           <GraduationCap className="w-4 h-4" />
-          Siswa Terdaftar
+          Student Terdaftar
           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1
             ${activeTab === 'students' ? 'bg-white/20 text-white' : 'bg-gray-200 text-brand-dark'}`}>
             {kelas.enrollments?.length || 0}
@@ -405,7 +433,7 @@ export default function ClassManager({
 
                 <div className="flex gap-3 pt-2">
                   <button
-                    onClick={() => setIsEditMode(true)}
+                    onClick={handleEnterEditMode}
                     className="flex items-center gap-2 px-5 py-3 bg-brand-cream text-brand-dark rounded-xl text-xs font-bold hover:bg-brand-darkblue hover:text-white transition-all shadow-sm"
                   >
                     <Pencil className="w-4 h-4" />
@@ -429,11 +457,11 @@ export default function ClassManager({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-brand-dark uppercase">Program / Judul</label>
+                  <label className="text-xs font-bold text-brand-dark uppercase">Program</label>
                   <select
-                    value={editTitle}
+                    value={selectedProgram}
                     onChange={(e) => {
-                      setEditTitle(e.target.value)
+                      setSelectedProgram(e.target.value)
                       // Auto-sync description
                       const prog = PROGRAMS.find(p => p.value === e.target.value)
                       if (prog) setEditDescription(prog.description)
@@ -441,10 +469,29 @@ export default function ClassManager({
                     className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue bg-white text-sm"
                     required
                   >
+                    <option value="" disabled>Pilih program...</option>
                     {PROGRAMS.map((p) => (
                       <option key={p.value} value={p.value}>{p.label}</option>
                     ))}
                   </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-brand-dark uppercase">
+                    Nomor Kelas <span className="text-brand-gray font-normal normal-case">(opsional, misal: 1 → &quot;{selectedProgram || 'Program'} 1&quot;)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={classNumber}
+                    onChange={(e) => setClassNumber(e.target.value)}
+                    placeholder="Kosongkan jika hanya 1 kelas"
+                    className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue text-sm"
+                  />
+                  {composedTitle && (
+                    <p className="text-xs text-brand-blue font-semibold mt-1">
+                      Nama kelas: <span className="font-bold">{composedTitle}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -610,19 +657,19 @@ export default function ClassManager({
           </div>
         )}
 
-        {/* --- TAB 3: ATUR SISWA --- */}
+        {/* --- TAB 3: ATUR STUDENT --- */}
         {activeTab === 'students' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left side: Enroll Student Form */}
             <div className="lg:col-span-5 bg-gray-50 p-6 rounded-3xl border border-gray-100 h-fit space-y-4">
               <div>
-                <h3 className="font-heading font-bold text-base text-brand-dark">Daftarkan Siswa Baru</h3>
-                <p className="text-xs text-brand-gray">Masukkan siswa secara manual ke kelas ini.</p>
+                <h3 className="font-heading font-bold text-base text-brand-dark">Daftarkan Student Baru</h3>
+                <p className="text-xs text-brand-gray">Masukkan student secara manual ke kelas ini.</p>
               </div>
 
               <form onSubmit={handleAddStudentSubmit} className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-brand-dark uppercase">Pilih Siswa ({selectedStudentIds.length} Terpilih)</label>
+                  <label className="text-xs font-bold text-brand-dark uppercase">Pilih Student ({selectedStudentIds.length} Terpilih)</label>
                   
                   {/* Search Input */}
                   <input
@@ -638,7 +685,7 @@ export default function ClassManager({
                   <div className="border border-gray-200 rounded-xl max-h-56 overflow-y-auto p-3 space-y-2 bg-white">
                     {filteredStudents.length === 0 ? (
                       <p className="text-xs text-gray-400 italic py-2 text-center">
-                        {studentSearch ? 'Tidak ada siswa yang cocok.' : 'Semua siswa sudah terdaftar.'}
+                        {studentSearch ? 'Tidak ada student yang cocok.' : 'Semua student sudah terdaftar.'}
                       </p>
                     ) : (
                       filteredStudents.map((s) => {
@@ -675,18 +722,18 @@ export default function ClassManager({
                   className="w-full flex items-center justify-center gap-2 bg-brand-darkblue text-white py-3 rounded-xl text-xs font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
                 >
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  Daftarkan {selectedStudentIds.length > 0 ? `${selectedStudentIds.length} Siswa` : 'Siswa'}
+                  Daftarkan {selectedStudentIds.length > 0 ? `${selectedStudentIds.length} Student` : 'Student'}
                 </button>
               </form>
             </div>
 
             {/* Right side: Enrolled Students List */}
             <div className="lg:col-span-7 space-y-4">
-              <h3 className="font-heading font-bold text-base text-brand-dark">Siswa Terdaftar</h3>
+              <h3 className="font-heading font-bold text-base text-brand-dark">Student Terdaftar</h3>
 
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                 {kelas.enrollments?.length === 0 ? (
-                  <p className="text-sm text-gray-400 italic py-8 text-center bg-gray-50 rounded-2xl">Belum ada siswa di kelas ini.</p>
+                  <p className="text-sm text-gray-400 italic py-8 text-center bg-gray-50 rounded-2xl">Belum ada student di kelas ini.</p>
                 ) : (
                   kelas.enrollments.map((item) => (
                     <div key={item.id} className="flex items-center justify-between p-3.5 bg-white rounded-2xl border border-gray-100 hover:border-green-200 transition-colors">
@@ -837,8 +884,8 @@ export default function ClassManager({
           handleRemoveStudent(confirmDeleteStudent.id)
           setConfirmDeleteStudent({ isOpen: false, id: '' })
         }}
-        title="Keluarkan Siswa"
-        message="Apakah kamu yakin ingin mengeluarkan siswa ini dari kelas?"
+        title="Keluarkan Student"
+        message="Apakah kamu yakin ingin mengeluarkan student ini dari kelas?"
         variant="danger"
         isLoading={isPending}
       />

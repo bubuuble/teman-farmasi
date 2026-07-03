@@ -75,7 +75,7 @@ export default async function AdminDashboard() {
     <div className="space-y-8">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Siswa" value={studentCount || 0} icon={Users} color="bg-brand-blue" />
+        <StatCard title="Total Student" value={studentCount || 0} icon={Users} color="bg-brand-blue" />
         <StatCard title="Total Mentor" value={mentorCount || 0} icon={UserCheck} color="bg-brand-teal" />
         <StatCard title="Total Kelas" value={classCount || 0} icon={BookOpen} color="bg-brand-pink" />
         <StatCard title="Pending Order" value={pendingOrderCount || 0} icon={CreditCard} color="bg-brand-dark" />
@@ -108,7 +108,7 @@ export default async function AdminDashboard() {
                                 </div>
                                 <div>
                                     <h4 className="font-bold text-sm text-brand-dark">
-                                        {item.profiles?.full_name || "Siswa"}
+                                        {item.profiles?.full_name || "Student"}
                                     </h4>
                                     <p className="text-[10px] text-brand-gray uppercase font-bold tracking-wider">
                                         {item.attendance_sessions?.batches?.classes?.title} • {item.attendance_sessions?.title}

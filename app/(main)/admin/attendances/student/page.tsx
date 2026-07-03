@@ -67,14 +67,14 @@ export default async function StudentAttendancePage({
       {classId ? (
         <div className="bg-white rounded-3xl shadow-card overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h3 className="font-bold text-brand-dark">Matrix Kehadiran Siswa</h3>
+            <h3 className="font-bold text-brand-dark">Matrix Kehadiran Student</h3>
             {sessions.length > 0 && <ExportAttendanceBtn sessions={sessions} students={students} attendanceMap={attendanceMap} />}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-brand-cream/50 text-[10px] font-bold uppercase tracking-widest text-brand-dark">
-                  <th className="p-4 sticky left-0 bg-gray z-10 min-w-[200px]">Nama Siswa</th>
+                  <th className="p-4 sticky left-0 bg-gray z-10 min-w-[200px]">Nama Student</th>
                   {sessions.map((s, idx) => (
                     <th key={s.id} className="p-4 text-center border-l border-gray-100 min-w-[120px]">
                       Sesi {idx + 1}
@@ -103,7 +103,7 @@ export default async function StudentAttendancePage({
                   </tr>
                 ))}
                 {students.length === 0 && sessions.length > 0 && (
-                  <tr><td colSpan={sessions.length + 1} className="p-8 text-center text-gray-400 text-sm italic">Belum ada siswa terdaftar.</td></tr>
+                  <tr><td colSpan={sessions.length + 1} className="p-8 text-center text-gray-400 text-sm italic">Belum ada student terdaftar.</td></tr>
                 )}
               </tbody>
             </table>

@@ -54,7 +54,7 @@ export default function AttendanceInput({
             <div className="bg-white p-6 rounded-3xl shadow-card border border-gray-100 flex justify-between items-center">
                 <div>
                     <h3 className="font-bold text-brand-dark">Input Kehadiran</h3>
-                    <p className="text-xs text-gray-400">{students.length} Siswa terdaftar</p>
+                    <p className="text-xs text-gray-400">{students.length} Student terdaftar</p>
                 </div>
                 <div className="flex gap-3">
                     <button 
@@ -82,7 +82,7 @@ export default function AttendanceInput({
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-brand-cream/50 text-[10px] font-bold uppercase text-brand-dark tracking-widest">
-                            <th className="p-6 text-sm">Nama Siswa</th>
+                            <th className="p-6 text-sm">Nama Student</th>
                             <th className="p-6 text-center text-sm">Hadir</th>
                             <th className="p-6 text-center text-sm">Telat</th>
                             <th className="p-6 text-center text-sm">Ijin</th>

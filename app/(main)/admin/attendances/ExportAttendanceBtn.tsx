@@ -23,7 +23,7 @@ export default function ExportAttendanceBtn({
 
     // 1. Header Dinamis: Nama, Email, ...[Judul Sesi]..., Persentase
     const headers = [
-      "Nama Siswa", 
+      "Nama Student", 
       "Email", 
       ...sessions.map((s, i) => `"Sesi ${i+1}: ${s.title}"`), 
       "Total Hadir",

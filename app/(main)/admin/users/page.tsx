@@ -45,7 +45,7 @@ export default async function AdminUsersPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-heading font-bold text-2xl text-brand-dark">Manajemen User</h1>
-          <p className="text-brand-gray text-sm">Kelola akun Siswa, Mentor, dan Admin.</p>
+          <p className="text-brand-gray text-sm">Kelola akun Student, Mentor, dan Admin.</p>
         </div>
         <AddUserForm currentUserRole={currentUserRole} />
       </div>

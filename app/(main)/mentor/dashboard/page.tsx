@@ -99,7 +99,7 @@ export default async function MentorDashboard() {
                         <Users className="w-7 h-7" />
                     </div>
                     <div>
-                        <p className="text-xs text-brand-gray uppercase font-bold tracking-widest">Total Siswa</p>
+                        <p className="text-xs text-brand-gray uppercase font-bold tracking-widest">Total Student</p>
                         <h3 className="text-3xl font-bold text-brand-dark">{studentCount}</h3>
                     </div>
                 </div>

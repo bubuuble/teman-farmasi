@@ -74,7 +74,7 @@ export default function CreateOrderForm({ students, classes }: Props) {
             <form action={formAction} className="p-6 space-y-4">
               
               <div className="space-y-1">
-                <label className="text-xs font-bold text-brand-dark uppercase">Pilih Siswa</label>
+                <label className="text-xs font-bold text-brand-dark uppercase">Pilih Student</label>
                 <input type="hidden" name="studentId" value={selectedStudentId} required />
                 
                 <input
@@ -87,7 +87,7 @@ export default function CreateOrderForm({ students, classes }: Props) {
 
                 <div className="border border-gray-200 rounded-xl max-h-40 overflow-y-auto p-2.5 bg-white space-y-1">
                   {filteredStudents.length === 0 ? (
-                    <p className="text-xs text-gray-400 italic py-2 text-center">Siswa tidak ditemukan.</p>
+                    <p className="text-xs text-gray-400 italic py-2 text-center">Student tidak ditemukan.</p>
                   ) : (
                     filteredStudents.map((s) => {
                       const isSelected = selectedStudentId === s.id

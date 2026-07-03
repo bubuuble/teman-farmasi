@@ -19,7 +19,7 @@ export async function createOrder(prevState: ActionState, formData: FormData): P
   const notes = formData.get('notes') as string
 
   if (!studentId || !classId || !amount) {
-    return { error: "Data tidak lengkap (Siswa, Kelas, dan Harga wajib diisi)" }
+    return { error: "Data tidak lengkap (Student, Kelas, dan Harga wajib diisi)" }
   }
 
   const { error } = await supabase.from('orders').insert({
@@ -48,7 +48,7 @@ export async function updateOrderStatus(orderId: string, newStatus: string, clas
 
   if (error) return { error: error.message }
 
-  // LOGIC PINTAR: Jika status jadi PAID, otomatis enroll siswa ke kelas
+  // LOGIC PINTAR: Jika status jadi PAID, otomatis enroll student ke kelas
   if (newStatus === 'paid') {
     // Cek dulu udah enroll belum?
     const { data: existing } = await supabase

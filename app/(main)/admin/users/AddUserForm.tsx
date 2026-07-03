@@ -102,7 +102,7 @@ export default function AddUserForm({ customTrigger, currentUserRole }: { custom
                     placeholder="Contoh: Universitas Indonesia"
                     className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue"
                   />
-                  <p className="text-[10px] text-gray-400">Opsional — asal institusi / universitas siswa.</p>
+                  <p className="text-[10px] text-gray-400">Opsional — asal institusi / universitas student.</p>
                 </div>
               )}
 

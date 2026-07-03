@@ -56,7 +56,7 @@ export default async function AdminOrdersPage() {
       <div className="flex flex-col lg:flex-row justify-between gap-6">
         <div>
           <h1 className="font-heading font-bold text-2xl text-brand-dark">Keuangan & Order</h1>
-          <p className="text-brand-gray text-sm">Kelola tagihan dan pembayaran siswa.</p>
+          <p className="text-brand-gray text-sm">Kelola tagihan dan pembayaran student.</p>
         </div>
         
         {/* Card Revenue */}
@@ -90,7 +90,7 @@ export default async function AdminOrdersPage() {
             <thead>
               <tr className="bg-brand-cream/50 text-brand-dark border-b border-brand-gray/10">
                 <th className="p-6 font-heading font-bold text-sm">ID / Tanggal</th>
-                <th className="p-6 font-heading font-bold text-sm">Siswa</th>
+                <th className="p-6 font-heading font-bold text-sm">Student</th>
                 <th className="p-6 font-heading font-bold text-sm">Kelas</th>
                 <th className="p-6 font-heading font-bold text-sm">Nominal</th>
                 <th className="p-6 font-heading font-bold text-sm text-right">Status & Aksi</th>
@@ -107,7 +107,7 @@ export default async function AdminOrdersPage() {
                     </div>
                   </td>
                   <td className="p-6">
-                    <div className="font-bold text-brand-dark">{order.profiles?.full_name || "Siswa Dihapus"}</div>
+                    <div className="font-bold text-brand-dark">{order.profiles?.full_name || "Student Dihapus"}</div>
                     <div className="text-xs text-brand-gray">{order.profiles?.email || "-"}</div>
                   </td>
                   <td className="p-6">

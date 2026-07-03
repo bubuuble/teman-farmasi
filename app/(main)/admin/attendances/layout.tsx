@@ -9,7 +9,7 @@ export default function AttendanceLayout({ children }: { children: React.ReactNo
 
   // Tab navigasi di dalam halaman
   const tabs = [
-    { label: "Absensi Siswa", href: "/admin/attendances/student" },
+    { label: "Absensi Student", href: "/admin/attendances/student" },
     { label: "Absensi Mentor", href: "/admin/attendances/mentor" },
   ]
 
@@ -19,7 +19,7 @@ export default function AttendanceLayout({ children }: { children: React.ReactNo
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-heading font-bold text-2xl text-brand-dark">Laporan Kehadiran</h1>
-          <p className="text-brand-gray text-sm">Monitoring aktivitas harian siswa dan mentor.</p>
+          <p className="text-brand-gray text-sm">Monitoring aktivitas harian student dan mentor.</p>
         </div>
 
         {/* TOMBOL TAB DI DALAM PAGE */}

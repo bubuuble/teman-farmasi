@@ -36,7 +36,7 @@ export default function AttendanceMatrix({
     return (
         <div className="bg-white rounded-[32px] shadow-card overflow-hidden border border-gray-100">
             <div className="p-6 border-b border-gray-50 bg-brand-cream/20">
-                <h3 className="font-bold text-brand-dark">Matrix Kehadiran Siswa</h3>
+                <h3 className="font-bold text-brand-dark">Matrix Kehadiran Student</h3>
                 <p className="text-xs text-gray-400">Klik pada status untuk mengubah secara manual.</p>
             </div>
             
@@ -44,7 +44,7 @@ export default function AttendanceMatrix({
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-gray-50 text-[10px] font-bold uppercase text-brand-dark tracking-widest border-b border-gray-100">
-                            <th className="p-4 sticky left-0 bg-gray-50 z-10 min-w-[180px]">Nama Siswa</th>
+                            <th className="p-4 sticky left-0 bg-gray-50 z-10 min-w-[180px]">Nama Student</th>
                             {sessions.map((s, idx) => (
                                 <th key={s.id} className="p-4 text-center border-l border-gray-100 min-w-[120px]">
                                     Sesi {idx + 1}

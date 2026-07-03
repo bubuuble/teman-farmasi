@@ -93,7 +93,7 @@ export default function UserTable({ users, currentUserRole, isSuperAdmin }: User
             <option value="all">Semua Role</option>
             <option value="admin">Admin</option>
             <option value="mentor">Mentor</option>
-            <option value="student">Siswa</option>
+            <option value="student">Student</option>
           </select>
         </div>
       </div>

@@ -145,7 +145,7 @@ export default async function MentorClassDetailPage({
           <section className="space-y-4">
             <div className="flex items-center justify-between px-2">
               <h3 className="font-heading font-bold text-lg text-brand-dark flex items-center gap-2">
-                <Users className="w-5 h-5 text-brand-pink" /> Siswa Terdaftar
+                <Users className="w-5 h-5 text-brand-pink" /> Student Terdaftar
               </h3>
               <span className="text-[10px] bg-brand-pink/10 text-brand-pink px-2 py-1 rounded-md font-bold">{students.length} Orang</span>
             </div>
@@ -166,7 +166,7 @@ export default async function MentorClassDetailPage({
                 ))}
                 {students.length === 0 && (
                   <div className="p-10 text-center">
-                    <p className="text-xs text-gray-400 italic">Belum ada siswa terdaftar.</p>
+                    <p className="text-xs text-gray-400 italic">Belum ada student terdaftar.</p>
                   </div>
                 )}
               </div>

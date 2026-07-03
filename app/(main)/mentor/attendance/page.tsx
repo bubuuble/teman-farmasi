@@ -94,7 +94,7 @@ export default async function MentorAttendancePage({
         <div className="space-y-8">
             <header>
                 <h1 className="font-heading font-bold text-2xl text-brand-dark">Input Absensi Manual</h1>
-                <p className="text-gray-500 text-sm">Monitor rekapitulasi dan edit kehadiran siswa secara mandiri.</p>
+                <p className="text-gray-500 text-sm">Monitor rekapitulasi dan edit kehadiran student secara mandiri.</p>
             </header>
 
             <AttendanceFilter 
@@ -112,9 +112,9 @@ export default async function MentorAttendancePage({
                 <div className="p-24 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center">
                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300 font-bold text-2xl">?</div>
                     <h3 className="text-brand-dark font-bold">Pilih Kelas Terlebih Dahulu</h3>
-                    <p className="text-gray-400 text-sm mt-1">Gunakan filter di atas untuk menampilkan data siswa.</p>
+                    <p className="text-gray-400 text-sm mt-1">Gunakan filter di atas untuk menampilkan data student.</p>
                 </div>
             )}
         </div>
     )
-}
+}

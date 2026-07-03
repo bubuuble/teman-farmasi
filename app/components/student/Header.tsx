@@ -15,7 +15,7 @@ export default async function StudentHeader() {
     <header className="h-24 bg-brand-cream/50 backdrop-blur-md flex items-center justify-between px-10 sticky top-0 z-40">
       <div>
         <h2 className="font-heading font-bold text-2xl text-brand-dark">
-          Halo, {profile?.full_name?.split(' ')[0] || 'Siswa'}! 👋
+          Halo, {profile?.full_name?.split(' ')[0] || 'Student'}! 👋
         </h2>
         <p className="text-sm text-gray-500 font-medium">Senang melihatmu kembali hari ini.</p>
       </div>

@@ -108,7 +108,7 @@ export async function assignStudent(prevState: ActionState, formData: FormData):
   const classId = formData.get('classId') as string
   const studentId = formData.get('studentId') as string
 
-  if (!classId || !studentId) return { error: "Pilih siswa terlebih dahulu!" }
+  if (!classId || !studentId) return { error: "Pilih student terlebih dahulu!" }
 
   const { error } = await supabase.from('enrollments').insert({
     class_id: classId,
@@ -117,19 +117,19 @@ export async function assignStudent(prevState: ActionState, formData: FormData):
   })
 
   if (error) {
-    if (error.code === '23505') return { error: "Siswa ini sudah terdaftar di kelas tersebut." }
+    if (error.code === '23505') return { error: "Student ini sudah terdaftar di kelas tersebut." }
     return { error: error.message }
   }
 
   revalidatePath('/admin/classes', 'layout')
-  return { success: "Siswa berhasil didaftarkan!" }
+  return { success: "Student berhasil didaftarkan!" }
 }
 
 export async function assignMultipleStudents(classId: string, studentIds: string[]): Promise<ActionState> {
   const supabase = await createClient()
 
   if (!classId || !studentIds || studentIds.length === 0) {
-    return { error: "Pilih minimal 1 siswa!" }
+    return { error: "Pilih minimal 1 student!" }
   }
 
   const enrollmentsToInsert = studentIds.map(studentId => ({
@@ -141,12 +141,12 @@ export async function assignMultipleStudents(classId: string, studentIds: string
   const { error } = await supabase.from('enrollments').insert(enrollmentsToInsert)
 
   if (error) {
-    if (error.code === '23505') return { error: "Salah satu atau beberapa siswa sudah terdaftar di kelas ini." }
+    if (error.code === '23505') return { error: "Salah satu atau beberapa student sudah terdaftar di kelas ini." }
     return { error: error.message }
   }
 
   revalidatePath('/admin/classes', 'layout')
-  return { success: `${studentIds.length} siswa berhasil didaftarkan!` }
+  return { success: `${studentIds.length} student berhasil didaftarkan!` }
 }
 
 // 2. Keluarkan Siswa dari Kelas
@@ -158,7 +158,7 @@ export async function removeStudent(enrollmentId: string) {
   if (error) return { error: error.message }
   
   revalidatePath('/admin/classes', 'layout')
-  return { success: "Siswa dikeluarkan dari kelas" }
+  return { success: "Student dikeluarkan dari kelas" }
 }
 
 export async function uploadResource(prevState: ActionState, formData: FormData): Promise<ActionState> {

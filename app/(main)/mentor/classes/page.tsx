@@ -67,7 +67,7 @@ export default async function MentorClassesPage() {
 
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                  <div className="text-xs font-semibold text-brand-dark bg-green-50 px-2 py-1 rounded-md">
-                    {kelas.enrollments?.[0]?.count || 0} Siswa Terdaftar
+                    {kelas.enrollments?.[0]?.count || 0} Student Terdaftar
                  </div>
                  
                  <Link 

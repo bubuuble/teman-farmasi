@@ -14,7 +14,7 @@ type ClassData = {
 }
 
 // Daftar program yang tersedia
-const PROGRAMS = [
+export const PROGRAMS = [
   {
     value: 'PharmaCore Class',
     label: 'PharmaCore Class',

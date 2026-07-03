@@ -17,7 +17,7 @@ export default function ExportButton({ orders }: { orders: OrderData[] }) {
     if (!orders || orders.length === 0) return alert("Tidak ada data untuk diexport")
 
     // 1. Buat Header CSV
-    const headers = ["Order ID", "Tanggal", "Nama Siswa", "Email", "Kelas", "Nominal", "Status"]
+    const headers = ["Order ID", "Tanggal", "Nama Student", "Email", "Kelas", "Nominal", "Status"]
     
     // 2. Map Data ke Baris CSV
     const rows = orders.map(order => [

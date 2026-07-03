@@ -39,7 +39,7 @@ export async function sendNewSessionNotification({
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Teman Farmasi <onboarding@resend.dev>',
+      from: process.env.RESEND_FROM_EMAIL || 'Teman Farmasi <onboarding@resend.dev>',
       to: toEmails,
       subject: `[Teman Farmasi] Sesi Baru Dijadwalkan: ${sessionTitle} - ${classTitle}`,
       html: `

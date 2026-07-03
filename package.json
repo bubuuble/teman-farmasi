@@ -47,6 +47,9 @@
     "typescript": "^5"
   },
   "overrides": {
-    "jsdom": "26.1.0"
+    "jsdom": "26.1.0",
+    "next-sanity": {
+      "next": "$next"
+    }
   }
 }

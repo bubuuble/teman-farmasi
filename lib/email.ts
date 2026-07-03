@@ -37,12 +37,19 @@ export async function sendNewSessionNotification({
     // Fallback
   }
 
-  try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'Teman Farmasi <onboarding@resend.dev>',
-      to: toEmails,
-      subject: `[Teman Farmasi] Sesi Baru Dijadwalkan: ${sessionTitle} - ${classTitle}`,
-      html: `
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://temanfarmasi.com'
+  
+  let timeRow = ''
+  if (formattedTime) {
+    timeRow = `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 500; width: 120px; vertical-align: top;">Waktu / Jam</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${formattedTime}</td>
+              </tr>
+    `
+  }
+
+  const htmlContent = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
           <div style="text-align: center; margin-bottom: 24px;">
             <h1 style="font-size: 24px; font-weight: bold; color: #0f172a; margin: 0;">Teman Farmasi</h1>
@@ -70,12 +77,7 @@ export async function sendNewSessionNotification({
                 <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Hari & Tanggal</td>
                 <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${formattedDate}</td>
               </tr>
-              ${formattedTime ? `
-              <tr>
-                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Waktu / Jam</td>
-                <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${formattedTime}</td>
-              </tr>
-              ` : ''}
+              ${timeRow}
             </table>
           </div>
           
@@ -84,7 +86,7 @@ export async function sendNewSessionNotification({
           </p>
           
           <div style="text-align: center; margin-bottom: 24px;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://teman-farmasi-web.vercel.app'}" 
+            <a href="${appUrl}" 
                style="background-color: #0d9488; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block;"
             >
               Buka Dashboard Kelas
@@ -96,7 +98,14 @@ export async function sendNewSessionNotification({
             Ini adalah email otomatis dari platform Teman Farmasi. Jangan membalas email ini secara langsung.
           </p>
         </div>
-      `,
+  `
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'Teman Farmasi <onboarding@resend.dev>',
+      to: toEmails,
+      subject: `[Teman Farmasi] Sesi Baru Dijadwalkan: ${sessionTitle} - ${classTitle}`,
+      html: htmlContent,
     })
 
     if (error) {

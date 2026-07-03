@@ -105,35 +105,6 @@ export default function ClassManager({
   const [activeTab, setActiveTab] = useState<TabType>('detail')
   const [isPending, startTransition] = useTransition()
 
-  // Alphabetical sort for student & mentor lists
-  const sortedStudents = [...allStudents].sort((a, b) => 
-    (a.full_name || a.email).localeCompare(b.full_name || b.email, 'id')
-  )
-  const sortedMentors = [...allMentors].sort((a, b) => 
-    (a.full_name || a.email).localeCompare(b.full_name || b.email, 'id')
-  )
-
-  // Enrolled list guards
-  const enrolledStudentIds = new Set(kelas.enrollments.map(e => e.student_id))
-  const enrollableStudents = sortedStudents.filter(s => !enrolledStudentIds.has(s.id))
-
-  const filteredStudents = enrollableStudents.filter(s => {
-    const searchLower = studentSearch.toLowerCase()
-    const fullName = (s.full_name || '').toLowerCase()
-    const email = (s.email || '').toLowerCase()
-    return fullName.includes(searchLower) || email.includes(searchLower)
-  })
-
-  const assignedMentorIds = new Set(kelas.class_mentors.map(m => m.mentor_id))
-  const assignableMentors = sortedMentors.filter(m => !assignedMentorIds.has(m.id))
-
-  const filteredMentors = assignableMentors.filter(m => {
-    const searchLower = mentorSearch.toLowerCase()
-    const fullName = (m.full_name || '').toLowerCase()
-    const email = (m.email || '').toLowerCase()
-    return fullName.includes(searchLower) || email.includes(searchLower)
-  })
-
   // Message & Error states
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
@@ -161,6 +132,34 @@ export default function ClassManager({
   const [confirmDeleteStudent, setConfirmDeleteStudent] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' })
   const [confirmDeleteMentor, setConfirmDeleteMentor] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' })
   const [confirmDeleteFile, setConfirmDeleteFile] = useState<{ isOpen: boolean; id: string; path: string }>({ isOpen: false, id: '', path: '' })
+
+  // Derived states / sorting / filtering
+  const sortedStudents = [...allStudents].sort((a, b) => 
+    (a.full_name || a.email).localeCompare(b.full_name || b.email, 'id')
+  )
+  const sortedMentors = [...allMentors].sort((a, b) => 
+    (a.full_name || a.email).localeCompare(b.full_name || b.email, 'id')
+  )
+
+  const enrolledStudentIds = new Set(kelas.enrollments.map(e => e.student_id))
+  const enrollableStudents = sortedStudents.filter(s => !enrolledStudentIds.has(s.id))
+
+  const filteredStudents = enrollableStudents.filter(s => {
+    const searchLower = studentSearch.toLowerCase()
+    const fullName = (s.full_name || '').toLowerCase()
+    const email = (s.email || '').toLowerCase()
+    return fullName.includes(searchLower) || email.includes(searchLower)
+  })
+
+  const assignedMentorIds = new Set(kelas.class_mentors.map(m => m.mentor_id))
+  const assignableMentors = sortedMentors.filter(m => !assignedMentorIds.has(m.id))
+
+  const filteredMentors = assignableMentors.filter(m => {
+    const searchLower = mentorSearch.toLowerCase()
+    const fullName = (m.full_name || '').toLowerCase()
+    const email = (m.email || '').toLowerCase()
+    return fullName.includes(searchLower) || email.includes(searchLower)
+  })
 
   const showFeedback = (success: string, error: string) => {
     if (success) {

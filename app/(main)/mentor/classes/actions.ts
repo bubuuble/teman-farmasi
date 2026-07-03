@@ -8,64 +8,24 @@ export type ActionState = {
   success?: string
 }
 
-// --- BATCH ACTIONS ---
-
-// app/(main)/mentor/actions.ts
-
-export async function createBatch(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser() // Ambil ID User Login
-
-  if (!user) return { error: "Unauthorized" }
-
-  const classId = formData.get('classId') as string
-  const name = formData.get('name') as string
-  const startDate = formData.get('startDate') as string
-  const endDate = formData.get('endDate') as string
-
-  const { error } = await supabase.from('batches').insert({
-    class_id: classId,
-    mentor_id: user.id, // <--- PASTIKAN INI TERISI
-    name,
-    start_date: startDate,
-    end_date: endDate
-  })
-
-  if (error) return { error: error.message }
-
-  revalidatePath(`/mentor/classes/${classId}`)
-  return { success: "Batch berhasil dibuat!" }
-}
-
-export async function deleteBatch(batchId: string, classId: string) {
-  const supabase = await createClient()
-  const { error } = await supabase.from('batches').delete().eq('id', batchId)
-  
-  if (error) return { error: error.message }
-  
-  revalidatePath(`/mentor/classes/${classId}`)
-  return { success: "Batch dihapus" }
-}
-
 // --- SESSION ACTIONS (JADWAL) ---
 
 export async function createSession(prevState: ActionState, formData: FormData) {
   const supabase = await createClient()
-  const batchId = formData.get('batchId') as string
   const classId = formData.get('classId') as string
   const title = formData.get('title') as string
-  const date = formData.get('date') as string // Hanya ambil date
+  const date = formData.get('date') as string
 
   const { error } = await supabase.from('attendance_sessions').insert({
-    batch_id: batchId,
+    class_id: classId,
     title,
-    date_time: date, // Supabase akan menganggap jam 00:00:00 secara otomatis
+    date_time: date,
     zoom_link: formData.get('zoomLink'),
-    is_open: true, // Otomatis terbuka
+    is_open: true,
   })
 
   if (error) return { error: error.message }
-  
+
   revalidatePath(`/mentor/classes/${classId}`)
   return { success: "Sesi berhasil dibuat!" }
 }
@@ -73,9 +33,9 @@ export async function createSession(prevState: ActionState, formData: FormData) 
 export async function deleteSession(sessionId: string, classId: string) {
   const supabase = await createClient()
   const { error } = await supabase.from('attendance_sessions').delete().eq('id', sessionId)
-  
+
   if (error) return { error: error.message }
-  
+
   revalidatePath(`/mentor/classes/${classId}`)
   return { success: "Sesi dihapus" }
 }
@@ -147,3 +107,87 @@ export async function submitMentorAttendance(sessionId: string, classId: string)
   revalidatePath(`/mentor/classes/${classId}`) 
   return { success: "Berhasil melakukan absen mengajar!" }
 }
+
+// --- RESOURCE / E-BOOK ACTIONS (MENTOR) ---
+
+export async function uploadMentorResource(prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Unauthorized" }
+
+  const classId = formData.get('classId') as string
+  const title = formData.get('title') as string
+  const file = formData.get('file') as File
+
+  if (!classId || !title || !file || file.size === 0) return { error: "Lengkapi data file!" }
+
+  // Guard: pastikan mentor ini memang bertugas di kelas tersebut
+  const { data: assignment } = await supabase
+    .from('class_mentors')
+    .select('id')
+    .eq('class_id', classId)
+    .eq('mentor_id', user.id)
+    .single()
+
+  if (!assignment) return { error: "Kamu tidak memiliki akses ke kelas ini." }
+
+  // Validasi ukuran file (50MB)
+  const maxSize = 50 * 1024 * 1024
+  if (file.size > maxSize) {
+    return { error: `File terlalu besar! Maksimal 50MB, file Anda ${(file.size / 1024 / 1024).toFixed(2)}MB` }
+  }
+
+  // Upload ke storage
+  const sanitizedFileName = file.name
+    .replace(/\s+/g, '-')
+    .replace(/['"&]/g, '')
+    .replace(/[^a-zA-Z0-9.\-_]/g, '')
+  const fileName = `${Date.now()}_${sanitizedFileName}`
+  const filePath = `${classId}/${fileName}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('ebooks')
+    .upload(filePath, file)
+
+  if (uploadError) return { error: "Gagal upload: " + uploadError.message }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('ebooks')
+    .getPublicUrl(filePath)
+
+  const { error: dbError } = await supabase.from('class_resources').insert({
+    class_id: classId,
+    title,
+    file_url: publicUrl,
+    file_path: filePath,
+  })
+
+  if (dbError) return { error: dbError.message }
+
+  revalidatePath(`/mentor/classes/${classId}`)
+  return { success: "E-Book berhasil diupload!" }
+}
+
+export async function deleteMentorResource(resourceId: string, filePath: string, classId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Unauthorized" }
+
+  // Hapus dari storage
+  const { error: storageError } = await supabase.storage
+    .from('ebooks')
+    .remove([filePath])
+
+  if (storageError) return { error: "Gagal hapus file: " + storageError.message }
+
+  // Hapus dari database
+  const { error: dbError } = await supabase
+    .from('class_resources')
+    .delete()
+    .eq('id', resourceId)
+
+  if (dbError) return { error: dbError.message }
+
+  revalidatePath(`/mentor/classes/${classId}`)
+  return { success: "File dihapus" }
+}

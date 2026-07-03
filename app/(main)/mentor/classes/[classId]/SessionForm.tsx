@@ -14,11 +14,9 @@ type SessionData = {
 }
 
 export default function SessionForm({ 
-  batchId, // Tidak wajib jika mode edit (tapi butuh classId)
   classId, 
   existingData 
 }: { 
-  batchId?: string, 
   classId: string,
   existingData?: SessionData 
 }) {
@@ -66,10 +64,8 @@ export default function SessionForm({
             <form action={formAction} className="space-y-4">
               <input type="hidden" name="classId" value={classId} />
               
-              {existingData ? (
+              {existingData && (
                  <input type="hidden" name="sessionId" value={existingData.id} />
-              ) : (
-                 <input type="hidden" name="batchId" value={batchId} />
               )}
               
               <div className="space-y-1">

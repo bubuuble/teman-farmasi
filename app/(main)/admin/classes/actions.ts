@@ -27,7 +27,7 @@ export async function createClass(prevState: ActionState, formData: FormData): P
 
   if (error) return { error: error.message }
 
-  revalidatePath('/admin/classes')
+  revalidatePath('/admin/classes', 'layout')
   return { success: "Kelas berhasil dibuat!" }
 }
 
@@ -49,7 +49,7 @@ export async function updateClass(prevState: ActionState, formData: FormData): P
 
   if (error) return { error: error.message }
 
-  revalidatePath('/admin/classes')
+  revalidatePath('/admin/classes', 'layout')
   return { success: "Kelas berhasil diupdate!" }
 }
 
@@ -58,7 +58,7 @@ export async function deleteClass(id: string) {
   const { error } = await supabase.from('classes').delete().eq('id', id)
   
   if (error) return { error: error.message }
-  revalidatePath('/admin/classes')
+  revalidatePath('/admin/classes', 'layout')
   return { success: "Kelas dihapus" }
 }
 
@@ -83,7 +83,7 @@ export async function assignMentor(prevState: ActionState, formData: FormData): 
     return { error: error.message }
   }
 
-  revalidatePath('/admin/classes')
+  revalidatePath('/admin/classes', 'layout')
   return { success: "Mentor berhasil ditugaskan!" }
 }
 
@@ -95,7 +95,7 @@ export async function removeMentor(assignmentId: string) {
 
   if (error) return { error: error.message }
   
-  revalidatePath('/admin/classes')
+  revalidatePath('/admin/classes', 'layout')
   return { success: "Mentor dihapus dari kelas" }
 }
 
@@ -121,8 +121,32 @@ export async function assignStudent(prevState: ActionState, formData: FormData):
     return { error: error.message }
   }
 
-  revalidatePath('/admin/classes')
+  revalidatePath('/admin/classes', 'layout')
   return { success: "Siswa berhasil didaftarkan!" }
+}
+
+export async function assignMultipleStudents(classId: string, studentIds: string[]): Promise<ActionState> {
+  const supabase = await createClient()
+
+  if (!classId || !studentIds || studentIds.length === 0) {
+    return { error: "Pilih minimal 1 siswa!" }
+  }
+
+  const enrollmentsToInsert = studentIds.map(studentId => ({
+    class_id: classId,
+    student_id: studentId,
+    status: 'active'
+  }))
+
+  const { error } = await supabase.from('enrollments').insert(enrollmentsToInsert)
+
+  if (error) {
+    if (error.code === '23505') return { error: "Salah satu atau beberapa siswa sudah terdaftar di kelas ini." }
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: `${studentIds.length} siswa berhasil didaftarkan!` }
 }
 
 // 2. Keluarkan Siswa dari Kelas
@@ -133,7 +157,7 @@ export async function removeStudent(enrollmentId: string) {
 
   if (error) return { error: error.message }
   
-  revalidatePath('/admin/classes')
+  revalidatePath('/admin/classes', 'layout')
   return { success: "Siswa dikeluarkan dari kelas" }
 }
 
@@ -204,7 +228,7 @@ export async function uploadResource(prevState: ActionState, formData: FormData)
 
   console.log(`[Upload] File berhasil disimpan ke database`)
 
-  revalidatePath('/admin/classes')
+  revalidatePath('/admin/classes', 'layout')
   return { success: "E-Book berhasil diupload!" }
 }
 
@@ -226,6 +250,6 @@ export async function deleteResource(resourceId: string, filePath: string) {
 
   if (dbError) return { error: dbError.message }
 
-  revalidatePath('/admin/classes')
+  revalidatePath('/admin/classes', 'layout')
   return { success: "File dihapus" }
 }

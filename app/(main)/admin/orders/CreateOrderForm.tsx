@@ -16,6 +16,21 @@ export default function CreateOrderForm({ students, classes }: Props) {
   const [selectedClassPrice, setSelectedClassPrice] = useState<number>(0) // Auto-fill harga
   const [state, formAction, isPending] = useActionState(createOrder, initialState)
 
+  const [studentSearch, setStudentSearch] = useState('')
+  const [selectedStudentId, setSelectedStudentId] = useState('')
+
+  // Sort students alphabetically
+  const sortedStudents = [...students].sort((a, b) => 
+    (a.full_name || a.email).localeCompare(b.full_name || b.email, 'id')
+  )
+
+  const filteredStudents = sortedStudents.filter(s => {
+    const searchLower = studentSearch.toLowerCase()
+    const fullName = (s.full_name || '').toLowerCase()
+    const email = (s.email || '').toLowerCase()
+    return fullName.includes(searchLower) || email.includes(searchLower)
+  })
+
   if (state?.success && isOpen) {
     setIsOpen(false)
     window.location.reload()
@@ -44,7 +59,14 @@ export default function CreateOrderForm({ students, classes }: Props) {
             
             <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-brand-cream">
               <h3 className="font-heading font-bold text-lg text-brand-dark">Buat Order Manual</h3>
-              <button onClick={() => setIsOpen(false)} className="text-brand-gray hover:text-red-500">
+              <button 
+                onClick={() => {
+                  setIsOpen(false)
+                  setStudentSearch('')
+                  setSelectedStudentId('')
+                }} 
+                className="text-brand-gray hover:text-red-500"
+              >
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -53,12 +75,40 @@ export default function CreateOrderForm({ students, classes }: Props) {
               
               <div className="space-y-1">
                 <label className="text-xs font-bold text-brand-dark uppercase">Pilih Siswa</label>
-                <select name="studentId" className="w-full p-3 rounded-xl border border-gray-200 bg-white" required>
-                  <option value="">-- Cari Siswa --</option>
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.full_name} ({s.email})</option>
-                  ))}
-                </select>
+                <input type="hidden" name="studentId" value={selectedStudentId} required />
+                
+                <input
+                  type="text"
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                  placeholder="Cari nama atau email..."
+                  className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-gray-50 mb-2"
+                />
+
+                <div className="border border-gray-200 rounded-xl max-h-40 overflow-y-auto p-2.5 bg-white space-y-1">
+                  {filteredStudents.length === 0 ? (
+                    <p className="text-xs text-gray-400 italic py-2 text-center">Siswa tidak ditemukan.</p>
+                  ) : (
+                    filteredStudents.map((s) => {
+                      const isSelected = selectedStudentId === s.id
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={() => setSelectedStudentId(isSelected ? '' : s.id)}
+                          className={`p-2 rounded-lg cursor-pointer text-sm flex items-center justify-between transition-colors
+                            ${isSelected ? 'bg-brand-blue/10 border border-brand-blue font-bold text-brand-blue' : 'hover:bg-gray-50 border border-transparent'}
+                          `}
+                        >
+                          <div className="min-w-0">
+                            <p className="font-semibold text-brand-dark truncate">{s.full_name || 'Tanpa Nama'}</p>
+                            <p className="text-xs text-gray-400 truncate">{s.email}</p>
+                          </div>
+                          {isSelected && <span className="text-xs font-bold text-brand-blue flex-shrink-0">Terpilih</span>}
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
               </div>
 
               <div className="space-y-1">

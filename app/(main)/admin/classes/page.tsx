@@ -1,10 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
-import { BookOpen } from "lucide-react"
+import { BookOpen, Settings } from "lucide-react"
+import Link from "next/link"
 import ClassForm from "./ClassForm"
-import DeleteClassButton from "./DeleteClassButton"
-import ManageMentors from "./ManageMentors"
-import ManageStudents from "./ManageStudents" 
-import ManageResources from "./ManageResources"
 
 export default async function AdminClassesPage() {
   const supabase = await createClient()
@@ -19,18 +16,6 @@ export default async function AdminClassesPage() {
       class_resources ( id, title, file_url, file_path, created_at )
     `)
     .order('created_at', { ascending: false })
-
-  // 2. Ambil List Mentor (Untuk Dropdown)
-  const { data: allMentors } = await supabase
-    .from('profiles')
-    .select('id, full_name, email')
-    .eq('role', 'mentor')
-
-  // 3. Ambil List Student (Untuk Dropdown)
-  const { data: allStudents } = await supabase
-    .from('profiles')
-    .select('id, full_name, email')
-    .eq('role', 'student')
 
   return (
     <div className="space-y-6">
@@ -89,39 +74,18 @@ export default async function AdminClassesPage() {
             </div>
 
             {/* Footer Actions */}
-            <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto">
+            <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto gap-4">
                <div className="text-sm font-bold text-brand-dark">
                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.price)}
                </div>
                
-               <div className="flex gap-1">
-                  {/* Manage Student (Green) */}
-                  <ManageStudents 
-                     classId={item.id}
-                     classTitle={item.title}
-                     allStudents={allStudents || []}
-                     currentEnrollments={item.enrollments || []}
-                  />
-
-                  {/* Manage Mentor (Blue) */}
-                  <ManageMentors 
-                    classId={item.id}
-                    classTitle={item.title}
-                    allMentors={allMentors || []}
-                    currentAssignments={item.class_mentors || []}
-                  />
-                  
-                  {/* Manage Resources (Purple) - FITUR BARU */}
-                  <ManageResources 
-                    classId={item.id}
-                    classTitle={item.title}
-                    resources={item.class_resources || []}
-                  />
-
-                  {/* Edit & Delete */}
-                  <ClassForm existingData={item} />
-                  <DeleteClassButton id={item.id} />
-               </div>
+               <Link 
+                 href={`/admin/classes/${item.id}`}
+                 className="px-4 py-2 bg-brand-darkblue text-white rounded-xl text-xs font-bold hover:bg-brand-dark transition-all flex items-center gap-1.5 shadow-md shadow-brand-darkblue/10"
+               >
+                 <Settings className="w-3.5 h-3.5" />
+                 Kelola Kelas
+               </Link>
             </div>
           </div>
         ))}

@@ -28,13 +28,14 @@ export default function ManageMentors({
   classId, 
   classTitle,
   allMentors, 
-  currentAssignments 
+  currentAssignments,
+  inline
 }: { 
   classId: string, 
   classTitle: string,
   allMentors: Mentor[], 
-  // PERBAIKAN: Ganti any[] dengan Assignment[]
   currentAssignments: Assignment[] 
+  inline?: boolean
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(assignMentor, initialState)
@@ -48,6 +49,93 @@ export default function ManageMentors({
 
   const handleRemove = async (assignmentId: string) => {
     await removeMentor(assignmentId)
+  }
+
+  const renderContent = () => (
+    <div className="space-y-6">
+      <div>
+        <h4 className="text-xs font-bold text-brand-dark uppercase mb-3">Mentor Bertugas</h4>
+        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+          {currentAssignments.length === 0 ? (
+            <p className="text-sm text-gray-400 italic">Belum ada mentor di kelas ini.</p>
+          ) : (
+            currentAssignments.map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <div>
+                  <p className="font-bold text-sm text-brand-dark">{item.profiles?.full_name || "Tanpa Nama"}</p>
+                  <p className="text-xs text-gray-500">{item.profiles?.email || "-"}</p>
+                </div>
+                <button 
+                  onClick={() => setConfirmModal({ isOpen: true, assignmentId: item.id })}
+                  className="text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, assignmentId: '' })}
+        onConfirm={() => {
+            handleRemove(confirmModal.assignmentId)
+            setConfirmModal({ isOpen: false, assignmentId: '' })
+        }}
+        title="Hapus Mentor"
+        message="Apakah kamu yakin ingin menghapus mentor ini dari kelas?"
+        variant="danger"
+      />
+
+      <hr className="border-gray-100" />
+
+      <form action={formAction} className="space-y-3">
+        <input type="hidden" name="classId" value={classId} />
+        
+        <h4 className="text-xs font-bold text-brand-dark uppercase">Tambah Mentor Baru</h4>
+        <div className="space-y-2">
+          <select 
+            name="mentorId" 
+            className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue bg-white text-sm"
+            required
+          >
+            <option value="">-- Pilih Mentor --</option>
+            {allMentors.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.full_name || m.email} ({m.email})
+              </option>
+            ))}
+          </select>
+          
+          <button 
+            type="submit"
+            disabled={isPending} 
+            className="w-full flex items-center justify-center gap-2 bg-brand-darkblue text-white py-3 px-4 rounded-xl font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
+          >
+            <Plus className="w-4 h-4" />
+            {isPending ? "Menerapkan..." : "Apply"}
+          </button>
+        </div>
+        {state?.error && <p className="text-xs text-red-500">{state.error}</p>}
+        {state?.success && <p className="text-xs text-green-500">Berhasil ditambahkan!</p>}
+      </form>
+    </div>
+  )
+
+  if (inline) {
+    return (
+      <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-card p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="font-heading font-bold text-lg text-brand-dark">Atur Mentor</h3>
+            <p className="text-xs text-brand-gray">{classTitle}</p>
+          </div>
+        </div>
+        {renderContent()}
+      </div>
+    )
   }
 
   return (
@@ -74,76 +162,8 @@ export default function ManageMentors({
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              
-              <div>
-                <h4 className="text-xs font-bold text-brand-dark uppercase mb-3">Mentor Bertugas</h4>
-                <div className="space-y-2">
-                  {currentAssignments.length === 0 ? (
-                    <p className="text-sm text-gray-400 italic">Belum ada mentor di kelas ini.</p>
-                  ) : (
-                    currentAssignments.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                        <div>
-                          <p className="font-bold text-sm text-brand-dark">{item.profiles?.full_name || "Tanpa Nama"}</p>
-                          <p className="text-xs text-gray-500">{item.profiles?.email || "-"}</p>
-                        </div>
-                        <button 
-                          onClick={() => setConfirmModal({ isOpen: true, assignmentId: item.id })}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <ConfirmModal 
-                isOpen={confirmModal.isOpen}
-                onClose={() => setConfirmModal({ isOpen: false, assignmentId: '' })}
-                onConfirm={() => {
-                    handleRemove(confirmModal.assignmentId)
-                    setConfirmModal({ isOpen: false, assignmentId: '' })
-                }}
-                title="Hapus Mentor"
-                message="Apakah kamu yakin ingin menghapus mentor ini dari kelas?"
-                variant="danger"
-              />
-
-              <hr className="border-gray-100" />
-
-              <form action={formAction} className="space-y-3">
-                <input type="hidden" name="classId" value={classId} />
-                
-                <h4 className="text-xs font-bold text-brand-dark uppercase">Tambah Mentor Baru</h4>
-                <div className="flex gap-2">
-                  <select 
-                    name="mentorId" 
-                    className="flex-1 p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue bg-white text-sm"
-                    required
-                  >
-                    <option value="">-- Pilih Mentor --</option>
-                    {allMentors.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.full_name || m.email} ({m.email})
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <button 
-                    type="submit"
-                    disabled={isPending} 
-                    className="bg-brand-darkblue text-white p-3 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50"
-                  >
-                    {isPending ? "..." : <Plus className="w-5 h-5" />}
-                  </button>
-                </div>
-                {state?.error && <p className="text-xs text-red-500">{state.error}</p>}
-                {state?.success && <p className="text-xs text-green-500">Berhasil ditambahkan!</p>}
-              </form>
-
+            <div className="p-6">
+              {renderContent()}
             </div>
           </div>
         </div>

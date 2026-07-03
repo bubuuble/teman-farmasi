@@ -1,17 +1,15 @@
-// app/(main)/admin/attendances/siswa/page.tsx
+// app/(main)/admin/attendances/student/page.tsx
 import { createClient } from "@/lib/supabase/server"
-import { Filter } from "lucide-react" // Perbaikan: Hapus FileSpreadsheet karena tidak dipakai
+import { Filter } from "lucide-react"
 import FilterAttendance from "../FilterAttendance"
 import ExportAttendanceBtn from "../ExportAttendanceBtn"
 
 export const dynamic = 'force-dynamic'
 
-// --- DEFINISI TIPE DATA ---
 type Session = { id: string; title: string; date_time: string }
 type Student = { id: string; full_name: string; email: string }
 type AttendanceRecord = { session_id: string; student_id: string; status: string }
 
-// Interface untuk menangani data enrollment dari Supabase
 interface EnrollmentRow {
   profiles: Student | null;
 }
@@ -19,43 +17,54 @@ interface EnrollmentRow {
 export default async function StudentAttendancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ classId?: string; batchId?: string }>
+  searchParams: Promise<{ classId?: string }>
 }) {
-  const { classId, batchId } = await searchParams
+  const { classId } = await searchParams
   const supabase = await createClient()
 
   const { data: classes } = await supabase.from('classes').select('id, title')
-  let batches: { id: string; name: string }[] = []
-  if (classId) {
-    const { data } = await supabase.from('batches').select('id, name').eq('class_id', classId).order('created_at', { ascending: false })
-    batches = data || []
-  }
 
   let sessions: Session[] = []
   let students: Student[] = []
   const attendanceMap: Record<string, string> = {}
 
-  if (batchId) {
-    const { data: sData } = await supabase.from('attendance_sessions').select('id, title, date_time').eq('batch_id', batchId).order('date_time', { ascending: true })
-    sessions = sData as Session[] || []
+  if (classId) {
+    // Sesi langsung dari class_id
+    const { data: sData } = await supabase
+      .from('attendance_sessions')
+      .select('id, title, date_time')
+      .eq('class_id', classId)
+      .order('date_time', { ascending: true })
+    sessions = (sData as Session[]) || []
 
-    const { data: eData } = await supabase.from('enrollments').select('profiles(id, full_name, email)').eq('class_id', classId)
+    // Siswa terdaftar
+    const { data: eData } = await supabase
+      .from('enrollments')
+      .select('profiles(id, full_name, email)')
+      .eq('class_id', classId)
     
-    // Perbaikan LINE 35: Mengganti (e: any) dengan tipe EnrollmentRow yang spesifik
     const rawEnrollments = (eData as unknown as EnrollmentRow[]) || []
-    students = rawEnrollments.map((e) => e.profiles).filter((p): p is Student => p !== null)
+    students = rawEnrollments
+      .map((e) => e.profiles)
+      .filter((p): p is Student => p !== null)
+
+    // Sort A-Z berdasarkan nama siswa
+    students.sort((a, b) => a.full_name.localeCompare(b.full_name, 'id'))
 
     if (sessions.length > 0) {
-      const { data: rData } = await supabase.from('attendance_records').select('session_id, student_id, status').in('session_id', sessions.map(s => s.id))
-      const records = rData as AttendanceRecord[] || []
+      const { data: rData } = await supabase
+        .from('attendance_records')
+        .select('session_id, student_id, status')
+        .in('session_id', sessions.map(s => s.id))
+      const records = (rData as AttendanceRecord[]) || []
       records.forEach(r => { attendanceMap[`${r.session_id}_${r.student_id}`] = r.status })
     }
   }
 
   return (
     <div className="space-y-6">
-      <FilterAttendance classes={classes} batches={batches} selectedClassId={classId} selectedBatchId={batchId} />
-      {batchId ? (
+      <FilterAttendance classes={classes} selectedClassId={classId} />
+      {classId ? (
         <div className="bg-white rounded-3xl shadow-card overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h3 className="font-bold text-brand-dark">Matrix Kehadiran Siswa</h3>
@@ -79,7 +88,7 @@ export default async function StudentAttendancePage({
               <tbody className="divide-y divide-gray-100 text-sm">
                 {students.map(student => (
                   <tr key={student.id} className="hover:bg-brand-cream/10 transition-colors">
-                    <td className="p-4 sticky left-0 bg-white group-hover:bg-brand-cream/10 z-10 border-r border-gray-100 font-bold">
+                    <td className="p-4 sticky left-0 bg-white z-10 border-r border-gray-100 font-bold">
                       {student.full_name}
                       <div className="text-[10px] text-gray-400 font-normal">{student.email}</div>
                     </td>
@@ -93,6 +102,9 @@ export default async function StudentAttendancePage({
                     ))}
                   </tr>
                 ))}
+                {students.length === 0 && sessions.length > 0 && (
+                  <tr><td colSpan={sessions.length + 1} className="p-8 text-center text-gray-400 text-sm italic">Belum ada siswa terdaftar.</td></tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -100,9 +112,9 @@ export default async function StudentAttendancePage({
       ) : (
         <div className="p-20 text-center bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
           <Filter className="w-12 h-12 text-gray-200 mx-auto mb-2" />
-          <p className="text-brand-gray font-medium">Silakan pilih Kelas dan Batch terlebih dahulu.</p>
+          <p className="text-brand-gray font-medium">Silakan pilih Kelas terlebih dahulu.</p>
         </div>
       )}
     </div>
   )
-}
+}

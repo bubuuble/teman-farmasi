@@ -4,9 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import AttendanceFilter from "./AttendanceFilter"
 import AttendanceMatrix from "./AttendanceMatrix"
 
-// --- DEFINISI TIPE DATA ---
 interface ClassItem { id: string; title: string }
-interface BatchItem { id: string; name: string }
 interface SessionItem { id: string; title: string; date_time: string }
 interface StudentItem { id: string; full_name: string }
 
@@ -15,10 +13,7 @@ interface ClassMentorJoin {
 }
 
 interface EnrollmentJoin {
-    profiles: {
-        id: string;
-        full_name: string | null;
-    } | null;
+    profiles: { id: string; full_name: string | null } | null;
 }
 
 interface AttendanceRecordJoin {
@@ -30,15 +25,15 @@ interface AttendanceRecordJoin {
 export default async function MentorAttendancePage({
     searchParams
 }: {
-    searchParams: Promise<{ classId?: string, batchId?: string }>
+    searchParams: Promise<{ classId?: string }>
 }) {
-    const { classId, batchId } = await searchParams
+    const { classId } = await searchParams
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return null
 
-    // 1. Ambil List Kelas yang diampu Mentor ini
+    // 1. Ambil kelas yang diampu mentor
     const { data: rawClasses } = await supabase
         .from('class_mentors')
         .select('classes(id, title)')
@@ -46,42 +41,28 @@ export default async function MentorAttendancePage({
     
     const classMentorData = (rawClasses as unknown as ClassMentorJoin[]) || []
     const classList = classMentorData
-        .map((item) => item.classes)
+        .map(item => item.classes)
         .filter((c): c is ClassItem => c !== null)
 
-    // 2. Ambil List Batch
-    let batches: BatchItem[] = []
-    if (classId) {
-        const { data } = await supabase
-            .from('batches')
-            .select('id, name')
-            .eq('class_id', classId)
-            .order('created_at', { ascending: false })
-        
-        batches = (data as BatchItem[]) || []
-    }
-
-    // 3. LOGIKA MATRIX
+    // 2. Jika kelas dipilih, ambil sesi + siswa + absensi
     let sessions: SessionItem[] = []
     let students: StudentItem[] = []
     const attendanceMap: Record<string, string> = {}
 
-    if (batchId && classId) {
-        // A. Ambil semua sesi
+    if (classId) {
+        // Sesi langsung dari class_id
         const { data: sData } = await supabase
             .from('attendance_sessions')
             .select('id, title, date_time')
-            .eq('batch_id', batchId)
+            .eq('class_id', classId)
             .order('date_time', { ascending: true })
         
         sessions = (sData as SessionItem[]) || []
 
-        // B. Ambil Siswa (Join ke Profiles)
+        // Siswa terdaftar
         const { data: eData } = await supabase
             .from('enrollments')
-            .select(`
-                profiles:student_id ( id, full_name )
-            `)
+            .select('profiles:student_id ( id, full_name )')
             .eq('class_id', classId)
             .eq('status', 'active')
 
@@ -90,9 +71,11 @@ export default async function MentorAttendancePage({
             students = rawEnrollments
                 .map(e => e.profiles)
                 .filter((p): p is StudentItem => p !== null && p.full_name !== null) as StudentItem[]
+            // Sort A-Z
+            students.sort((a, b) => a.full_name.localeCompare(b.full_name, 'id'))
         }
 
-        // C. Ambil Record Absensi
+        // Record absensi
         if (sessions.length > 0) {
             const sessionIds = sessions.map(s => s.id)
             const { data: rData } = await supabase
@@ -116,13 +99,10 @@ export default async function MentorAttendancePage({
 
             <AttendanceFilter 
                 classes={classList} 
-                batches={batches} 
-                sessions={sessions}
                 selectedClassId={classId}
-                selectedBatchId={batchId}
             />
 
-            {batchId ? (
+            {classId ? (
                 <AttendanceMatrix 
                     sessions={sessions}
                     students={students}
@@ -131,10 +111,10 @@ export default async function MentorAttendancePage({
             ) : (
                 <div className="p-24 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center">
                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300 font-bold text-2xl">?</div>
-                    <h3 className="text-brand-dark font-bold">Pilih Batch Terlebih Dahulu</h3>
+                    <h3 className="text-brand-dark font-bold">Pilih Kelas Terlebih Dahulu</h3>
                     <p className="text-gray-400 text-sm mt-1">Gunakan filter di atas untuk menampilkan data siswa.</p>
                 </div>
             )}
         </div>
     )
-}
+}

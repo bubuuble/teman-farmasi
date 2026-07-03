@@ -14,6 +14,7 @@ const initialState: ActionState = {
 
 export default function AddUserForm({ customTrigger, currentUserRole }: { customTrigger?: React.ReactNode, currentUserRole?: string }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [selectedRole, setSelectedRole] = useState('student')
   const [state, formAction, isPending] = useActionState(createUser, initialState)
 
   // Tutup modal otomatis jika sukses
@@ -54,7 +55,12 @@ export default function AddUserForm({ customTrigger, currentUserRole }: { custom
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-brand-dark uppercase">Role</label>
-                    <select name="role" className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:border-brand-blue">
+                    <select
+                      name="role"
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:border-brand-blue"
+                    >
                         <option value="student">Student</option>
                         <option value="mentor">Mentor</option>
                         <option value="admin">Admin</option>
@@ -85,6 +91,20 @@ export default function AddUserForm({ customTrigger, currentUserRole }: { custom
                 <input name="password" type="text" placeholder="Min. 6 karakter" className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue" required />
                 <p className="text-[10px] text-gray-400">Password default, user bisa ganti nanti.</p>
               </div>
+
+              {/* Kolom Institusi — hanya untuk Student */}
+              {selectedRole === 'student' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-brand-dark uppercase">Institusi</label>
+                  <input
+                    name="institusi"
+                    type="text"
+                    placeholder="Contoh: Universitas Indonesia"
+                    className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue"
+                  />
+                  <p className="text-[10px] text-gray-400">Opsional — asal institusi / universitas siswa.</p>
+                </div>
+              )}
 
               {state?.error && (
                 <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">

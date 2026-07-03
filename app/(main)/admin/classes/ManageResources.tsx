@@ -19,11 +19,13 @@ const initialState: ActionState = { error: '', success: '' }
 export default function ManageResources({ 
   classId, 
   classTitle,
-  resources 
+  resources,
+  inline
 }: { 
   classId: string, 
   classTitle: string,
   resources: Resource[]
+  inline?: boolean
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(uploadResource, initialState)
@@ -39,20 +41,17 @@ export default function ManageResources({
     path: '',
   });
 
-  // Compute upload message directly (tidak perlu state)
   const uploadMessage = selectedFile 
     ? `Mengupload "${selectedFile.name}" (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)...`
     : ''
 
   const handleCloseModal = () => {
-    console.log('Modal ditutup')
     setIsOpen(false)
     setSelectedFile(null)
   }
 
   const handleFormAction = async (formData: FormData) => {
     await formAction(formData)
-    // Reset setelah action selesai
     setSelectedFile(null)
     formRef.current?.reset()
   }
@@ -61,7 +60,7 @@ export default function ManageResources({
     await deleteResource(id, path)
   }
 
-  const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+  const MAX_FILE_SIZE = 50 * 1024 * 1024
 
   const handleFileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     const formElement = e.currentTarget
@@ -75,9 +74,6 @@ export default function ManageResources({
         return
       }
       setSelectedFile(file)
-      console.log(`✅ Validasi file lokal berhasil`)
-      console.log(`File: ${file.name}`)
-      console.log(`Ukuran: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
     }
   }
 
@@ -86,6 +82,148 @@ export default function ManageResources({
     if (file) {
       setSelectedFile(file)
     }
+  }
+
+  const renderContent = () => (
+    <div className="space-y-6">
+      {/* LIST RESOURCES */}
+      <div>
+        <div className="flex justify-between items-center mb-3">
+            <h4 className="text-xs font-bold text-brand-dark uppercase">File Tersedia</h4>
+            <span className="text-xs bg-gray-100 px-2 py-1 rounded-md font-bold">{resources.length} File</span>
+        </div>
+        
+        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+          {resources.length === 0 ? (
+            <p className="text-sm text-gray-400 italic">Belum ada materi diupload.</p>
+          ) : (
+            resources.map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-purple-200 transition-colors">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="w-8 h-8 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-brand-dark truncate">{item.title}</p>
+                    <a 
+                        href={item.file_url} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="text-[10px] text-brand-blue hover:underline flex items-center gap-1"
+                    >
+                        <Download className="w-3 h-3" /> Download
+                    </a>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setConfirmModal({ isOpen: true, id: item.id, path: item.file_path })}
+                  className="text-gray-400 hover:text-red-500 transition-colors"
+                  title="Hapus File"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, id: '', path: '' })}
+        onConfirm={() => {
+            handleDelete(confirmModal.id, confirmModal.path)
+            setConfirmModal({ isOpen: false, id: '', path: '' })
+        }}
+        title="Hapus File"
+        message="Apakah kamu yakin ingin menghapus file ini secara permanen?"
+        variant="danger"
+      />
+
+      <hr className="border-gray-100" />
+
+      {/* FORM UPLOAD */}
+      <form ref={formRef} action={handleFormAction} onSubmit={handleFileSubmit} className="space-y-3">
+        <input type="hidden" name="classId" value={classId} />
+        
+        <div className="flex justify-between items-center">
+          <h4 className="text-xs font-bold text-brand-dark uppercase">Upload File Baru (PDF)</h4>
+          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-md font-semibold">Maks 50 MB</span>
+        </div>
+        
+        <div className="space-y-2">
+            <input 
+                name="title" 
+                type="text" 
+                placeholder="Judul Materi (Misal: Modul Bab 1)" 
+                className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue text-sm"
+                required
+                disabled={isPending}
+            />
+            
+            <div className="flex gap-2">
+                <input 
+                    name="file" 
+                    type="file" 
+                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    onChange={handleFileChange}
+                    className="flex-1 p-2 rounded-xl border border-gray-200 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
+                    required
+                    disabled={isPending}
+                />
+                <button 
+                    type="submit"
+                    disabled={isPending}
+                    className="bg-brand-darkblue text-white p-3 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50 min-w-[48px] flex items-center justify-center"
+                >
+                    {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                </button>
+            </div>
+
+            {selectedFile && !isPending && (
+              <p className="text-xs text-gray-500">
+                📎 File terpilih: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+              </p>
+            )}
+        </div>
+
+        {isPending && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-blue-700">Sedang mengupload...</p>
+                <p className="text-xs text-blue-600">{uploadMessage}</p>
+                <p className="text-[10px] text-blue-500 mt-1">Mohon tunggu, jangan tutup halaman ini</p>
+              </div>
+            </div>
+            <div className="mt-3 h-1.5 bg-blue-200 rounded-full overflow-hidden">
+              <div className="h-full bg-blue-600 rounded-full" 
+                   style={{ width: '100%', animation: 'progress 2s ease-in-out infinite' }} />
+            </div>
+          </div>
+        )}
+
+        {state?.error && <p className="text-xs text-red-500 bg-red-50 p-2 rounded-lg">❌ {state.error}</p>}
+        {state?.success && (
+          <p className="text-xs text-green-600 bg-green-50 p-2 rounded-lg">✅ Upload berhasil!</p>
+        )}
+      </form>
+    </div>
+  )
+
+  if (inline) {
+    return (
+      <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-card p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="font-heading font-bold text-lg text-brand-dark">Kelola E-Book</h3>
+            <p className="text-xs text-brand-gray">{classTitle}</p>
+          </div>
+        </div>
+        {renderContent()}
+      </div>
+    )
   }
 
   return (
@@ -117,149 +255,8 @@ export default function ManageResources({
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              
-              {/* LIST RESOURCES */}
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-xs font-bold text-brand-dark uppercase">File Tersedia</h4>
-                    <span className="text-xs bg-gray-100 px-2 py-1 rounded-md font-bold">{resources.length} File</span>
-                </div>
-                
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                  {resources.length === 0 ? (
-                    <p className="text-sm text-gray-400 italic">Belum ada materi diupload.</p>
-                  ) : (
-                    resources.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-purple-200 transition-colors">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <div className="w-8 h-8 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-bold text-sm text-brand-dark truncate">{item.title}</p>
-                            <a 
-                                href={item.file_url} 
-                                target="_blank" 
-                                rel="noreferrer"
-                                className="text-[10px] text-brand-blue hover:underline flex items-center gap-1"
-                            >
-                                <Download className="w-3 h-3" /> Download
-                            </a>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setConfirmModal({ isOpen: true, id: item.id, path: item.file_path })}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
-                          title="Hapus File"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <ConfirmModal 
-                isOpen={confirmModal.isOpen}
-                onClose={() => setConfirmModal({ isOpen: false, id: '', path: '' })}
-                onConfirm={() => {
-                    handleDelete(confirmModal.id, confirmModal.path)
-                    setConfirmModal({ isOpen: false, id: '', path: '' })
-                }}
-                title="Hapus File"
-                message="Apakah kamu yakin ingin menghapus file ini secara permanen?"
-                variant="danger"
-              />
-
-              <hr className="border-gray-100" />
-
-              {/* FORM UPLOAD */}
-              <form ref={formRef} action={handleFormAction} onSubmit={handleFileSubmit} className="space-y-3">
-                <input type="hidden" name="classId" value={classId} />
-                
-                <div className="flex justify-between items-center">
-                  <h4 className="text-xs font-bold text-brand-dark uppercase">Upload File Baru (PDF)</h4>
-                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-md font-semibold">Maks 50 MB</span>
-                </div>
-                
-                <div className="space-y-2">
-                    <input 
-                        name="title" 
-                        type="text" 
-                        placeholder="Judul Materi (Misal: Modul Bab 1)" 
-                        className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue text-sm"
-                        required
-                        disabled={isPending}
-                    />
-                    
-                    <div className="flex gap-2">
-                        <input 
-                            name="file" 
-                            type="file" 
-                            accept=".pdf,.doc,.docx,.ppt,.pptx"
-                            onChange={handleFileChange}
-                            className="flex-1 p-2 rounded-xl border border-gray-200 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
-                            required
-                            disabled={isPending}
-                        />
-                        <button 
-                            type="submit"
-                            disabled={isPending}
-                            onClick={() => {
-                              console.log('Submit button diklik')
-                              console.log('isPending:', isPending)
-                              console.log('Form sedang diproses...')
-                            }}
-                            className="bg-brand-darkblue text-white p-3 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50 min-w-[48px] flex items-center justify-center"
-                        >
-                            {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                        </button>
-                    </div>
-
-                    {/* Selected File Info */}
-                    {selectedFile && !isPending && (
-                      <p className="text-xs text-gray-500">
-                        📎 File terpilih: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                      </p>
-                    )}
-                </div>
-
-                {/* Upload Progress Indicator */}
-                {isPending && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 animate-pulse">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-blue-700">Sedang mengupload...</p>
-                        <p className="text-xs text-blue-600">{uploadMessage}</p>
-                        <p className="text-[10px] text-blue-500 mt-1">Mohon tunggu, jangan tutup halaman ini</p>
-                      </div>
-                    </div>
-                    {/* Progress bar animation */}
-                    <div className="mt-3 h-1.5 bg-blue-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-600 rounded-full animate-[progress_2s_ease-in-out_infinite]" 
-                           style={{ width: '100%', animation: 'progress 2s ease-in-out infinite' }} />
-                    </div>
-                    <style jsx>{`
-                      @keyframes progress {
-                        0% { transform: translateX(-100%); }
-                        50% { transform: translateX(0%); }
-                        100% { transform: translateX(100%); }
-                      }
-                    `}</style>
-                  </div>
-                )}
-
-                {state?.error && <p className="text-xs text-red-500 bg-red-50 p-2 rounded-lg">❌ {state.error}</p>}
-                {state?.success && isOpen && (
-                  <p className="text-xs text-green-600 bg-green-50 p-2 rounded-lg">✅ Upload berhasil!</p>
-                )}
-              </form>
-
+            <div className="p-6">
+              {renderContent()}
             </div>
           </div>
         </div>

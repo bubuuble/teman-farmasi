@@ -21,6 +21,7 @@ export async function createUser(prevState: ActionState, formData: FormData): Pr
   const fullName = formData.get('fullName') as string
   const username = formData.get('username') as string
   const role = formData.get('role') as string
+  const institusi = formData.get('institusi') as string | null
 
   // Validasi Input
   if (!email || !password || !fullName || !role) {
@@ -50,7 +51,8 @@ export async function createUser(prevState: ActionState, formData: FormData): Pr
     user_metadata: {
       full_name: fullName,
       role: role,
-      username: username 
+      username: username,
+      ...(role === 'student' && institusi ? { institusi } : {})
     }
   })
 
@@ -58,14 +60,19 @@ export async function createUser(prevState: ActionState, formData: FormData): Pr
     return { error: error.message }
   }
 
-  // Update Username Manual
-  if (data.user && username) {
-    const { error: updateError } = await supabaseAdmin
-      .from('profiles')
-      .update({ username: username })
-      .eq('id', data.user.id)
-    
-    if (updateError) console.error("Gagal set username:", updateError)
+  // Update Username & Institusi Manual
+  if (data.user) {
+    const profileUpdate: Record<string, string> = {}
+    if (username) profileUpdate.username = username
+    if (role === 'student' && institusi) profileUpdate.institusi = institusi
+
+    if (Object.keys(profileUpdate).length > 0) {
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update(profileUpdate)
+        .eq('id', data.user.id)
+      if (updateError) console.error("Gagal update profile:", updateError)
+    }
   }
 
   revalidatePath('/admin/users')

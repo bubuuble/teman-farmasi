@@ -19,13 +19,13 @@ export async function createSession(prevState: ActionState, formData: FormData) 
   const date = formData.get('date') as string
   const zoomLink = formData.get('zoomLink') as string | null
 
-  const { error } = await supabase.from('attendance_sessions').insert({
+  const { data: newSession, error } = await supabase.from('attendance_sessions').insert({
     class_id: classId,
     title,
     date_time: date,
     zoom_link: zoomLink,
     is_open: true,
-  })
+  }).select('id').single()
 
   if (error) return { error: error.message }
 
@@ -34,9 +34,18 @@ export async function createSession(prevState: ActionState, formData: FormData) 
     try {
       const { data: classData } = await supabase
         .from('classes')
-        .select('title')
+        .select('title, level')
         .eq('id', classId)
         .single()
+
+      // Calculate session index
+      const { data: classSessions } = await supabase
+        .from('attendance_sessions')
+        .select('id')
+        .eq('class_id', classId)
+        .order('date_time', { ascending: true })
+
+      const sessionIndex = classSessions ? classSessions.findIndex((s: any) => s.id === newSession?.id) + 1 : 1
 
       const { data: enrolledStudents } = await supabase
         .from('enrollments')
@@ -54,6 +63,8 @@ export async function createSession(prevState: ActionState, formData: FormData) 
           sessionTitle: title,
           sessionDateTime: date,
           zoomLink: zoomLink,
+          sessionNumber: sessionIndex > 0 ? sessionIndex : undefined,
+          totalSessions: classData.level || undefined,
         })
       }
     } catch (err) {
@@ -125,9 +136,18 @@ export async function updateSession(prevState: ActionState, formData: FormData):
     try {
       const { data: classData } = await supabase
         .from('classes')
-        .select('title')
+        .select('title, level')
         .eq('id', classId)
         .single()
+
+      // Calculate session index
+      const { data: classSessions } = await supabase
+        .from('attendance_sessions')
+        .select('id')
+        .eq('class_id', classId)
+        .order('date_time', { ascending: true })
+
+      const sessionIndex = classSessions ? classSessions.findIndex((s: any) => s.id === sessionId) + 1 : 1
 
       const { data: enrolledStudents } = await supabase
         .from('enrollments')
@@ -146,6 +166,8 @@ export async function updateSession(prevState: ActionState, formData: FormData):
           sessionDateTime: date,
           zoomLink: zoomLink,
           isRevision: true,
+          sessionNumber: sessionIndex > 0 ? sessionIndex : undefined,
+          totalSessions: classData.level || undefined,
         })
       }
     } catch (err) {

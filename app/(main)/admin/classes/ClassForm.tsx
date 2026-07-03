@@ -200,6 +200,7 @@ export default function ClassForm({
                     min="1"
                     placeholder="Contoh: 5"
                     className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue"
+                    required
                   />
                 </div>
                 <div className="space-y-1">

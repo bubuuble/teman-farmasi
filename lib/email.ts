@@ -9,6 +9,8 @@ interface SendSessionEmailParams {
   sessionDateTime: string
   zoomLink?: string | null
   isRevision?: boolean
+  sessionNumber?: number
+  totalSessions?: string
 }
 
 export async function sendNewSessionNotification({
@@ -18,6 +20,8 @@ export async function sendNewSessionNotification({
   sessionDateTime,
   zoomLink,
   isRevision = false,
+  sessionNumber,
+  totalSessions,
 }: SendSessionEmailParams) {
   if (toEmails.length === 0) return { success: true, message: 'No recipients.' }
 
@@ -53,6 +57,16 @@ export async function sendNewSessionNotification({
     `
   }
 
+  let sessionNumberRow = ''
+  if (sessionNumber) {
+    sessionNumberRow = `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Pertemuan</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: Ke-${sessionNumber} dari ${totalSessions || '-'} Pertemuan</td>
+              </tr>
+    `
+  }
+
   let zoomRow = ''
   if (zoomLink) {
     zoomRow = `
@@ -76,7 +90,7 @@ export async function sendNewSessionNotification({
           
           <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-bottom: 24px;" />
           
-          <h2 style="font-size: 18px; font-weight: bold; color: #0f172a; margin-top: 0; margin-bottom: 12px;">Halo Rekan Apoteker,</h2>
+          <h2 style="font-size: 18px; font-weight: bold; color: #0f172a; margin-top: 0; margin-bottom: 12px;">Halo Student,</h2>
           <p style="font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 20px;">
             ${introText}
           </p>
@@ -96,6 +110,7 @@ export async function sendNewSessionNotification({
                 <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${formattedDate}</td>
               </tr>
               ${timeRow}
+              ${sessionNumberRow}
               ${zoomRow}
             </table>
           </div>

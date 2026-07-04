@@ -15,7 +15,11 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  UserCheck,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight
 } from 'lucide-react'
 import { 
   updateClass, 
@@ -29,7 +33,10 @@ import {
   assignMultipleStudents,
   createSubClass,
   updateSubClass,
-  deleteSubClass
+  deleteSubClass,
+  assignMultipleStudentsToMentor,
+  removeStudentFromMentor,
+  reassignStudentMentor
 } from '../actions'
 import ConfirmModal from '@/app/components/ConfirmModal'
 
@@ -106,16 +113,27 @@ type SubClass = {
   created_at: string
 }
 
+type MentorStudentAssignment = {
+  id: string
+  mentor_id: string
+  student_id: string
+  class_id: string
+  sub_class_id: string
+  created_at: string
+}
+
 export default function ClassManager({
   kelas,
   subClasses,
   allStudents,
   allMentors,
+  mentorStudentAssignments,
 }: {
   kelas: ClassDetail
   subClasses: SubClass[]
   allStudents: any[]
   allMentors: any[]
+  mentorStudentAssignments: MentorStudentAssignment[]
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabType>('detail')
@@ -175,6 +193,13 @@ export default function ClassManager({
   const [confirmDeleteStudent, setConfirmDeleteStudent] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' })
   const [confirmDeleteMentor, setConfirmDeleteMentor] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' })
   const [confirmDeleteFile, setConfirmDeleteFile] = useState<{ isOpen: boolean; id: string; path: string }>({ isOpen: false, id: '', path: '' })
+  const [confirmDeleteMentorStudentAssignment, setConfirmDeleteMentorStudentAssignment] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' })
+
+  // Mentor-Student Assignment states
+  const [selectedMentorForStudents, setSelectedMentorForStudents] = useState<string>('')
+  const [studentSearchForMentor, setStudentSearchForMentor] = useState('')
+  const [selectedStudentIdsForMentor, setSelectedStudentIdsForMentor] = useState<string[]>([])
+  const [expandedMentors, setExpandedMentors] = useState<Set<string>>(new Set())
 
   // Derived states / sorting / filtering
   const sortedStudents = [...allStudents].sort((a, b) => 
@@ -208,6 +233,41 @@ export default function ClassManager({
 
   const assignedMentorIds = new Set(currentMentors.map(m => m.mentor_id))
   const assignableMentors = sortedMentors.filter(m => !assignedMentorIds.has(m.id))
+
+  // Mentor-Student Assignment derived values
+  const currentMSAssignments = mentorStudentAssignments.filter(
+    a => a.sub_class_id === selectedSubClassId
+  )
+  // Student IDs yang SUDAH di-assign ke mentor mana pun di sub_class ini
+  const assignedStudentIds = new Set(currentMSAssignments.map(a => a.student_id))
+  // Student yang terdaftar di sub_class ini tapi belum di-assign ke mentor mana pun
+  const unassignedStudents = currentEnrollments.filter(e => !assignedStudentIds.has(e.student_id))
+  // Helper: dapat list student yang di-assign ke mentor tertentu
+  const getStudentsForMentor = (mentorId: string) => {
+    const assignmentIds = currentMSAssignments
+      .filter(a => a.mentor_id === mentorId)
+      .map(a => a.student_id)
+    return currentEnrollments.filter(e => assignmentIds.includes(e.student_id)).map(e => ({
+      ...e,
+      assignmentId: currentMSAssignments.find(a => a.mentor_id === mentorId && a.student_id === e.student_id)?.id || ''
+    }))
+  }
+  // Student enrolled di sub_class ini yang belum di-assign ke mentor yang sedang dipilih
+  const getAssignableStudentsForMentor = (mentorId: string) => {
+    const alreadyAssignedToThisMentor = new Set(
+      currentMSAssignments.filter(a => a.mentor_id === mentorId).map(a => a.student_id)
+    )
+    return currentEnrollments.filter(e => !alreadyAssignedToThisMentor.has(e.student_id))
+  }
+  const assignableStudentsForSelectedMentor = selectedMentorForStudents
+    ? getAssignableStudentsForMentor(selectedMentorForStudents)
+    : []
+  const filteredStudentsForMentor = assignableStudentsForSelectedMentor.filter(e => {
+    const searchLower = studentSearchForMentor.toLowerCase()
+    const fullName = (e.profiles?.full_name || '').toLowerCase()
+    const email = (e.profiles?.email || '').toLowerCase()
+    return fullName.includes(searchLower) || email.includes(searchLower)
+  })
 
   const filteredMentors = assignableMentors.filter(m => {
     const searchLower = mentorSearch.toLowerCase()
@@ -371,6 +431,51 @@ export default function ClassManager({
       } else {
         showFeedback('File materi berhasil dihapus.', '')
       }
+    })
+  }
+
+  // --- MENTOR-STUDENT ASSIGNMENT HANDLERS ---
+
+  const handleAssignStudentsToMentor = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedMentorForStudents || selectedStudentIdsForMentor.length === 0 || !selectedSubClassId) return
+    startTransition(async () => {
+      const res = await assignMultipleStudentsToMentor(
+        selectedMentorForStudents,
+        selectedStudentIdsForMentor,
+        kelas.id,
+        selectedSubClassId
+      )
+      if (res.error) {
+        showFeedback('', res.error)
+      } else {
+        showFeedback(res.success || 'Student berhasil di-assign!', '')
+        setSelectedStudentIdsForMentor([])
+        setStudentSearchForMentor('')
+      }
+    })
+  }
+
+  const handleRemoveStudentFromMentor = (assignmentId: string) => {
+    startTransition(async () => {
+      const res = await removeStudentFromMentor(assignmentId)
+      if (res.error) {
+        showFeedback('', res.error)
+      } else {
+        showFeedback('Student di-unassign dari mentor.', '')
+      }
+    })
+  }
+
+  const toggleMentorExpand = (mentorId: string) => {
+    setExpandedMentors(prev => {
+      const next = new Set(prev)
+      if (next.has(mentorId)) {
+        next.delete(mentorId)
+      } else {
+        next.add(mentorId)
+      }
+      return next
     })
   }
 
@@ -860,31 +965,32 @@ export default function ClassManager({
 
                   {/* TAB: Assign Student */}
                   {subClassActiveTab === 'students' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-200">
-                      {/* Left form */}
-                      <div className="lg:col-span-5 bg-gray-50 p-6 rounded-3xl border border-gray-100 h-fit space-y-4">
-                        <div>
-                          <h3 className="font-heading font-bold text-base text-brand-dark">Daftarkan Student</h3>
-                          <p className="text-xs text-brand-gray">Masukkan student ke sub kelas ini.</p>
+                    <div className="space-y-6 animate-in fade-in duration-200">
+
+                      {/* STEP 1: Daftarkan student ke sub kelas ini */}
+                      <div className="bg-gray-50 rounded-2xl border border-gray-100 p-5 space-y-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-6 h-6 bg-brand-darkblue text-white rounded-full flex items-center justify-center text-[10px] font-black">1</div>
+                          <h4 className="font-bold text-sm text-brand-dark">Enroll Student ke Peminatan Ini</h4>
+                          <span className="text-[10px] bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full font-bold ml-auto">{currentEnrollments.length} Terdaftar</span>
                         </div>
-                        <form onSubmit={handleAddStudentSubmit} className="space-y-3">
-                          <div className="space-y-1">
-                            <label className="text-xs font-bold text-brand-dark uppercase">Pilih Student ({selectedStudentIds.length} Terpilih)</label>
-                            <input
-                              type="text"
-                              value={studentSearch}
-                              onChange={(e) => setStudentSearch(e.target.value)}
-                              placeholder="Cari nama atau email..."
-                              className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white mb-2"
-                              disabled={isPending}
-                            />
-                            <div className="border border-gray-200 rounded-xl max-h-56 overflow-y-auto p-3 space-y-2 bg-white">
-                              {filteredStudents.length === 0 ? (
-                                <p className="text-xs text-gray-400 italic py-2 text-center">
-                                  {studentSearch ? 'Tidak ada student yang cocok.' : 'Semua student sudah terdaftar.'}
-                                </p>
-                              ) : (
-                                filteredStudents.map((s) => {
+                        <form onSubmit={handleAddStudentSubmit} className="space-y-2">
+                          <input
+                            type="text"
+                            value={studentSearch}
+                            onChange={(e) => setStudentSearch(e.target.value)}
+                            placeholder="Cari nama atau email student..."
+                            className="w-full p-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white"
+                            disabled={isPending}
+                          />
+                          <div className="border border-gray-200 rounded-xl max-h-44 overflow-y-auto bg-white">
+                            {filteredStudents.length === 0 ? (
+                              <p className="text-xs text-gray-400 italic py-4 text-center">
+                                {studentSearch ? 'Tidak ada yang cocok.' : 'Semua student sudah terdaftar di peminatan ini.'}
+                              </p>
+                            ) : (
+                              <div className="p-2 space-y-1">
+                                {filteredStudents.map((s) => {
                                   const isChecked = selectedStudentIds.includes(s.id)
                                   return (
                                     <label key={s.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm">
@@ -902,54 +1008,240 @@ export default function ClassManager({
                                         disabled={isPending}
                                       />
                                       <div className="min-w-0">
-                                        <p className="font-bold text-brand-dark truncate">{s.full_name || 'Tanpa Nama'}</p>
-                                        <p className="text-xs text-gray-500 truncate">{s.email}</p>
+                                        <p className="font-bold text-brand-dark truncate text-xs">{s.full_name || 'Tanpa Nama'}</p>
+                                        <p className="text-[10px] text-gray-400 truncate">{s.email}</p>
                                       </div>
                                     </label>
                                   )
-                                })
-                              )}
-                            </div>
+                                })}
+                              </div>
+                            )}
                           </div>
                           <button
                             type="submit"
                             disabled={isPending || selectedStudentIds.length === 0}
-                            className="w-full flex items-center justify-center gap-2 bg-brand-darkblue text-white py-3 rounded-xl text-xs font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-2 bg-brand-darkblue text-white py-2.5 rounded-xl text-xs font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
                           >
                             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                            Daftarkan Student
+                            Enroll {selectedStudentIds.length > 0 ? `${selectedStudentIds.length} ` : ''}Student
                           </button>
                         </form>
                       </div>
 
-                      {/* Right list */}
-                      <div className="lg:col-span-7 space-y-4">
-                        <h3 className="font-heading font-bold text-base text-brand-dark">Student Terdaftar</h3>
-                        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                          {currentEnrollments.length === 0 ? (
-                            <p className="text-sm text-gray-400 italic py-8 text-center bg-gray-50 rounded-2xl">Belum ada student di sub kelas ini.</p>
-                          ) : (
-                            currentEnrollments.map((item) => (
-                              <div key={item.id} className="flex items-center justify-between p-3.5 bg-white rounded-2xl border border-gray-100 hover:border-brand-blue/20 transition-colors">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                  <div className="w-10 h-10 bg-brand-cream text-brand-dark rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                    {item.profiles?.full_name?.[0] || 'S'}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="font-bold text-sm text-brand-dark truncate">{item.profiles?.full_name || 'Tanpa Nama'}</p>
-                                    <p className="text-xs text-gray-400 truncate">{item.profiles?.email}</p>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => setConfirmDeleteStudent({ isOpen: true, id: item.id })}
-                                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ))
+                      {/* STEP 2: Assign student ke mentor */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-brand-pink text-white rounded-full flex items-center justify-center text-[10px] font-black">2</div>
+                          <h4 className="font-bold text-sm text-brand-dark">Assign Student ke Mentor</h4>
+                          {unassignedStudents.length > 0 && (
+                            <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              {unassignedStudents.length} belum di-assign
+                            </span>
                           )}
                         </div>
+
+                        {currentMentors.length === 0 ? (
+                          <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5 text-center">
+                            <AlertTriangle className="w-8 h-8 text-orange-400 mx-auto mb-2" />
+                            <p className="text-sm font-bold text-orange-700">Belum ada mentor di peminatan ini</p>
+                            <p className="text-xs text-orange-500 mt-1">Assign mentor di tab "Assign Mentor" terlebih dahulu.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {/* Form assign: pilih mentor, lalu pilih student */}
+                            <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 space-y-3">
+                              <p className="text-[10px] font-bold text-brand-blue uppercase tracking-wider">Form Assign Student → Mentor</p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {/* Pilih Mentor */}
+                                <div>
+                                  <label className="text-[10px] font-bold text-brand-dark uppercase mb-1 block">Pilih Mentor</label>
+                                  <select
+                                    value={selectedMentorForStudents}
+                                    onChange={(e) => {
+                                      setSelectedMentorForStudents(e.target.value)
+                                      setSelectedStudentIdsForMentor([])
+                                      setStudentSearchForMentor('')
+                                    }}
+                                    className="w-full p-2.5 rounded-xl border border-gray-200 outline-none focus:border-brand-blue bg-white text-sm"
+                                    disabled={isPending}
+                                  >
+                                    <option value="">-- Pilih Mentor --</option>
+                                    {currentMentors.map(m => (
+                                      <option key={m.id} value={m.mentor_id}>
+                                        {m.profiles?.full_name || m.profiles?.email || 'Mentor'}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* Cari Student */}
+                                {selectedMentorForStudents && (
+                                  <div>
+                                    <label className="text-[10px] font-bold text-brand-dark uppercase mb-1 block">Cari Student</label>
+                                    <input
+                                      type="text"
+                                      value={studentSearchForMentor}
+                                      onChange={(e) => setStudentSearchForMentor(e.target.value)}
+                                      placeholder="Nama atau email..."
+                                      className="w-full p-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white"
+                                      disabled={isPending}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+
+                              {selectedMentorForStudents && (
+                                <form onSubmit={handleAssignStudentsToMentor} className="space-y-2">
+                                  <div className="border border-gray-200 rounded-xl max-h-40 overflow-y-auto bg-white">
+                                    {filteredStudentsForMentor.length === 0 ? (
+                                      <p className="text-xs text-gray-400 italic py-4 text-center">
+                                        {currentEnrollments.length === 0
+                                          ? 'Belum ada student enrolled di peminatan ini.'
+                                          : 'Semua student sudah di-assign ke mentor ini.'}
+                                      </p>
+                                    ) : (
+                                      <div className="p-2 space-y-1">
+                                        {filteredStudentsForMentor.map((e) => {
+                                          const isChecked = selectedStudentIdsForMentor.includes(e.student_id)
+                                          // Find if this student is already assigned to another mentor
+                                          const existingAssignment = currentMSAssignments.find(a => a.student_id === e.student_id)
+                                          const existingMentorData = existingAssignment
+                                            ? currentMentors.find(m => m.mentor_id === existingAssignment.mentor_id)
+                                            : null
+                                          return (
+                                            <label key={e.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                                              <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                onChange={(ev) => {
+                                                  if (ev.target.checked) {
+                                                    setSelectedStudentIdsForMentor([...selectedStudentIdsForMentor, e.student_id])
+                                                  } else {
+                                                    setSelectedStudentIdsForMentor(selectedStudentIdsForMentor.filter(id => id !== e.student_id))
+                                                  }
+                                                }}
+                                                className="rounded text-brand-blue focus:ring-brand-blue"
+                                                disabled={isPending}
+                                              />
+                                              <div className="min-w-0 flex-1">
+                                                <p className="font-bold text-brand-dark truncate text-xs">{e.profiles?.full_name || 'Tanpa Nama'}</p>
+                                                <p className="text-[10px] text-gray-400 truncate">{e.profiles?.email}</p>
+                                              </div>
+                                              {existingMentorData && (
+                                                <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">
+                                                  Di mentor lain
+                                                </span>
+                                              )}
+                                            </label>
+                                          )
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="submit"
+                                    disabled={isPending || selectedStudentIdsForMentor.length === 0}
+                                    className="w-full flex items-center justify-center gap-2 bg-brand-pink text-white py-2.5 rounded-xl text-xs font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
+                                  >
+                                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
+                                    Assign {selectedStudentIdsForMentor.length > 0 ? `${selectedStudentIdsForMentor.length} ` : ''}Student ke Mentor Ini
+                                  </button>
+                                </form>
+                              )}
+                            </div>
+
+                            {/* List mentor + student mereka */}
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold text-brand-gray uppercase tracking-wider px-1">Daftar Mentor & Student Mereka</p>
+                              {currentMentors.map(mentor => {
+                                const mentorStudents = getStudentsForMentor(mentor.mentor_id)
+                                const isExpanded = expandedMentors.has(mentor.mentor_id)
+                                return (
+                                  <div key={mentor.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                                    <button
+                                      onClick={() => toggleMentorExpand(mentor.mentor_id)}
+                                      className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+                                    >
+                                      <div className="w-9 h-9 bg-blue-50 text-brand-blue rounded-xl flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                        {mentor.profiles?.full_name?.[0] || 'M'}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-sm text-brand-dark truncate">{mentor.profiles?.full_name || 'Tanpa Nama'}</p>
+                                        <p className="text-[10px] text-gray-400 truncate">{mentor.profiles?.email}</p>
+                                      </div>
+                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${mentorStudents.length === 0 ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-700'}`}>
+                                          {mentorStudents.length} Student
+                                        </span>
+                                        {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                                      </div>
+                                    </button>
+
+                                    {isExpanded && (
+                                      <div className="border-t border-gray-50 divide-y divide-gray-50">
+                                        {mentorStudents.length === 0 ? (
+                                          <p className="text-xs text-gray-400 italic py-4 text-center">Belum ada student di-assign ke mentor ini.</p>
+                                        ) : (
+                                          mentorStudents.map(item => (
+                                            <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50/50 transition-colors">
+                                              <div className="flex items-center gap-3 overflow-hidden">
+                                                <div className="w-8 h-8 bg-brand-cream text-brand-dark rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                                                  {item.profiles?.full_name?.[0] || 'S'}
+                                                </div>
+                                                <div className="min-w-0">
+                                                  <p className="font-bold text-xs text-brand-dark truncate">{item.profiles?.full_name || 'Tanpa Nama'}</p>
+                                                  <p className="text-[10px] text-gray-400 truncate">{item.profiles?.email}</p>
+                                                </div>
+                                              </div>
+                                              <button
+                                                onClick={() => setConfirmDeleteMentorStudentAssignment({ isOpen: true, id: item.assignmentId })}
+                                                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                                title="Unassign dari mentor ini"
+                                              >
+                                                <Trash2 className="w-3 h-3" />
+                                              </button>
+                                            </div>
+                                          ))
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+
+                            {/* Student yang belum di-assign ke mentor mana pun */}
+                            {unassignedStudents.length > 0 && (
+                              <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
+                                <p className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1">
+                                  <AlertTriangle className="w-4 h-4" />
+                                  Student Belum Di-assign ke Mentor ({unassignedStudents.length})
+                                </p>
+                                <div className="space-y-1.5">
+                                  {unassignedStudents.map(e => (
+                                    <div key={e.id} className="flex items-center gap-2 bg-white rounded-xl p-2.5">
+                                      <div className="w-7 h-7 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-[10px]">
+                                        {e.profiles?.full_name?.[0] || 'S'}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-xs text-brand-dark truncate">{e.profiles?.full_name || 'Tanpa Nama'}</p>
+                                        <p className="text-[10px] text-gray-400 truncate">{e.profiles?.email}</p>
+                                      </div>
+                                      <button
+                                        onClick={() => setConfirmDeleteStudent({ isOpen: true, id: e.id })}
+                                        className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                        title="Keluarkan dari peminatan"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1212,6 +1504,19 @@ export default function ClassManager({
           }}
           title="Hapus File Materi"
           message="Apakah kamu yakin ingin menghapus file ini dari sub kelas secara permanen?"
+          variant="danger"
+          isLoading={isPending}
+        />
+
+        <ConfirmModal
+          isOpen={confirmDeleteMentorStudentAssignment.isOpen}
+          onClose={() => setConfirmDeleteMentorStudentAssignment({ isOpen: false, id: '' })}
+          onConfirm={() => {
+            handleRemoveStudentFromMentor(confirmDeleteMentorStudentAssignment.id)
+            setConfirmDeleteMentorStudentAssignment({ isOpen: false, id: '' })
+          }}
+          title="Hapus Assignment Mentor-Student"
+          message="Apakah kamu yakin ingin melepaskan student ini dari mentor? Student akan menjadi unassigned."
           variant="danger"
           isLoading={isPending}
         />

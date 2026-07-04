@@ -91,6 +91,12 @@ export default async function AdminClassDetailPage({
     .select('id, full_name, email')
     .eq('role', 'student')
 
+  // 5. Fetch Mentor-Student Assignments for this class
+  const { data: mentorStudentAssignments } = await supabase
+    .from('mentor_student_assignments')
+    .select('id, mentor_id, student_id, class_id, sub_class_id, created_at')
+    .eq('class_id', classId)
+
   return (
     <div className="space-y-8">
       {/* Navigation Header */}
@@ -112,7 +118,8 @@ export default async function AdminClassDetailPage({
         kelas={kelas} 
         subClasses={(subClasses as unknown as SubClass[]) || []}
         allStudents={allStudents || []} 
-        allMentors={allMentors || []} 
+        allMentors={allMentors || []}
+        mentorStudentAssignments={(mentorStudentAssignments as any) || []}
       />
     </div>
   )

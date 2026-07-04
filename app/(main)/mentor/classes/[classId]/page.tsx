@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
-import { ArrowLeft, Users, Mail, Calendar, Video, CheckCircle } from "lucide-react"
+import { ArrowLeft, Users, Mail, Calendar, Video, CheckCircle, UserCheck } from "lucide-react"
 import SessionForm from "./SessionForm"
 import MentorManageResources from "./MentorManageResources"
 import DeleteSessionButton from "./DeleteSessionButton"
@@ -15,7 +15,7 @@ type Resource = {
   id: string; title: string; file_url: string; file_path: string; created_at: string;
 }
 
-type EnrolledStudent = {
+type AssignedStudent = {
   profiles: { full_name: string | null; email: string | null } | null;
 }
 
@@ -29,6 +29,9 @@ export default async function MentorClassDetailPage({
   const { classId } = await params
   const { subClassId } = await searchParams
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return null
 
   // 1. Detail kelas
   const { data: kelas } = await supabase
@@ -36,6 +39,8 @@ export default async function MentorClassDetailPage({
     .select('title, level')
     .eq('id', classId)
     .single()
+
+  const isPharmacamp = kelas?.title?.startsWith('Pharmacamp')
 
   // Fetch subclass if subClassId is present
   let subClassData = null
@@ -78,21 +83,30 @@ export default async function MentorClassDetailPage({
   const { data: rawResources } = await resourcesQuery.order('created_at', { ascending: false })
   const resources = (rawResources as Resource[]) || []
 
-  // 4. Siswa terdaftar
-  const studentsQuery = supabase
-    .from('enrollments')
-    .select('profiles:student_id ( full_name, email )')
-    .eq('class_id', classId)
-    .eq('status', 'active')
-  
-  if (subClassId) {
-    studentsQuery.eq('sub_class_id', subClassId)
-  } else {
-    studentsQuery.is('sub_class_id', null)
-  }
+  // 4. Siswa — logic berbeda untuk Pharmacamp vs non-Pharmacamp
+  let students: AssignedStudent[] = []
 
-  const { data: rawEnrollments } = await studentsQuery
-  const students = (rawEnrollments as unknown as EnrolledStudent[]) || []
+  if (isPharmacamp) {
+    // Pharmacamp: tampilkan semua student enrolled di kelas
+    const { data: rawEnrollments } = await supabase
+      .from('enrollments')
+      .select('profiles:student_id ( full_name, email )')
+      .eq('class_id', classId)
+      .eq('status', 'active')
+      .is('sub_class_id', null)
+    students = (rawEnrollments as unknown as AssignedStudent[]) || []
+  } else {
+    // Non-Pharmacamp: tampilkan HANYA student yang di-assign ke mentor ini di sub_class ini
+    if (subClassId) {
+      const { data: rawAssignments } = await supabase
+        .from('mentor_student_assignments')
+        .select('profiles:student_id ( full_name, email )')
+        .eq('mentor_id', user.id)
+        .eq('class_id', classId)
+        .eq('sub_class_id', subClassId)
+      students = (rawAssignments as unknown as AssignedStudent[]) || []
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -183,7 +197,10 @@ export default async function MentorClassDetailPage({
           <section className="space-y-4">
             <div className="flex items-center justify-between px-2">
               <h3 className="font-heading font-bold text-lg text-brand-dark flex items-center gap-2">
-                <Users className="w-5 h-5 text-brand-pink" /> Student Terdaftar
+                {isPharmacamp 
+                  ? <><Users className="w-5 h-5 text-brand-pink" /> Student Terdaftar</>
+                  : <><UserCheck className="w-5 h-5 text-green-600" /> Student Saya</>
+                }
               </h3>
               <span className="text-[10px] bg-brand-pink/10 text-brand-pink px-2 py-1 rounded-md font-bold">{students.length} Orang</span>
             </div>
@@ -204,7 +221,14 @@ export default async function MentorClassDetailPage({
                 ))}
                 {students.length === 0 && (
                   <div className="p-10 text-center">
-                    <p className="text-xs text-gray-400 italic">Belum ada student terdaftar.</p>
+                    {isPharmacamp 
+                      ? <p className="text-xs text-gray-400 italic">Belum ada student terdaftar.</p>
+                      : <>
+                          <UserCheck className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                          <p className="text-xs text-gray-400 italic font-bold">Belum ada student yang di-assign ke kamu.</p>
+                          <p className="text-[10px] text-gray-300 mt-1">Hubungi admin untuk assign student.</p>
+                        </>
+                    }
                   </div>
                 )}
               </div>

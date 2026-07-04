@@ -54,6 +54,32 @@ export default async function StudentClassDetailPage({
     .eq('id', classId)
     .single()
 
+  // 2b. Ambil Detail Sub Class & Mentor jika ada
+  let subClass = null
+  let assignedMentor = null
+  if (enrollment.sub_class_id) {
+    const { data: subClassData } = await supabase
+      .from('sub_classes')
+      .select('title')
+      .eq('id', enrollment.sub_class_id)
+      .single()
+    subClass = subClassData
+
+    const { data: mentorAssignment } = await supabase
+      .from('mentor_student_assignments')
+      .select(`
+        profiles:mentor_id ( full_name, email )
+      `)
+      .eq('student_id', user?.id)
+      .eq('class_id', classId)
+      .eq('sub_class_id', enrollment.sub_class_id)
+      .maybeSingle()
+    
+    if (mentorAssignment) {
+      assignedMentor = (mentorAssignment as any).profiles
+    }
+  }
+
   // 3. Ambil Resources (E-Book)
   const resourcesQuery = supabase
     .from('class_resources')
@@ -104,6 +130,8 @@ export default async function StudentClassDetailPage({
   const attendanceMap: Record<string, string> = {}
   myRecords?.forEach(r => { attendanceMap[r.session_id] = r.status })
 
+  const isPharmacamp = kelas?.title?.startsWith('Pharmacamp')
+
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
       {/* Header Area */}
@@ -117,10 +145,31 @@ export default async function StudentClassDetailPage({
          
          <div className="bg-brand-darkblue p-10 rounded-[40px] shadow-xl relative overflow-hidden text-white">
             <div className="relative z-10">
-                <span className="bg-brand-pink text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-4 inline-block shadow-lg">
-                    {kelas?.level}
-                </span>
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <span className="bg-brand-pink text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-lg">
+                      {kelas?.level}
+                  </span>
+                  {!isPharmacamp && subClass && (
+                    <span className="bg-brand-blue text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                        Peminatan: {subClass.title}
+                    </span>
+                  )}
+                </div>
+                
                 <h1 className="font-heading font-bold text-4xl mb-4 leading-tight text-brand-cream">{kelas?.title}</h1>
+                
+                {!isPharmacamp && (
+                  <div className="flex items-center gap-3 mb-6 bg-white/10 w-fit px-4 py-2 rounded-2xl border border-white/10 backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-brand-yellow rounded-full flex items-center justify-center text-xs font-bold text-brand-dark">
+                      {(assignedMentor?.full_name || 'T')[0]}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] text-blue-200 font-bold uppercase tracking-wider">Mentor Pendamping</p>
+                      <p className="text-sm font-bold text-brand-cream">{assignedMentor?.full_name || 'Tim Pengajar'}</p>
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-blue-100 leading-relaxed max-w-3xl text-base font-medium">
                     {kelas?.description || "Selamat belajar! Silakan unduh materi dan cek jadwal di bawah ini untuk memulai perjalanan belajarmu."}
                 </p>

@@ -313,3 +313,112 @@ export async function deleteSubClass(id: string): Promise<ActionState> {
   revalidatePath('/admin/classes', 'layout')
   return { success: "Sub kelas berhasil dihapus!" }
 }
+
+// --- MENTOR-STUDENT ASSIGNMENT ACTIONS ---
+
+// Assign student ke mentor di dalam sub kelas
+export async function assignStudentToMentor(
+  mentorId: string,
+  studentId: string,
+  classId: string,
+  subClassId: string
+): Promise<ActionState> {
+  const supabase = await createClient()
+
+  if (!mentorId || !studentId || !classId || !subClassId) {
+    return { error: "Data tidak lengkap!" }
+  }
+
+  const { error } = await supabase.from('mentor_student_assignments').insert({
+    mentor_id: mentorId,
+    student_id: studentId,
+    class_id: classId,
+    sub_class_id: subClassId,
+  })
+
+  if (error) {
+    if (error.code === '23505') return { error: "Student ini sudah di-assign ke mentor tersebut." }
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: "Student berhasil di-assign ke mentor!" }
+}
+
+// Assign multiple students ke mentor di dalam sub kelas
+export async function assignMultipleStudentsToMentor(
+  mentorId: string,
+  studentIds: string[],
+  classId: string,
+  subClassId: string
+): Promise<ActionState> {
+  const supabase = await createClient()
+
+  if (!mentorId || !studentIds.length || !classId || !subClassId) {
+    return { error: "Data tidak lengkap!" }
+  }
+
+  const rows = studentIds.map(studentId => ({
+    mentor_id: mentorId,
+    student_id: studentId,
+    class_id: classId,
+    sub_class_id: subClassId,
+  }))
+
+  const { error } = await supabase.from('mentor_student_assignments').insert(rows)
+
+  if (error) {
+    if (error.code === '23505') return { error: "Salah satu student sudah di-assign ke mentor ini." }
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: `${studentIds.length} student berhasil di-assign!` }
+}
+
+// Hapus assignment mentor-student
+export async function removeStudentFromMentor(assignmentId: string): Promise<ActionState> {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('mentor_student_assignments')
+    .delete()
+    .eq('id', assignmentId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: "Assignment dihapus." }
+}
+
+// Pindahkan student dari satu mentor ke mentor lain dalam sub kelas yang sama
+export async function reassignStudentMentor(
+  oldAssignmentId: string,
+  newMentorId: string,
+  studentId: string,
+  classId: string,
+  subClassId: string
+): Promise<ActionState> {
+  const supabase = await createClient()
+
+  // Hapus lama
+  const { error: deleteError } = await supabase
+    .from('mentor_student_assignments')
+    .delete()
+    .eq('id', oldAssignmentId)
+
+  if (deleteError) return { error: deleteError.message }
+
+  // Insert baru
+  const { error: insertError } = await supabase.from('mentor_student_assignments').insert({
+    mentor_id: newMentorId,
+    student_id: studentId,
+    class_id: classId,
+    sub_class_id: subClassId,
+  })
+
+  if (insertError) return { error: insertError.message }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: "Student berhasil dipindahkan ke mentor lain!" }
+}

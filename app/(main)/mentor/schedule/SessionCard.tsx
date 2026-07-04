@@ -12,9 +12,8 @@ type Session = {
   title: string
   date_time: string
   mentor_status: string | null
-  batches: {
-    name: string
-    classes: { title: string } | null
+  classes: {
+    title: string
   } | null
 }
 
@@ -41,10 +40,9 @@ export default function SessionCard({ session }: { session: Session }) {
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
               <span className="text-[10px] font-bold text-brand-blue uppercase tracking-widest block mb-1">
-                  {session.batches?.classes?.title || 'Kelas'}
+                  {session.classes?.title || 'Kelas'}
               </span>
               <h3 className="font-bold text-brand-dark leading-tight">{session.title}</h3>
-              <p className="text-[10px] text-gray-400 mt-1 uppercase font-semibold">{session.batches?.name}</p>
           </div>
         </div>
 

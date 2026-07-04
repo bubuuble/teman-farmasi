@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Calendar, CheckCircle, Lock, Video, X, ExternalLink } from 'lucide-react'
+import { Calendar, CheckCircle, Lock, Video, X, ExternalLink, MapPin } from 'lucide-react'
 import { studentCheckIn } from './actions'
 import ConfirmModal from '@/app/components/ConfirmModal'
 
@@ -97,14 +97,28 @@ export default function SessionCard({
                 <div className="p-10 space-y-8">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Jadwal Sesi</label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">
+                                {session.batches?.classes?.title?.startsWith('Pharmacamp') ? 'Jadwal Hari' : 'Jadwal Sesi'}
+                            </label>
                             <div className="flex items-center gap-2 font-bold text-brand-dark text-sm">
                                 <Calendar className="w-4 h-4 text-brand-pink" /> {dateStr}
                             </div>
                         </div>
                     </div>
 
-                    {session.zoom_link && session.zoom_link.trim() !== "" ? (
+                    {session.batches?.classes?.title?.startsWith('Pharmacamp') ? (
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase px-1">Lokasi Kegiatan (Offline)</label>
+                            <a 
+                                href={session.zoom_link || 'https://maps.app.goo.gl/4VKwJoh5JXUHKdwY7'} 
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-full bg-brand-darkblue text-white p-5 rounded-3xl font-bold flex items-center justify-center gap-3 hover:bg-brand-dark transition-all shadow-xl shadow-brand-darkblue/20 text-center"
+                            >
+                                <MapPin className="w-6 h-6 flex-shrink-0" /> Buka Lokasi: Mini Lab Teman Farmasi (Gmaps)
+                            </a>
+                        </div>
+                    ) : session.zoom_link && session.zoom_link.trim() !== "" ? (
                         <div className="space-y-3">
                             <label className="text-[10px] font-bold text-gray-400 uppercase px-1">Link Pertemuan Online</label>
                             <a 

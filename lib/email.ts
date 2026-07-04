@@ -41,29 +41,49 @@ export async function sendNewSessionNotification({
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://temanfarmasi.com'
 
+  const isPharmacamp = classTitle.startsWith('Pharmacamp')
+  const mapLink = zoomLink || 'https://maps.app.goo.gl/4VKwJoh5JXUHKdwY7'
+  const locationName = 'Mini Lab Teman Farmasi'
+
   let sessionNumberRow = ''
   if (sessionNumber) {
-    sessionNumberRow = `
-              <tr>
-                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Pertemuan</td>
-                <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: Ke-${sessionNumber} dari ${totalSessions || '-'} Pertemuan</td>
-              </tr>
-    `
+    if (isPharmacamp) {
+      sessionNumberRow = `
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Hari</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: Ke-${sessionNumber} dari ${totalSessions || '-'} Hari</td>
+                </tr>
+      `
+    } else {
+      sessionNumberRow = `
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Pertemuan</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: Ke-${sessionNumber} dari ${totalSessions || '-'} Pertemuan</td>
+                </tr>
+      `
+    }
   }
 
   let zoomRow = ''
-  if (zoomLink) {
+  if (isPharmacamp || zoomLink) {
+    const label = isPharmacamp ? 'Lokasi (Offline)' : 'Link Sesi'
+    const value = isPharmacamp ? locationName : zoomLink
+    const linkUrl = isPharmacamp ? mapLink : zoomLink
     zoomRow = `
               <tr>
-                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Link Sesi</td>
-                <td style="padding: 6px 0; color: #0d9488; font-weight: 600; vertical-align: top;">: <a href="${zoomLink}" style="color: #0d9488; text-decoration: underline;">${zoomLink}</a></td>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">${label}</td>
+                <td style="padding: 6px 0; color: #0d9488; font-weight: 600; vertical-align: top;">: <a href="${linkUrl}" style="color: #0d9488; text-decoration: underline;">${value}</a></td>
               </tr>
     `
   }
 
   const introText = isRevision
-    ? 'Mentor Anda baru saja memperbarui detail jadwal untuk sesi belajar berikut. Silakan periksa kembali detail terbarunya:'
-    : 'Mentor Anda baru saja menjadwalkan sesi belajar baru untuk kelas yang Anda ikuti. Berikut adalah detail jadwal sesinya:'
+    ? (isPharmacamp
+        ? 'Mentor Anda baru saja memperbarui detail jadwal untuk kegiatan berikut. Silakan periksa kembali detail terbarunya:'
+        : 'Mentor Anda baru saja memperbarui detail jadwal untuk sesi belajar berikut. Silakan periksa kembali detail terbarunya:')
+    : (isPharmacamp
+        ? 'Mentor Anda baru saja menjadwalkan hari kegiatan baru untuk kelas yang Anda ikuti. Berikut adalah detail jadwal kegiatannya:'
+        : 'Mentor Anda baru saja menjadwalkan sesi belajar baru untuk kelas yang Anda ikuti. Berikut adalah detail jadwal sesinya:')
 
   const htmlContent = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
@@ -99,7 +119,10 @@ export async function sendNewSessionNotification({
           </div>
           
           <p style="font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 24px;">
-            Silakan masuk ke Dashboard Teman Farmasi untuk mengakses tautan pertemuan (Zoom/Meet) dan melakukan presensi saat kelas berlangsung.
+            ${isPharmacamp
+              ? 'Silakan masuk ke Dashboard Teman Farmasi untuk mengakses lokasi detail (Google Maps) dan melakukan presensi saat kegiatan berlangsung.'
+              : 'Silakan masuk ke Dashboard Teman Farmasi untuk mengakses tautan pertemuan (Zoom/Meet) dan melakukan presensi saat kelas berlangsung.'
+            }
           </p>
           
           <div style="text-align: center; margin-bottom: 24px;">
@@ -108,11 +131,11 @@ export async function sendNewSessionNotification({
             >
               Buka Dashboard Kelas
             </a>
-            ${zoomLink ? `
-            <a href="${zoomLink}" 
+            ${(isPharmacamp || zoomLink) ? `
+            <a href="${isPharmacamp ? mapLink : zoomLink}" 
                style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block; margin-bottom: 8px;"
             >
-              Gabung Pertemuan
+              ${isPharmacamp ? 'Buka Google Maps' : 'Gabung Pertemuan'}
             </a>
             ` : ''}
           </div>

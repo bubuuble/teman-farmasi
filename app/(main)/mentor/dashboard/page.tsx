@@ -9,11 +9,8 @@ type NextSessionData = {
   title: string
   date_time: string
   zoom_link: string | null
-  batches: {
-    name: string
-    classes: {
-      title: string
-    } | null
+  classes: {
+    title: string
   } | null
 }
 
@@ -55,9 +52,9 @@ export default async function MentorDashboard() {
         .from('attendance_sessions')
         .select(`
             id, title, date_time, zoom_link,
-            batches!inner ( name, classes ( title ) )
+            classes!inner ( title )
         `)
-        .in('batches.class_id', myClassIds)
+        .in('class_id', myClassIds)
         .gte('date_time', today.toISOString())
         .order('date_time', { ascending: true })
         .limit(1)
@@ -117,7 +114,7 @@ export default async function MentorDashboard() {
                         <div>
                             <h4 className="text-2xl font-bold text-brand-dark mb-1">{nextSession.title}</h4>
                             <p className="text-brand-gray font-medium">
-                                {nextSession.batches?.classes?.title} • {nextSession.batches?.name}
+                                {nextSession.classes?.title} • {nextSession.title}
                             </p>
                         </div>
                         

@@ -416,7 +416,10 @@ export default function ClassManager({
               <div className="space-y-6">
                 <div>
                   <span className="px-2.5 py-1 bg-brand-blue/10 text-brand-blue text-[10px] font-bold rounded-full uppercase tracking-wider">
-                    {kelas.level ? `${kelas.level}x Pertemuan` : '-'}
+                    {kelas.level 
+                      ? (kelas.title?.startsWith('Pharmacamp') ? `${kelas.level} Hari` : `${kelas.level}x Pertemuan`) 
+                      : '-'
+                    }
                   </span>
                   <h2 className="font-heading font-bold text-2xl text-brand-dark mt-3">{kelas.title}</h2>
                   <p className="text-xl font-extrabold text-brand-dark mt-2" suppressHydrationWarning>
@@ -496,7 +499,9 @@ export default function ClassManager({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-dark uppercase">Jumlah Pertemuan</label>
+                    <label className="text-xs font-bold text-brand-dark uppercase">
+                      {kelas.title?.startsWith('Pharmacamp') ? 'Jumlah Hari' : 'Jumlah Pertemuan'}
+                    </label>
                     <input
                       type="number"
                       value={editLevel}

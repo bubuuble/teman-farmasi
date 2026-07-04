@@ -9,9 +9,8 @@ type SessionData = {
   title: string
   date_time: string
   mentor_status: string | null
-  batches: {
-    name: string
-    classes: { title: string } | null
+  classes: {
+    title: string
   } | null
 }
 
@@ -21,17 +20,24 @@ export default async function MentorSchedulePage() {
 
   if (!user) return null
 
-  // Ambil semua sesi dari batch yang diajar mentor ini
+  // Ambil kelas yang diampu mentor
+  const { data: myClasses } = await supabase
+    .from('class_mentors')
+    .select('class_id')
+    .eq('mentor_id', user.id)
+
+  const classIds = myClasses?.map(c => c.class_id) || []
+
+  // Ambil semua sesi dari kelas yang diajar mentor ini
   const { data: rawSessions } = await supabase
     .from('attendance_sessions')
     .select(`
         id, title, date_time, mentor_status,
-        batches!inner (
-            name,
-            classes ( title )
+        classes!inner (
+            title
         )
     `)
-    .eq('batches.mentor_id', user.id)
+    .in('class_id', classIds)
     .order('date_time', { ascending: true })
 
   const sessions = (rawSessions as unknown as SessionData[]) || []

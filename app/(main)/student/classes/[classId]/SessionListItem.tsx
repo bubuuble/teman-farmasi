@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Calendar, Clock, Video, ExternalLink, X, CheckCircle, Lock } from 'lucide-react'
+import { Calendar, Clock, Video, ExternalLink, X, CheckCircle, Lock, MapPin } from 'lucide-react'
 import { studentCheckIn } from '../../schedule/actions'
 import ConfirmModal from '@/app/components/ConfirmModal'
 
@@ -92,7 +92,7 @@ export default function SessionListItem({
                 </div>
 
                 {/* Modal Body */}
-                <div className="p-10 space-y-8">
+                        <div className="p-10 space-y-8">
                     {/* Grid Waktu */}
                     <div className="grid grid-cols-2 gap-6">
                         <div className="bg-brand-cream/30 p-6 rounded-[32px] border border-brand-cream shadow-sm">
@@ -108,8 +108,28 @@ export default function SessionListItem({
 
                     {/* Link Zoom */}
                     <div className="space-y-4">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase px-2 tracking-widest">Link Pertemuan</label>
-                        {session.zoom_link ? (
+                        <label className="text-[10px] font-bold text-gray-400 uppercase px-2 tracking-widest">
+                            {classTitle?.startsWith('Pharmacamp') ? 'Lokasi Kegiatan (Offline)' : 'Link Pertemuan'}
+                        </label>
+                        {classTitle?.startsWith('Pharmacamp') ? (
+                            <a 
+                                href={session.zoom_link || 'https://maps.app.goo.gl/4VKwJoh5JXUHKdwY7'} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="flex items-center justify-between p-6 bg-brand-yellow text-brand-dark rounded-[32px] hover:bg-brand-dark hover:text-white transition-all group shadow-xl shadow-brand-yellow/10"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                                        <MapPin className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-base">Mini Lab Teman Farmasi</p>
+                                        <p className="text-[10px] font-bold opacity-70 uppercase tracking-wider">Klik untuk membuka Google Maps</p>
+                                    </div>
+                                </div>
+                                <ExternalLink className="w-5 h-5" />
+                            </a>
+                        ) : session.zoom_link ? (
                             <a 
                                 href={session.zoom_link} 
                                 target="_blank" 

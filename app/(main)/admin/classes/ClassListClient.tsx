@@ -110,7 +110,14 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
       'Lainnya': []
     }
 
-    initialClasses.forEach((item) => {
+    // Urutkan kelas berdasarkan jumlah pertemuan (level) terkecil - terbesar
+    const sortedClasses = [...initialClasses].sort((a, b) => {
+      const levelA = Number(a.level) || 0
+      const levelB = Number(b.level) || 0
+      return levelA - levelB
+    })
+
+    sortedClasses.forEach((item) => {
       const category = getCategoryOfClass(item.title)
       if (groups[category]) {
         groups[category].push(item)
@@ -219,7 +226,10 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
                           <BookOpen className="w-6 h-6" />
                         </div>
                         <span className="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-500 rounded-full uppercase tracking-wider">
-                          {item.level ? `${item.level}x Pertemuan` : '-'}
+                          {item.level
+                            ? (category === 'Pharmacamp' ? `${item.level} Hari` : `${item.level}x Pertemuan`)
+                            : '-'
+                          }
                         </span>
                       </div>
 

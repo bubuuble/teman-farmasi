@@ -30,7 +30,7 @@ export default async function StudentClassDetailPage({
   // 1. Cek Enrollment (Security)
   const { data: enrollment } = await supabase
     .from('enrollments')
-    .select('id')
+    .select('id, sub_class_id')
     .eq('student_id', user?.id)
     .eq('class_id', classId)
     .eq('status', 'active')
@@ -55,23 +55,45 @@ export default async function StudentClassDetailPage({
     .single()
 
   // 3. Ambil Resources (E-Book)
-  const { data: rawResources } = await supabase
+  const resourcesQuery = supabase
     .from('class_resources')
     .select('id, title, file_url, created_at')
     .eq('class_id', classId)
-    .order('created_at', { ascending: false })
+  if (enrollment.sub_class_id) {
+    resourcesQuery.eq('sub_class_id', enrollment.sub_class_id)
+  } else {
+    resourcesQuery.is('sub_class_id', null)
+  }
+  const { data: rawResources } = await resourcesQuery.order('created_at', { ascending: false })
   const resources = (rawResources as unknown as Resource[]) || []
 
-  // 4. Ambil Batch & Sesi
-  const { data: rawBatches } = await supabase
-    .from('batches')
-    .select(`
-        id, name, start_date, end_date,
-        attendance_sessions ( id, title, date_time, zoom_link, is_open )
-    `)
+  // 4. Ambil Sesi langsung dari class_id & sub_class_id
+  const sessionsQuery = supabase
+    .from('attendance_sessions')
+    .select('id, title, date_time, zoom_link, is_open')
     .eq('class_id', classId)
-    .order('created_at', { ascending: false })
-  const batches = (rawBatches as unknown as Batch[]) || []
+  
+  if (enrollment.sub_class_id) {
+    sessionsQuery.eq('sub_class_id', enrollment.sub_class_id)
+  } else {
+    sessionsQuery.is('sub_class_id', null)
+  }
+
+  const { data: rawSessions } = await sessionsQuery.order('date_time', { ascending: true })
+  const sessions = (rawSessions as Session[]) || []
+
+  // Construct a virtual batch for UI display compatibility
+  const batches: Batch[] = sessions.length > 0 ? [
+    {
+      id: 'default-batch',
+      name: enrollment.sub_class_id 
+        ? `Sesi Peminatan` 
+        : `Sesi Program Utama`,
+      start_date: sessions[0]?.date_time || new Date().toISOString(),
+      end_date: sessions[sessions.length - 1]?.date_time || new Date().toISOString(),
+      attendance_sessions: sessions
+    }
+  ] : []
 
   // 5. Ambil Data Kehadiran Siswa
   const { data: myRecords } = await supabase
@@ -81,11 +103,6 @@ export default async function StudentClassDetailPage({
   
   const attendanceMap: Record<string, string> = {}
   myRecords?.forEach(r => { attendanceMap[r.session_id] = r.status })
-
-  // Sort sesi berdasarkan waktu
-  batches?.forEach(b => {
-      b.attendance_sessions?.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
-  })
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">

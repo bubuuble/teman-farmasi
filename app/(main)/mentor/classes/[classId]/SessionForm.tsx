@@ -15,9 +15,11 @@ type SessionData = {
 
 export default function SessionForm({ 
   classId, 
+  subClassId,
   existingData 
 }: { 
   classId: string,
+  subClassId?: string | null,
   existingData?: SessionData 
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -68,6 +70,7 @@ export default function SessionForm({
 
             <form action={formAction} className="space-y-4">
               <input type="hidden" name="classId" value={classId} />
+              {subClassId && <input type="hidden" name="subClassId" value={subClassId} />}
               
               {existingData && (
                  <input type="hidden" name="sessionId" value={existingData.id} />

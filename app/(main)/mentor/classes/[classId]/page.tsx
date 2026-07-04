@@ -21,10 +21,13 @@ type EnrolledStudent = {
 
 export default async function MentorClassDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ classId: string }>
+  searchParams: Promise<{ subClassId?: string }>
 }) {
   const { classId } = await params
+  const { subClassId } = await searchParams
   const supabase = await createClient()
 
   // 1. Detail kelas
@@ -34,31 +37,61 @@ export default async function MentorClassDetailPage({
     .eq('id', classId)
     .single()
 
-  // 2. Sesi langsung dari class_id
-  const { data: rawSessions } = await supabase
+  // Fetch subclass if subClassId is present
+  let subClassData = null
+  if (subClassId) {
+    const { data } = await supabase
+      .from('sub_classes')
+      .select('id, title')
+      .eq('id', subClassId)
+      .single()
+    subClassData = data
+  }
+
+  // 2. Sesi langsung dari class_id & subClassId
+  const sessionsQuery = supabase
     .from('attendance_sessions')
     .select('id, title, date_time, zoom_link, mentor_status')
     .eq('class_id', classId)
-    .order('date_time', { ascending: true })
+  
+  if (subClassId) {
+    sessionsQuery.eq('sub_class_id', subClassId)
+  } else {
+    sessionsQuery.is('sub_class_id', null)
+  }
 
+  const { data: rawSessions } = await sessionsQuery.order('date_time', { ascending: true })
   const sessions = (rawSessions as Session[]) || []
 
   // 3. E-Book / Materi
-  const { data: rawResources } = await supabase
+  const resourcesQuery = supabase
     .from('class_resources')
     .select('id, title, file_url, file_path, created_at')
     .eq('class_id', classId)
-    .order('created_at', { ascending: false })
+  
+  if (subClassId) {
+    resourcesQuery.eq('sub_class_id', subClassId)
+  } else {
+    resourcesQuery.is('sub_class_id', null)
+  }
 
+  const { data: rawResources } = await resourcesQuery.order('created_at', { ascending: false })
   const resources = (rawResources as Resource[]) || []
 
   // 4. Siswa terdaftar
-  const { data: rawEnrollments } = await supabase
+  const studentsQuery = supabase
     .from('enrollments')
     .select('profiles:student_id ( full_name, email )')
     .eq('class_id', classId)
     .eq('status', 'active')
+  
+  if (subClassId) {
+    studentsQuery.eq('sub_class_id', subClassId)
+  } else {
+    studentsQuery.is('sub_class_id', null)
+  }
 
+  const { data: rawEnrollments } = await studentsQuery
   const students = (rawEnrollments as unknown as EnrolledStudent[]) || []
 
   return (
@@ -73,6 +106,11 @@ export default async function MentorClassDetailPage({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="font-heading font-bold text-2xl text-brand-dark">{kelas?.title}</h1>
+              {subClassData && (
+                <span className="bg-brand-pink/10 text-brand-pink text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                  Peminatan: {subClassData.title}
+                </span>
+              )}
               <span className="bg-brand-blue/10 text-brand-blue text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                 {kelas?.level}
               </span>
@@ -80,7 +118,7 @@ export default async function MentorClassDetailPage({
             <p className="text-brand-gray text-xs">Kelola jadwal sesi dan materi kelas.</p>
           </div>
         </div>
-        <SessionForm classId={classId} />
+        <SessionForm classId={classId} subClassId={subClassId} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -127,7 +165,7 @@ export default async function MentorClassDetailPage({
                       <AbsenButton sessionId={session.id} classId={classId} />
                     )}
                     <div className="flex items-center gap-1 pl-2 border-l border-gray-200">
-                      <SessionForm classId={classId} existingData={session} />
+                      <SessionForm classId={classId} subClassId={subClassId} existingData={session} />
                       <DeleteSessionButton sessionId={session.id} classId={classId} />
                     </div>
                   </div>
@@ -140,7 +178,7 @@ export default async function MentorClassDetailPage({
         {/* KOLOM KANAN: MATERI & SISWA */}
         <div className="space-y-8">
 
-          <MentorManageResources classId={classId} resources={resources} />
+          <MentorManageResources classId={classId} subClassId={subClassId} resources={resources} />
 
           <section className="space-y-4">
             <div className="flex items-center justify-between px-2">

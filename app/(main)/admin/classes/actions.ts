@@ -70,16 +70,18 @@ export async function assignMentor(prevState: ActionState, formData: FormData): 
   
   const classId = formData.get('classId') as string
   const mentorId = formData.get('mentorId') as string
+  const subClassId = formData.get('subClassId') as string || null
 
   if (!classId || !mentorId) return { error: "Pilih mentor terlebih dahulu!" }
 
   const { error } = await supabase.from('class_mentors').insert({
     class_id: classId,
-    mentor_id: mentorId
+    mentor_id: mentorId,
+    sub_class_id: subClassId
   })
 
   if (error) {
-    if (error.code === '23505') return { error: "Mentor ini sudah ada di kelas tersebut." }
+    if (error.code === '23505') return { error: "Mentor ini sudah ditugaskan." }
     return { error: error.message }
   }
 
@@ -107,17 +109,19 @@ export async function assignStudent(prevState: ActionState, formData: FormData):
   
   const classId = formData.get('classId') as string
   const studentId = formData.get('studentId') as string
+  const subClassId = formData.get('subClassId') as string || null
 
   if (!classId || !studentId) return { error: "Pilih student terlebih dahulu!" }
 
   const { error } = await supabase.from('enrollments').insert({
     class_id: classId,
     student_id: studentId,
+    sub_class_id: subClassId,
     status: 'active'
   })
 
   if (error) {
-    if (error.code === '23505') return { error: "Student ini sudah terdaftar di kelas tersebut." }
+    if (error.code === '23505') return { error: "Student ini sudah terdaftar." }
     return { error: error.message }
   }
 
@@ -125,7 +129,7 @@ export async function assignStudent(prevState: ActionState, formData: FormData):
   return { success: "Student berhasil didaftarkan!" }
 }
 
-export async function assignMultipleStudents(classId: string, studentIds: string[]): Promise<ActionState> {
+export async function assignMultipleStudents(classId: string, studentIds: string[], subClassId?: string): Promise<ActionState> {
   const supabase = await createClient()
 
   if (!classId || !studentIds || studentIds.length === 0) {
@@ -135,13 +139,14 @@ export async function assignMultipleStudents(classId: string, studentIds: string
   const enrollmentsToInsert = studentIds.map(studentId => ({
     class_id: classId,
     student_id: studentId,
+    sub_class_id: subClassId || null,
     status: 'active'
   }))
 
   const { error } = await supabase.from('enrollments').insert(enrollmentsToInsert)
 
   if (error) {
-    if (error.code === '23505') return { error: "Salah satu atau beberapa student sudah terdaftar di kelas ini." }
+    if (error.code === '23505') return { error: "Salah satu atau beberapa student sudah terdaftar." }
     return { error: error.message }
   }
 
@@ -167,6 +172,7 @@ export async function uploadResource(prevState: ActionState, formData: FormData)
   const classId = formData.get('classId') as string
   const title = formData.get('title') as string
   const file = formData.get('file') as File
+  const subClassId = formData.get('subClassId') as string || null
 
   if (!classId || !title || !file) return { error: "Lengkapi data file!" }
 
@@ -184,13 +190,12 @@ export async function uploadResource(prevState: ActionState, formData: FormData)
   }
 
   // 1. Upload ke Supabase Storage
-  // Nama file dibuat unik dengan timestamp dan sanitize karakter khusus
   const sanitizedFileName = file.name
-    .replace(/\s+/g, '-')           // Ganti spasi dengan dash
-    .replace(/['"&]/g, '')          // Hapus tanda petik dan ampersand
-    .replace(/[^a-zA-Z0-9.\-_]/g, '') // Hapus karakter khusus lainnya
+    .replace(/\s+/g, '-')           
+    .replace(/['"&]/g, '')          
+    .replace(/[^a-zA-Z0-9.\-_]/g, '') 
   const fileName = `${Date.now()}_${sanitizedFileName}`
-  const filePath = `${classId}/${fileName}` // Folder per classId
+  const filePath = subClassId ? `${classId}/${subClassId}/${fileName}` : `${classId}/${fileName}`
 
   console.log(`[Upload] Sanitized filename: ${sanitizedFileName}`)
   console.log(`[Upload] File path: ${filePath}`)
@@ -216,6 +221,7 @@ export async function uploadResource(prevState: ActionState, formData: FormData)
   // 3. Simpan ke Database
   const { error: dbError } = await supabase.from('class_resources').insert({
     class_id: classId,
+    sub_class_id: subClassId,
     title: title,
     file_url: publicUrl,
     file_path: filePath
@@ -252,4 +258,58 @@ export async function deleteResource(resourceId: string, filePath: string) {
 
   revalidatePath('/admin/classes', 'layout')
   return { success: "File dihapus" }
+}
+
+// --- SUB CLASS CRUD ACTIONS ---
+
+export async function createSubClass(prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const supabase = await createClient()
+
+  const classId = formData.get('classId') as string
+  const title = formData.get('title') as string
+  const description = formData.get('description') as string || null
+
+  if (!classId || !title) return { error: "Nama sub kelas wajib diisi!" }
+
+  const { error } = await supabase.from('sub_classes').insert({
+    class_id: classId,
+    title: title,
+    description: description
+  })
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: "Sub kelas berhasil dibuat!" }
+}
+
+export async function updateSubClass(prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const supabase = await createClient()
+
+  const id = formData.get('id') as string
+  const title = formData.get('title') as string
+  const description = formData.get('description') as string || null
+
+  if (!id || !title) return { error: "Nama sub kelas wajib diisi!" }
+
+  const { error } = await supabase.from('sub_classes').update({
+    title: title,
+    description: description
+  }).eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: "Sub kelas berhasil diperbarui!" }
+}
+
+export async function deleteSubClass(id: string): Promise<ActionState> {
+  const supabase = await createClient()
+
+  const { error } = await supabase.from('sub_classes').delete().eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: "Sub kelas berhasil dihapus!" }
 }

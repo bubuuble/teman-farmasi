@@ -7,13 +7,17 @@ import Link from "next/link"
 // Definisi Tipe
 type AssignedClass = {
   class_id: string
+  sub_class_id: string | null
   classes: {
     id: string
     title: string
     level: string
     description: string | null
-    enrollments: { count: number }[]
-  }
+  } | null
+  sub_classes: {
+    id: string
+    title: string
+  } | null
 }
 
 export default async function MentorClassesPage() {
@@ -22,33 +26,53 @@ export default async function MentorClassesPage() {
 
   if (!user) return null
 
-  // Ambil kelas
+  // Ambil kelas & sub kelas yang diampu mentor
   const { data: rawAssignments } = await supabase
     .from('class_mentors')
     .select(`
       class_id,
+      sub_class_id,
       classes (
-        id, title, level, description,
-        enrollments ( count )
+        id, title, level, description
+      ),
+      sub_classes (
+        id, title
       )
     `)
     .eq('mentor_id', user.id)
 
-  // Cast tipe
-  const assignments = rawAssignments as unknown as AssignedClass[]
+  const assignments = (rawAssignments as unknown as AssignedClass[]) || []
+
+  // Ambil active enrollments untuk hitung student count
+  const { data: enrollments } = await supabase
+    .from('enrollments')
+    .select('class_id, sub_class_id')
+    .eq('status', 'active')
+
+  const getStudentCount = (classId: string, subClassId: string | null) => {
+    return enrollments?.filter(e => e.class_id === classId && e.sub_class_id === subClassId).length || 0
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-heading font-bold text-2xl text-brand-dark">Kelas Saya</h1>
-        <p className="text-brand-gray text-sm">Pilih kelas untuk mengatur Jadwal & Batch.</p>
+        <p className="text-brand-gray text-sm">Pilih kelas & peminatan untuk mengatur Jadwal & Sesi.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {assignments?.map((item) => {
+        {assignments?.map((item, idx) => {
           const kelas = item.classes
+          const subKelas = item.sub_classes
+          if (!kelas) return null
+
+          const isSubClass = !!item.sub_class_id
+          const studentCount = getStudentCount(item.class_id, item.sub_class_id)
+          const displayTitle = isSubClass ? `${kelas.title}` : kelas.title
+          const displaySubtitle = isSubClass ? `Peminatan: ${subKelas?.title}` : "Program Utama"
+
           return (
-            <div key={kelas.id} className="bg-white rounded-3xl p-6 shadow-card hover:shadow-soft transition-all border border-transparent hover:border-brand-blue/30 group">
+            <div key={`${item.class_id}-${item.sub_class_id || 'main'}-${idx}`} className="bg-white rounded-3xl p-6 shadow-card hover:shadow-soft transition-all border border-transparent hover:border-brand-blue/30 group">
               <div className="flex justify-between items-start mb-4">
                  <div className="w-12 h-12 bg-brand-cream text-brand-dark rounded-2xl flex items-center justify-center group-hover:bg-brand-blue group-hover:text-white transition-colors">
                     <BookOpen className="w-6 h-6" />
@@ -58,20 +82,23 @@ export default async function MentorClassesPage() {
                  </span>
               </div>
               
-              <h3 className="font-heading font-bold text-xl text-brand-dark mb-2 line-clamp-1">
-                {kelas.title}
+              <h3 className="font-heading font-bold text-xl text-brand-dark mb-1 line-clamp-1">
+                {displayTitle}
               </h3>
+              <p className="text-xs text-brand-blue font-bold mb-2 uppercase tracking-wide">
+                {displaySubtitle}
+              </p>
               <p className="text-brand-gray text-sm line-clamp-2 mb-4 h-10">
                 {kelas.description || "Tidak ada deskripsi."}
               </p>
 
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                  <div className="text-xs font-semibold text-brand-dark bg-green-50 px-2 py-1 rounded-md">
-                    {kelas.enrollments?.[0]?.count || 0} Student Terdaftar
+                    {studentCount} Student Terdaftar
                  </div>
                  
                  <Link 
-                    href={`/mentor/classes/${kelas.id}`}
+                    href={`/mentor/classes/${kelas.id}${item.sub_class_id ? `?subClassId=${item.sub_class_id}` : ''}`}
                     className="w-10 h-10 rounded-full bg-brand-darkblue text-white flex items-center justify-center hover:bg-brand-pink transition-colors"
                  >
                     <ArrowRight className="w-5 h-5" />

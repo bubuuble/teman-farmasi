@@ -18,9 +18,11 @@ export async function createSession(prevState: ActionState, formData: FormData) 
   const title = formData.get('title') as string
   const date = formData.get('date') as string
   const zoomLink = formData.get('zoomLink') as string | null
+  const subClassId = formData.get('subClassId') as string || null
 
   const { data: newSession, error } = await supabase.from('attendance_sessions').insert({
     class_id: classId,
+    sub_class_id: subClassId,
     title,
     date_time: date,
     zoom_link: zoomLink,
@@ -43,6 +45,7 @@ export async function createSession(prevState: ActionState, formData: FormData) 
         .from('attendance_sessions')
         .select('id')
         .eq('class_id', classId)
+        .eq('sub_class_id', subClassId || null)
         .order('date_time', { ascending: true })
 
       const sessionIndex = classSessions ? classSessions.findIndex((s: any) => s.id === newSession?.id) + 1 : 1
@@ -51,6 +54,7 @@ export async function createSession(prevState: ActionState, formData: FormData) 
         .from('enrollments')
         .select('profiles ( email )')
         .eq('class_id', classId)
+        .eq('sub_class_id', subClassId || null)
 
       const studentEmails = enrolledStudents
         ?.map((item: any) => item.profiles?.email)
@@ -204,16 +208,22 @@ export async function uploadMentorResource(prevState: ActionState, formData: For
   const classId = formData.get('classId') as string
   const title = formData.get('title') as string
   const file = formData.get('file') as File
+  const subClassId = formData.get('subClassId') as string || null
 
   if (!classId || !title || !file || file.size === 0) return { error: "Lengkapi data file!" }
 
-  // Guard: pastikan mentor ini memang bertugas di kelas tersebut
-  const { data: assignment } = await supabase
+  // Guard: pastikan mentor ini memang bertugas di kelas/subkelas tersebut
+  const checkQuery = supabase
     .from('class_mentors')
     .select('id')
     .eq('class_id', classId)
     .eq('mentor_id', user.id)
-    .single()
+  
+  if (subClassId) {
+    checkQuery.eq('sub_class_id', subClassId)
+  }
+
+  const { data: assignment } = await checkQuery.maybeSingle()
 
   if (!assignment) return { error: "Kamu tidak memiliki akses ke kelas ini." }
 
@@ -229,7 +239,7 @@ export async function uploadMentorResource(prevState: ActionState, formData: For
     .replace(/['"&]/g, '')
     .replace(/[^a-zA-Z0-9.\-_]/g, '')
   const fileName = `${Date.now()}_${sanitizedFileName}`
-  const filePath = `${classId}/${fileName}`
+  const filePath = subClassId ? `${classId}/${subClassId}/${fileName}` : `${classId}/${fileName}`
 
   const { error: uploadError } = await supabase.storage
     .from('ebooks')
@@ -243,6 +253,7 @@ export async function uploadMentorResource(prevState: ActionState, formData: For
 
   const { error: dbError } = await supabase.from('class_resources').insert({
     class_id: classId,
+    sub_class_id: subClassId,
     title,
     file_url: publicUrl,
     file_path: filePath,

@@ -38,9 +38,25 @@ export async function proxy(request: NextRequest) {
   const isMentorArea = path === '/mentor' || path.startsWith('/mentor/');
   const isStudentArea = path === '/student' || path.startsWith('/student/');
 
+  // Helper: ambil role user — prioritaskan user_metadata, fallback ke profiles table
+  const getUserRole = async (): Promise<string | undefined> => {
+    const metaRole = user?.user_metadata?.role;
+    if (metaRole) return metaRole;
+    // Fallback: baca dari tabel profiles
+    if (user?.id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      return profile?.role;
+    }
+    return undefined;
+  };
+
   // 2. Proteksi Halaman Login (Kalau udah login, jangan kasih masuk halaman login lagi)
   if (user && path.startsWith('/login')) {
-    const userRole = user.user_metadata?.role;
+    const userRole = await getUserRole();
     if (userRole === 'admin' || userRole === 'superadmin') {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
@@ -55,11 +71,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 4. Proteksi Role (RBAC) - Cek Metadata Role
+  // 4. Proteksi Role (RBAC)
   if (user) {
-    // Kita ambil role dari user_metadata (Ini diset saat login/signup)
-    // CATATAN: Pastikan saat create user, metadata 'role' diisi.
-    const userRole = user.user_metadata?.role; // 'superadmin' | 'admin' | 'mentor' | 'student'
+    const userRole = await getUserRole();
 
     // A. Student coba masuk Admin/Mentor
     if (userRole === 'student' && (isAdminArea || isMentorArea)) {

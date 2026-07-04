@@ -6,22 +6,22 @@ import { Calendar, CheckCircle, Lock, Video, X, ExternalLink, MapPin } from 'luc
 import { studentCheckIn } from './actions'
 import ConfirmModal from '@/app/components/ConfirmModal'
 
-// PERBAIKAN: Definisikan tipe Session secara detail sesuai data nested dari Supabase
 type Session = {
   id: string
   title: string
   date_time: string
   zoom_link: string | null
   is_open: boolean
-  batches: {
-    name: string
-    classes: {
-      title: string
-    } | null
+  classes: {
+    id: string
+    title: string
+  } | null
+  sub_classes: {
+    id: string
+    title: string
   } | null
 }
 
-// PERBAIKAN: Ganti 'any' dengan tipe 'Session' yang sudah didefinisikan
 export default function SessionCard({ 
   session, 
   attendanceStatus 
@@ -88,25 +88,25 @@ export default function SessionCard({
                         <X className="w-5 h-5" />
                     </button>
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 mb-2 block">
-                        {session.batches?.classes?.title || 'Kelas'}
+                        {session.classes?.title || 'Kelas'}
                     </span>
                     <h2 className="text-3xl font-bold font-heading leading-tight">{session.title}</h2>
-                    <p className="mt-2 opacity-90">{session.batches?.name}</p>
+                    {session.sub_classes?.title && <p className="mt-2 opacity-90">Peminatan: {session.sub_classes.title}</p>}
                 </div>
 
                 <div className="p-10 space-y-8">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">
-                                {session.batches?.classes?.title?.startsWith('Pharmacamp') ? 'Jadwal Hari' : 'Jadwal Sesi'}
-                            </label>
-                            <div className="flex items-center gap-2 font-bold text-brand-dark text-sm">
-                                <Calendar className="w-4 h-4 text-brand-pink" /> {dateStr}
-                            </div>
-                        </div>
+                             <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">
+                                 {session.classes?.title?.startsWith('Pharmacamp') ? 'Jadwal Hari' : 'Jadwal Sesi'}
+                             </label>
+                             <div className="flex items-center gap-2 font-bold text-brand-dark text-sm">
+                                 <Calendar className="w-4 h-4 text-brand-pink" /> {dateStr}
+                             </div>
+                         </div>
                     </div>
 
-                    {session.batches?.classes?.title?.startsWith('Pharmacamp') ? (
+                    {session.classes?.title?.startsWith('Pharmacamp') ? (
                         <div className="space-y-3">
                             <label className="text-[10px] font-bold text-gray-400 uppercase px-1">Lokasi Kegiatan (Offline)</label>
                             <a 

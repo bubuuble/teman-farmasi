@@ -10,10 +10,8 @@ type Session = {
   date_time: string
   zoom_link: string | null
   is_open: boolean
-  batches: {
-    name: string
-    classes: { title: string }
-  }
+  classes: { title: string } | null
+  sub_classes: { title: string } | null
 }
 
 export const revalidate = 0;
@@ -27,7 +25,7 @@ export default async function StudentDashboard() {
   // 1. Ambil Kelas Aktif
   const { count: classCount, data: enrollments } = await supabase
     .from('enrollments')
-    .select('class_id', { count: 'exact' })
+    .select('class_id, sub_class_id', { count: 'exact' })
     .eq('student_id', user.id)
     .eq('status', 'active')
 
@@ -42,19 +40,24 @@ export default async function StudentDashboard() {
   let nextSession: Session | null = null
   
   if (enrollments && enrollments.length > 0) {
-      const classIds = enrollments.map(e => e.class_id)
-      
       // LOGIKA TANGGAL: Set ke awal hari ini (00:00:00) agar sesi hari ini muncul
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      const orParts = enrollments.map(e => 
+        e.sub_class_id 
+          ? `and(class_id.eq.${e.class_id},sub_class_id.eq.${e.sub_class_id})` 
+          : `and(class_id.eq.${e.class_id},sub_class_id.is.null)`
+      )
+
       const { data: sessions } = await supabase
         .from('attendance_sessions')
         .select(`
-            id, title, date_time, zoom_link, is_open,
-            batches!inner ( name, class_id, classes ( title ) )
+            id, title, date_time, zoom_link, is_open, class_id, sub_class_id,
+            classes ( title ),
+            sub_classes ( title )
         `)
-        .in('batches.class_id', classIds)
+        .or(orParts.join(','))
         .gte('date_time', today.toISOString()) // Filter Sesi >= Hari ini
         .order('date_time', { ascending: true })
         .limit(1)
@@ -130,15 +133,17 @@ export default async function StudentDashboard() {
                             <div className="flex justify-between items-start mb-6">
                                 <div>
                                     <span className="bg-white px-3 py-1 rounded-full text-[10px] font-bold text-brand-pink uppercase tracking-widest mb-3 inline-block shadow-sm border border-brand-pink/10">
-                                        {nextSession.batches.classes.title}
+                                        {nextSession.classes?.title || "Kelas"}
                                     </span>
                                     <h4 className="font-bold text-3xl text-brand-dark group-hover:text-brand-pink transition-colors leading-tight">
                                         {nextSession.title}
                                     </h4>
-                                    <p className="text-gray-500 font-medium mt-2 flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 bg-brand-pink rounded-full"></span>
-                                        {nextSession.batches.name}
-                                    </p>
+                                    {nextSession.sub_classes?.title && (
+                                        <p className="text-gray-500 font-medium mt-2 flex items-center gap-2">
+                                            <span className="w-1.5 h-1.5 bg-brand-pink rounded-full"></span>
+                                            Peminatan: {nextSession.sub_classes.title}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className={`px-4 py-2 rounded-xl text-[10px] font-bold shadow-sm border ${
                                     nextSession.is_open 

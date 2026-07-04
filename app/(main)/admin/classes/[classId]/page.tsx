@@ -13,6 +13,7 @@ type ClassDetail = {
   class_mentors: {
     id: string
     mentor_id: string
+    sub_class_id: string | null
     profiles: {
       full_name: string | null
       email: string
@@ -21,6 +22,7 @@ type ClassDetail = {
   enrollments: {
     id: string
     student_id: string
+    sub_class_id: string | null
     profiles: {
       full_name: string | null
       email: string
@@ -29,10 +31,19 @@ type ClassDetail = {
   class_resources: {
     id: string
     title: string
+    sub_class_id: string | null
     file_url: string
     file_path: string
     created_at: string
   }[]
+}
+
+type SubClass = {
+  id: string
+  class_id: string
+  title: string
+  description: string | null
+  created_at: string
 }
 
 export default async function AdminClassDetailPage({
@@ -48,9 +59,9 @@ export default async function AdminClassDetailPage({
     .from('classes')
     .select(`
       *,
-      class_mentors ( id, mentor_id, profiles ( full_name, email ) ),
-      enrollments ( id, student_id, profiles ( full_name, email ) ),
-      class_resources ( id, title, file_url, file_path, created_at )
+      class_mentors ( id, mentor_id, sub_class_id, profiles ( full_name, email ) ),
+      enrollments ( id, student_id, sub_class_id, profiles ( full_name, email ) ),
+      class_resources ( id, title, sub_class_id, file_url, file_path, created_at )
     `)
     .eq('id', classId)
     .single()
@@ -61,13 +72,20 @@ export default async function AdminClassDetailPage({
 
   const kelas = rawClass as unknown as ClassDetail
 
-  // 2. Fetch list of all Mentors
+  // 2. Fetch Sub Classes
+  const { data: subClasses } = await supabase
+    .from('sub_classes')
+    .select('*')
+    .eq('class_id', classId)
+    .order('created_at', { ascending: true })
+
+  // 3. Fetch list of all Mentors
   const { data: allMentors } = await supabase
     .from('profiles')
     .select('id, full_name, email')
     .eq('role', 'mentor')
 
-  // 3. Fetch list of all Students
+  // 4. Fetch list of all Students
   const { data: allStudents } = await supabase
     .from('profiles')
     .select('id, full_name, email')
@@ -92,6 +110,7 @@ export default async function AdminClassDetailPage({
       {/* Unified Tabbed Card Manager */}
       <ClassManager 
         kelas={kelas} 
+        subClasses={(subClasses as unknown as SubClass[]) || []}
         allStudents={allStudents || []} 
         allMentors={allMentors || []} 
       />

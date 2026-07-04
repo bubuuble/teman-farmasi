@@ -22,26 +22,67 @@ export default async function StudentAttendancePage({
   const { classId } = await searchParams
   const supabase = await createClient()
 
-  const { data: classes } = await supabase.from('classes').select('id, title')
+  // Load classes and subclasses
+  const { data: allClasses } = await supabase.from('classes').select('id, title')
+  const { data: allSubClasses } = await supabase.from('sub_classes').select('id, class_id, title')
+
+  const classesList: { id: string; title: string }[] = []
+  if (allClasses) {
+    allClasses.forEach(c => {
+      const subClassesOfClass = allSubClasses?.filter(s => s.class_id === c.id) || []
+      if (subClassesOfClass.length > 0) {
+        subClassesOfClass.forEach(s => {
+          classesList.push({
+            id: `${c.id}:${s.id}`,
+            title: `${c.title} - Peminatan: ${s.title}`
+          })
+        })
+      } else {
+        classesList.push({
+          id: c.id,
+          title: c.title
+        })
+      }
+    })
+  }
+
+  // Parse classId query parameter
+  const [selectedClassId, selectedSubClassId] = classId && classId.includes(':') 
+    ? classId.split(':')
+    : [classId, undefined]
 
   let sessions: Session[] = []
   let students: Student[] = []
   const attendanceMap: Record<string, string> = {}
 
-  if (classId) {
-    // Sesi langsung dari class_id
-    const { data: sData } = await supabase
+  if (selectedClassId) {
+    // Sesi langsung dari class_id & sub_class_id
+    const sessionsQuery = supabase
       .from('attendance_sessions')
       .select('id, title, date_time')
-      .eq('class_id', classId)
-      .order('date_time', { ascending: true })
+      .eq('class_id', selectedClassId)
+    
+    if (selectedSubClassId) {
+      sessionsQuery.eq('sub_class_id', selectedSubClassId)
+    } else {
+      sessionsQuery.is('sub_class_id', null)
+    }
+    const { data: sData } = await sessionsQuery.order('date_time', { ascending: true })
     sessions = (sData as Session[]) || []
 
     // Siswa terdaftar
-    const { data: eData } = await supabase
+    const enrollQuery = supabase
       .from('enrollments')
-      .select('profiles(id, full_name, email)')
-      .eq('class_id', classId)
+      .select('profiles:student_id(id, full_name, email)')
+      .eq('class_id', selectedClassId)
+    
+    if (selectedSubClassId) {
+      enrollQuery.eq('sub_class_id', selectedSubClassId)
+    } else {
+      enrollQuery.is('sub_class_id', null)
+    }
+
+    const { data: eData } = await enrollQuery
     
     const rawEnrollments = (eData as unknown as EnrollmentRow[]) || []
     students = rawEnrollments
@@ -63,7 +104,7 @@ export default async function StudentAttendancePage({
 
   return (
     <div className="space-y-6">
-      <FilterAttendance classes={classes} selectedClassId={classId} />
+      <FilterAttendance classes={classesList} selectedClassId={classId} />
       {classId ? (
         <div className="bg-white rounded-3xl shadow-card overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">

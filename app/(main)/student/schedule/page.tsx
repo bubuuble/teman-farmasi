@@ -13,11 +13,8 @@ type SessionData = {
   date_time: string
   zoom_link: string
   is_open: boolean
-  batches: {
-    name: string
-    id: string
-    classes: { id: string; title: string }
-  }
+  classes: { id: string; title: string; level: string } | null
+  sub_classes: { id: string; title: string } | null
 }
 
 type ClassInfo = {
@@ -35,24 +32,33 @@ export default async function StudentSchedulePage() {
   // 1. Ambil Enrollments & Classes
   const { data: enrollments } = await supabase
     .from('enrollments')
-    .select('class_id, classes ( id, title, level )')
+    .select('class_id, sub_class_id, classes ( id, title, level )')
     .eq('student_id', user.id)
     .eq('status', 'active')
 
-  const classIds = enrollments?.map(e => e.class_id) || []
   const myClasses = (enrollments?.map(e => e.classes).filter(Boolean) || []) as unknown as ClassInfo[]
 
-  // 2. Ambil Sesi Jadwal
-  const { data: rawSessions } = await supabase
-    .from('attendance_sessions')
-    .select(`
-        id, title, date_time, zoom_link, is_open,
-        batches ( name, id, classes ( id, title ) )
-    `)
-    .in('batch_id', (await supabase.from('batches').select('id').in('class_id', classIds)).data?.map(b => b.id) || [])
-    .order('date_time', { ascending: true })
+  // 2. Ambil Sesi Jadwal berdasarkan class_id & sub_class_id dari enrollments
+  let sessions: SessionData[] = []
+  if (enrollments && enrollments.length > 0) {
+      const orParts = enrollments.map(e => 
+        e.sub_class_id 
+          ? `and(class_id.eq.${e.class_id},sub_class_id.eq.${e.sub_class_id})` 
+          : `and(class_id.eq.${e.class_id},sub_class_id.is.null)`
+      )
 
-  const sessions = rawSessions as unknown as SessionData[] || []
+      const { data: rawSessions } = await supabase
+        .from('attendance_sessions')
+        .select(`
+            id, title, date_time, zoom_link, is_open, class_id, sub_class_id,
+            classes ( id, title, level ),
+            sub_classes ( id, title )
+        `)
+        .or(orParts.join(','))
+        .order('date_time', { ascending: true })
+
+      sessions = (rawSessions as unknown as SessionData[]) || []
+  }
 
   // 3. Ambil Data Kehadiran
   const { data: myRecords } = await supabase

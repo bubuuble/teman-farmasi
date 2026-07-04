@@ -6,15 +6,12 @@ import MentorFilter from "../MentorFilter"
 export const dynamic = 'force-dynamic'
 
 type MentorSessionData = {
-  id: string; title: string; date_time: string; mentor_status: string | null;
+  id: string; title: string; date_time: string; mentor_status: string | null; class_id: string; sub_class_id: string | null;
   classes: {
     title: string;
-    class_mentors: {
-      mentor_id: string;
-      profiles: {
-        full_name: string | null;
-      } | null;
-    }[];
+  } | null;
+  sub_classes: {
+    title: string;
   } | null;
 }
 
@@ -29,26 +26,47 @@ export default async function MentorAttendancePage({
   // Ambil list mentor untuk dropdown sort
   const { data: mentors } = await supabase.from('profiles').select('id, full_name').eq('role', 'mentor')
 
+  // Ambil mentor assignments untuk dicocokkan dengan sesi
+  const { data: allClassMentors } = await supabase
+    .from('class_mentors')
+    .select('class_id, sub_class_id, profiles:mentor_id ( full_name )')
+
+  const getMentorNamesForSession = (classId: string, subClassId: string | null) => {
+    const matched = allClassMentors?.filter(cm => cm.class_id === classId && cm.sub_class_id === subClassId) || []
+    return matched.map(cm => {
+      const p = cm.profiles as any
+      if (!p) return null
+      if (Array.isArray(p)) {
+        return p[0]?.full_name
+      }
+      return p.full_name
+    }).filter(Boolean).join(', ') || '-'
+  }
+
   // Query dengan filter mentor jika ada
   let query = supabase.from('attendance_sessions').select(`
-      id, title, date_time, mentor_status,
-      classes!inner (
-        title,
-        class_mentors!inner (
-          mentor_id,
-          profiles:mentor_id ( full_name )
-        )
-      )
+      id, title, date_time, mentor_status, class_id, sub_class_id,
+      classes ( title ),
+      sub_classes ( title )
     `)
   
   if (mentorId) {
     const { data: myClasses } = await supabase
       .from('class_mentors')
-      .select('class_id')
+      .select('class_id, sub_class_id')
       .eq('mentor_id', mentorId)
     
-    const classIds = myClasses?.map(c => c.class_id) || []
-    query = query.in('class_id', classIds)
+    const orParts = myClasses?.map(c => 
+      c.sub_class_id 
+        ? `and(class_id.eq.${c.class_id},sub_class_id.eq.${c.sub_class_id})` 
+        : `and(class_id.eq.${c.class_id},sub_class_id.is.null)`
+    ) || []
+    
+    if (orParts.length > 0) {
+      query = query.or(orParts.join(','))
+    } else {
+      query = query.eq('class_id', '00000000-0000-0000-0000-000000000000') // matches nothing
+    }
   }
   
   const { data: rawSessions } = await query.order('date_time', { ascending: false })
@@ -63,13 +81,15 @@ export default async function MentorAttendancePage({
             <tr>
               <th className="p-6">Jadwal Mengajar</th>
               <th className="p-6">Nama Mentor</th>
-              <th className="p-6">Kelas</th>
+              <th className="p-6">Kelas / Peminatan</th>
               <th className="p-6 text-right">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 text-sm">
             {sessions?.map(s => {
-              const mentorNames = s.classes?.class_mentors?.map(cm => cm.profiles?.full_name).filter(Boolean).join(', ') || '-'
+              const mentorNames = getMentorNamesForSession(s.class_id, s.sub_class_id)
+              const className = s.classes?.title || '-'
+              const subClassName = s.sub_classes?.title ? `Peminatan: ${s.sub_classes.title}` : 'Program Utama'
               return (
                 <tr key={s.id} className="hover:bg-gray-50">
                   <td className="p-6">
@@ -78,8 +98,9 @@ export default async function MentorAttendancePage({
                   </td>
                   <td className="p-6 font-bold text-brand-dark">{mentorNames}</td>
                   <td className="p-6">
-                    <div className="font-semibold">{s.classes?.title}</div>
-                    <div className="text-[10px] text-gray-400 uppercase">{s.title}</div>
+                    <div className="font-semibold">{className}</div>
+                    <div className="text-xs text-brand-blue font-semibold">{subClassName}</div>
+                    <div className="text-[10px] text-gray-400 uppercase mt-0.5">{s.title}</div>
                   </td>
                 <td className="p-6 text-right">
                   {s.mentor_status === 'present' ? (

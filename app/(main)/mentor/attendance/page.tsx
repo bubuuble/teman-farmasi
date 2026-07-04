@@ -33,38 +33,78 @@ export default async function MentorAttendancePage({
 
     if (!user) return null
 
-    // 1. Ambil kelas yang diampu mentor
+    // 1. Ambil kelas & sub kelas yang diampu mentor
     const { data: rawClasses } = await supabase
         .from('class_mentors')
-        .select('classes(id, title)')
+        .select(`
+            class_id,
+            sub_class_id,
+            classes ( id, title ),
+            sub_classes ( id, title )
+        `)
         .eq('mentor_id', user.id)
     
-    const classMentorData = (rawClasses as unknown as ClassMentorJoin[]) || []
+    const classMentorData = rawClasses || []
+    
+    // Construct class options list
     const classList = classMentorData
-        .map(item => item.classes)
+        .map(item => {
+            const cls = item.classes as any
+            const sub = item.sub_classes as any
+            if (!cls) return null
+            if (item.sub_class_id) {
+                return {
+                    id: `${item.class_id}:${item.sub_class_id}`,
+                    title: `${cls.title} - Peminatan: ${sub?.title}`
+                }
+            }
+            return {
+                id: item.class_id,
+                title: cls.title
+            }
+        })
         .filter((c): c is ClassItem => c !== null)
 
-    // 2. Jika kelas dipilih, ambil sesi + siswa + absensi
+    // 2. Parse classId query parameter
+    const [selectedClassId, selectedSubClassId] = classId && classId.includes(':') 
+        ? classId.split(':')
+        : [classId, undefined]
+
+    // 3. Jika kelas dipilih, ambil sesi + siswa + absensi
     let sessions: SessionItem[] = []
     let students: StudentItem[] = []
     const attendanceMap: Record<string, string> = {}
 
-    if (classId) {
-        // Sesi langsung dari class_id
-        const { data: sData } = await supabase
+    if (selectedClassId) {
+        // Sesi langsung dari class_id & sub_class_id
+        const sessionsQuery = supabase
             .from('attendance_sessions')
             .select('id, title, date_time')
-            .eq('class_id', classId)
-            .order('date_time', { ascending: true })
+            .eq('class_id', selectedClassId)
         
+        if (selectedSubClassId) {
+            sessionsQuery.eq('sub_class_id', selectedSubClassId)
+        } else {
+            sessionsQuery.is('sub_class_id', null)
+        }
+
+        const { data: sData } = await sessionsQuery.order('date_time', { ascending: true })
         sessions = (sData as SessionItem[]) || []
 
         // Siswa terdaftar
-        const { data: eData } = await supabase
+        const enrollQuery = supabase
             .from('enrollments')
             .select('profiles:student_id ( id, full_name )')
-            .eq('class_id', classId)
+            .eq('class_id', selectedClassId)
             .eq('status', 'active')
+
+        if (selectedSubClassId) {
+            enrollQuery.eq('sub_class_id', selectedSubClassId)
+        } else {
+            enrollQuery.is('sub_class_id', null)
+        }
+
+        const { data: eData } = await enrollQuery
 
         if (eData) {
             const rawEnrollments = eData as unknown as EnrollmentJoin[]

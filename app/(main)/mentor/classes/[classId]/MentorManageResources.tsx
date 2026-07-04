@@ -17,9 +17,11 @@ const initialState: ActionState = { error: '', success: '' }
 
 export default function MentorManageResources({
   classId,
+  subClassId,
   resources,
 }: {
   classId: string
+  subClassId?: string | null
   resources: Resource[]
 }) {
   const [state, formAction, isPending] = useActionState(uploadMentorResource, initialState)
@@ -141,6 +143,7 @@ export default function MentorManageResources({
           className="space-y-2"
         >
           <input type="hidden" name="classId" value={classId} />
+          {subClassId && <input type="hidden" name="subClassId" value={subClassId} />}
 
           <input
             name="title"

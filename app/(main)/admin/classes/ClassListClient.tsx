@@ -10,7 +10,8 @@ import {
   BookOpenCheck,
   Trophy,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  X
 } from "lucide-react"
 import Link from "next/link"
 import ClassForm, { PROGRAMS } from "./ClassForm"
@@ -31,6 +32,14 @@ function getCategoryOfClass(title: string): string {
   const programs = PROGRAMS.map(p => p.value).sort((a, b) => b.length - a.length)
   for (const p of programs) {
     if (title.startsWith(p)) {
+      if (p === 'PharmaCore Class') {
+        if (title.toLowerCase().includes('private')) {
+          return 'PharmaCore Class (Private)'
+        }
+        if (title.toLowerCase().includes('group') || title.toLowerCase().includes('grup')) {
+          return 'PharmaCore Class (Group)'
+        }
+      }
       return p
     }
   }
@@ -46,6 +55,22 @@ const CATEGORY_META: Record<string, {
   badgeText: string;
   textColor: string;
 }> = {
+  'PharmaCore Class (Private)': {
+    label: 'PharmaCore Class (Private)',
+    icon: BookOpen,
+    borderColor: 'hover:border-brand-blue/30',
+    badgeBg: 'bg-brand-blue/10',
+    badgeText: 'text-brand-blue',
+    textColor: 'text-brand-blue'
+  },
+  'PharmaCore Class (Group)': {
+    label: 'PharmaCore Class (Group)',
+    icon: BookOpen,
+    borderColor: 'hover:border-indigo-500/30',
+    badgeBg: 'bg-indigo-50',
+    badgeText: 'text-indigo-700',
+    textColor: 'text-indigo-700'
+  },
   'PharmaCore Class': {
     label: 'PharmaCore Class',
     icon: BookOpen,
@@ -98,10 +123,27 @@ const CATEGORY_META: Record<string, {
 
 export default function ClassListClient({ initialClasses }: { initialClasses: ClassWithRelations[] }) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
+
+  // Filter kelas berdasarkan kata kunci pencarian
+  const filteredClasses = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return initialClasses
+
+    return initialClasses.filter((item) => {
+      return (
+        item.title.toLowerCase().includes(q) ||
+        (item.description ?? '').toLowerCase().includes(q) ||
+        (item.level ?? '').toLowerCase().includes(q)
+      )
+    })
+  }, [initialClasses, searchQuery])
 
   // Kelompokkan kelas berdasarkan kategori
   const groupedClasses = useMemo(() => {
     const groups: Record<string, ClassWithRelations[]> = {
+      'PharmaCore Class (Private)': [],
+      'PharmaCore Class (Group)': [],
       'PharmaCore Class': [],
       'Pharma Research Mentoring': [],
       'PharmaPublish Academy': [],
@@ -111,7 +153,7 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
     }
 
     // Urutkan kelas berdasarkan jumlah pertemuan (level) terkecil - terbesar
-    const sortedClasses = [...initialClasses].sort((a, b) => {
+    const sortedClasses = [...filteredClasses].sort((a, b) => {
       const levelA = Number(a.level) || 0
       const levelB = Number(b.level) || 0
       return levelA - levelB
@@ -127,7 +169,7 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
     })
 
     return groups
-  }, [initialClasses])
+  }, [filteredClasses])
 
   // Menentukan kategori mana saja yang perlu dirender berdasarkan filter
   const categoriesToRender = useMemo(() => {
@@ -151,6 +193,32 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
         </div>
         
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Search Input */}
+          <div className="relative min-w-[240px] flex-1">
+            <input
+              type="text"
+              placeholder="Cari kelas…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white font-medium text-sm text-brand-dark outline-none focus:border-brand-blue transition-all shadow-sm"
+            />
+            {/* Search Icon left */}
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+              <Search className="w-4 h-4" />
+            </div>
+            {/* Clear Button right */}
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-brand-dark transition-colors"
+                aria-label="Hapus pencarian"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
           {/* Dropdown Filter Kategori */}
           <div className="relative min-w-[220px]">
             <select
@@ -288,11 +356,15 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
           )
         })}
 
-        {initialClasses.length === 0 && (
+        {initialClasses.length === 0 ? (
           <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-200">
             <p className="text-brand-gray">Belum ada kelas yang dibuat.</p>
           </div>
-        )}
+        ) : filteredClasses.length === 0 ? (
+          <div className="py-20 text-center bg-white rounded-[32px] border border-dashed border-gray-200 bg-gray-50/30">
+            <p className="text-brand-gray font-medium">Tidak ada kelas yang cocok dengan pencarian &quot;{searchQuery}&quot;.</p>
+          </div>
+        ) : null}
       </div>
     </div>
   )

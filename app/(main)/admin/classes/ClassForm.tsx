@@ -37,7 +37,7 @@ export const PROGRAMS = [
   },
   {
     value: 'Pharmacamp',
-    label: 'Pharmacamp - Formulation Cosmetics Class',
+    label: 'Pharmacamp',
     description: 'Program edukasi intensif formulasi kosmetik (skincare & personal care) dan sains formulasi. Menjembatani teori akademik dengan praktik industri nyata melalui pembelajaran hands-on lab, pengenalan bahan baku & fungsinya, teknik troubleshooting formula, regulasi dasar (CPKB, BPOM, Halal), serta business mentoring (costing, pricing, branding).',
   },
 ]

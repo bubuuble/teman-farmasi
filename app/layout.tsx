@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Montserrat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
+import NavigationProgress from "@/app/components/NavigationProgress";
 import "./globals.css";
 
 // Heading Font
@@ -50,9 +51,11 @@ export default function RootLayout({
         </Script>
       </head>
       <body suppressHydrationWarning className={`${plusJakarta.variable} ${montserrat.variable} font-sans bg-brand-cream text-brand-dark antialiased`}>
+        <NavigationProgress />
         {children}
         <Analytics />
       </body>
     </html>
   );
 }
+

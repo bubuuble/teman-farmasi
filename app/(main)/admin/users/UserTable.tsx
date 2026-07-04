@@ -11,6 +11,7 @@ type UserProfile = {
   email: string | null
   username: string | null
   created_at: string
+  institusi?: string | null
 }
 
 interface UserTableProps {
@@ -116,6 +117,9 @@ export default function UserTable({ users, currentUserRole, isSuperAdmin }: User
                 <tr key={user.id} className="hover:bg-brand-cream/20 transition-colors">
                   <td className="p-6">
                     <div className="font-bold text-brand-dark">{user.full_name || "Tanpa Nama"}</div>
+                    {user.role === 'student' && user.institusi && (
+                      <div className="text-xs text-brand-gray mt-0.5">{user.institusi}</div>
+                    )}
                   </td>
                   <td className="p-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
@@ -146,7 +150,8 @@ export default function UserTable({ users, currentUserRole, isSuperAdmin }: User
                               email: user.email || "",
                               full_name: user.full_name,
                               username: user.username,
-                              role: user.role || "student"
+                              role: user.role || "student",
+                              institusi: user.institusi
                             }} 
                             currentUserRole={currentUserRole} 
                           />

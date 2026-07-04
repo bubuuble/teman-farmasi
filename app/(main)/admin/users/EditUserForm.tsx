@@ -11,6 +11,7 @@ type UserProps = {
   full_name: string | null
   username: string | null
   role: string
+  institusi?: string | null
 }
 
 const initialState: ActionState = {
@@ -20,6 +21,7 @@ const initialState: ActionState = {
 
 export default function EditUserForm({ user, currentUserRole }: { user: UserProps, currentUserRole?: string }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [selectedRole, setSelectedRole] = useState(user.role)
   const [state, formAction, isPending] = useActionState(updateUser, initialState)
 
   // Tutup modal jika sukses
@@ -61,7 +63,8 @@ export default function EditUserForm({ user, currentUserRole }: { user: UserProp
                     <label className="text-xs font-bold text-brand-dark uppercase">Role</label>
                     <select 
                       name="role" 
-                      defaultValue={user.role}
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
                       className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:border-brand-blue"
                     >
                         <option value="student">Student</option>
@@ -117,6 +120,21 @@ export default function EditUserForm({ user, currentUserRole }: { user: UserProp
                 />
                 <p className="text-[10px] text-gray-500 mt-1">Isi hanya jika user lupa password / reset.</p>
               </div>
+
+              {/* Kolom Institusi — hanya untuk Student */}
+              {selectedRole === 'student' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-brand-dark uppercase">Institusi</label>
+                  <input
+                    name="institusi"
+                    type="text"
+                    defaultValue={user.institusi || ''}
+                    placeholder="Contoh: Universitas Indonesia"
+                    className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue"
+                  />
+                  <p className="text-[10px] text-gray-400">Opsional — asal institusi / universitas student.</p>
+                </div>
+              )}
 
               {state?.error && (
                 <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">

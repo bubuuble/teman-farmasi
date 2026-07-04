@@ -135,6 +135,7 @@ export async function updateUser(prevState: ActionState, formData: FormData): Pr
   const username = formData.get('username') as string
   const role = formData.get('role') as string
   const password = formData.get('password') as string // Opsional
+  const institusi = formData.get('institusi') as string | null
 
   if (!userId || !email || !fullName || !role) {
     return { error: "Data utama tidak boleh kosong!" }
@@ -172,7 +173,8 @@ export async function updateUser(prevState: ActionState, formData: FormData): Pr
     user_metadata: {
       full_name: fullName,
       role: role,
-      username: username
+      username: username,
+      ...(role === 'student' ? { institusi } : { institusi: null })
     }
   }
 
@@ -198,7 +200,8 @@ export async function updateUser(prevState: ActionState, formData: FormData): Pr
       full_name: fullName,
       role: role,
       username: username,
-      email: email // Update email juga di profile
+      email: email, // Update email juga di profile
+      institusi: role === 'student' ? (institusi || null) : null
     })
     .eq('id', userId)
 

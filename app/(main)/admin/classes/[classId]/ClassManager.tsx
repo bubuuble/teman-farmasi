@@ -1179,9 +1179,9 @@ export default function ClassManager({
                             <p className="text-xs text-orange-500 mt-1">Selesaikan Step 1 dengan menambahkan mentor terlebih dahulu.</p>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                            {/* Left: Form assign student ke mentor */}
-                            <div className="lg:col-span-5 bg-gray-50 p-5 rounded-2xl border border-gray-100 h-fit space-y-3">
+                          <div className="flex flex-col gap-6">
+                            {/* Top: Form assign student ke mentor */}
+                            <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 space-y-3">
                               <div>
                                 <label className="text-[10px] font-bold text-brand-dark uppercase mb-1 block">Pilih Mentor</label>
                                 <select
@@ -1303,8 +1303,8 @@ export default function ClassManager({
                               )}
                             </div>
 
-                            {/* Right: Daftar mentor + student mereka + unassigned */}
-                            <div className="lg:col-span-7 space-y-3">
+                            {/* Middle: Daftar mentor + student mereka */}
+                            <div className="space-y-3">
                               <p className="text-xs font-bold text-brand-gray uppercase tracking-wider">Daftar Mentor & Student Mereka</p>
                               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                                 {currentMentors.map(mentor => {
@@ -1362,31 +1362,31 @@ export default function ClassManager({
                                     </div>
                                   )
                                 })}
-
-                                {/* Student belum di-assign */}
-                                {unassignedStudents.length > 0 && (
-                                  <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
-                                    <p className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1">
-                                      <AlertTriangle className="w-4 h-4" />
-                                      Student Belum Di-assign ke Mentor ({unassignedStudents.length})
-                                    </p>
-                                    <div className="space-y-1.5">
-                                      {unassignedStudents.map(e => (
-                                        <div key={e.id} className="flex items-center gap-2 bg-white rounded-xl p-2.5">
-                                          <div className="w-7 h-7 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-[10px]">
-                                            {e.profiles?.full_name?.[0] || 'S'}
-                                          </div>
-                                          <div className="min-w-0 flex-1">
-                                            <p className="font-bold text-xs text-brand-dark truncate">{e.profiles?.full_name || 'Tanpa Nama'}</p>
-                                            <p className="text-[10px] text-gray-400 truncate">{e.profiles?.email}</p>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
                               </div>
                             </div>
+
+                            {/* Bottom: Student belum di-assign */}
+                            {unassignedStudents.length > 0 && (
+                              <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
+                                <p className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1">
+                                  <AlertTriangle className="w-4 h-4" />
+                                  Student Belum Di-assign ke Mentor ({unassignedStudents.length})
+                                </p>
+                                <div className="space-y-1.5">
+                                  {unassignedStudents.map(e => (
+                                    <div key={e.id} className="flex items-center gap-2 bg-white rounded-xl p-2.5">
+                                      <div className="w-7 h-7 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-[10px]">
+                                        {e.profiles?.full_name?.[0] || 'S'}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-xs text-brand-dark truncate">{e.profiles?.full_name || 'Tanpa Nama'}</p>
+                                        <p className="text-[10px] text-gray-400 truncate">{e.profiles?.email}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

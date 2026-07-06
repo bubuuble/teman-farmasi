@@ -1,5 +1,6 @@
 // components/admin/Header.tsx
 import { createClient } from "@/lib/supabase/server"
+import SidebarToggle from "./SidebarToggle"
 
 export default async function AdminHeader() {
   const supabase = await createClient()
@@ -12,12 +13,15 @@ export default async function AdminHeader() {
     .single()
 
   return (
-    <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
-      <div>
-        <h2 className="font-heading font-bold text-xl text-brand-dark">
-          Dashboard
-        </h2>
-        <p className="text-sm text-brand-gray">Overview aktivitas sistem hari ini</p>
+    <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
+      <div className="flex items-center gap-3">
+        <SidebarToggle />
+        <div>
+          <h2 className="font-heading font-bold text-xl text-brand-dark">
+            Dashboard
+          </h2>
+          <p className="text-sm text-brand-gray hidden sm:block">Overview aktivitas sistem hari ini</p>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

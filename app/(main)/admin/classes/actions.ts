@@ -382,6 +382,62 @@ export async function assignMultipleStudentsToMentor(
   return { success: `${studentIds.length} student berhasil di-assign!` }
 }
 
+// Enroll student ke sub kelas DAN assign ke mentor sekaligus (1 step)
+export async function enrollAndAssignToMentor(
+  mentorId: string,
+  studentIds: string[],
+  classId: string,
+  subClassId: string
+): Promise<ActionState> {
+  const supabase = await createClient()
+
+  if (!mentorId || !studentIds.length || !classId || !subClassId) {
+    return { error: "Data tidak lengkap!" }
+  }
+
+  // Step 1: Upsert enrollment ke sub kelas (jika sudah enrolled di kelas lain, pindahkan sub_class_id-nya)
+  const enrollments = studentIds.map(studentId => ({
+    class_id: classId,
+    student_id: studentId,
+    sub_class_id: subClassId,
+    status: 'active',
+  }))
+
+  const { error: enrollError } = await supabase
+    .from('enrollments')
+    .upsert(enrollments, { onConflict: 'class_id,student_id' })
+
+  if (enrollError) return { error: "Gagal enroll student: " + enrollError.message }
+
+  // Step 2: Upsert mentor-student assignment (hapus assignment lama jika ada, lalu insert baru)
+  // Hapus assignment lama untuk student-student ini di sub kelas yang sama
+  const { error: deleteError } = await supabase
+    .from('mentor_student_assignments')
+    .delete()
+    .eq('class_id', classId)
+    .eq('sub_class_id', subClassId)
+    .in('student_id', studentIds)
+
+  if (deleteError) return { error: "Gagal reset assignment lama: " + deleteError.message }
+
+  // Insert assignment baru
+  const assignments = studentIds.map(studentId => ({
+    mentor_id: mentorId,
+    student_id: studentId,
+    class_id: classId,
+    sub_class_id: subClassId,
+  }))
+
+  const { error: assignError } = await supabase
+    .from('mentor_student_assignments')
+    .insert(assignments)
+
+  if (assignError) return { error: "Gagal assign ke mentor: " + assignError.message }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: `${studentIds.length} student berhasil di-enroll dan di-assign ke mentor!` }
+}
+
 // Hapus assignment mentor-student
 export async function removeStudentFromMentor(assignmentId: string): Promise<ActionState> {
   const supabase = await createClient()

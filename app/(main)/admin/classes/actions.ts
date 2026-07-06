@@ -312,6 +312,14 @@ export async function updateSubClass(prevState: ActionState, formData: FormData)
 export async function deleteSubClass(id: string): Promise<ActionState> {
   const supabase = await createClient()
 
+  // Hapus semua enrollments yang ada di sub kelas ini agar ikut terhapus ketika sub kelas dihapus
+  const { error: enrollDeleteError } = await supabase
+    .from('enrollments')
+    .delete()
+    .eq('sub_class_id', id)
+
+  if (enrollDeleteError) return { error: "Gagal menghapus enrollments sub kelas: " + enrollDeleteError.message }
+
   const { error } = await supabase.from('sub_classes').delete().eq('id', id)
 
   if (error) return { error: error.message }

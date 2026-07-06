@@ -615,98 +615,13 @@ export default function ClassManager({
           <div className="p-4 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-3 text-sm text-orange-850 shadow-sm animate-in fade-in duration-200">
             <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-bold text-orange-950">Ada Student Belum Masuk Sub Kelas</p>
+              <p className="font-bold text-orange-950">Ada Student Belum Masuk Peminatan/Mentor</p>
               <p className="text-xs text-orange-800/80 mt-0.5">
-                Terdapat <span className="font-bold text-orange-900">{kelas.enrollments.filter(e => e.sub_class_id === null).length} student</span> yang sudah terdaftar di kelas ini (via pembayaran/order), tetapi belum dimasukkan ke sub kelas (peminatan) mana pun. Silakan pilih sub kelas di sebelah kiri, buka tab <strong>Enroll Student</strong>, lalu masukkan mereka.
+                Terdapat <span className="font-bold text-orange-900">{kelas.enrollments.filter(e => e.sub_class_id === null).length} student</span> yang sudah terdaftar di kelas ini (via pembayaran/order), tetapi belum dimasukkan ke peminatan (mentor) mana pun. Silakan pilih sub kelas di sebelah kiri, buka tab <strong>Mentor & Peminatan</strong>, lalu assign mereka ke mentor di Step 2.
               </p>
             </div>
           </div>
         )}
-
-        {/* NEW SECTION: Class Student Directory */}
-        <div className="bg-white rounded-[32px] border border-gray-100 shadow-card p-8 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 pb-4">
-            <div>
-              <h3 className="font-heading font-bold text-lg text-brand-dark">Direktori Student Kelas</h3>
-              <p className="text-xs text-brand-gray mt-0.5 font-medium">Daftar seluruh student yang terdaftar di kelas ini beserta peminatan (sub kelas) mereka.</p>
-            </div>
-            <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full border border-green-100 w-fit">
-              Total {kelas.enrollments?.length || 0} Student
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            {kelas.enrollments?.length === 0 ? (
-              <p className="text-sm text-gray-400 italic py-8 text-center">Belum ada student terdaftar di kelas ini.</p>
-            ) : (
-              <table className="w-full text-left border-collapse min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-gray-100 text-xs font-bold text-brand-gray uppercase bg-gray-50/50">
-                    <th className="py-3 px-4 rounded-l-xl">Nama Student</th>
-                    <th className="py-3 px-4">Email</th>
-                    <th className="py-3 px-4">Peminatan (Sub Kelas)</th>
-                    <th className="py-3 px-4 text-center rounded-r-xl">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {kelas.enrollments.map((enroll) => {
-                    return (
-                      <tr key={enroll.id} className="hover:bg-gray-50/30 transition-colors text-sm">
-                        <td className="py-3.5 px-4 font-bold text-brand-dark">
-                          {enroll.profiles?.full_name || 'Tanpa Nama'}
-                        </td>
-                        <td className="py-3.5 px-4 text-brand-gray">
-                          {enroll.profiles?.email}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <select
-                            value={enroll.sub_class_id || ''}
-                            onChange={(e) => {
-                              const newSubId = e.target.value || undefined
-                              startTransition(async () => {
-                                const res = await assignMultipleStudents(kelas.id, [enroll.student_id], newSubId)
-                                if (res.error) {
-                                  showFeedback('', res.error)
-                                } else {
-                                  showFeedback('Peminatan student berhasil diperbarui!', '')
-                                  router.refresh()
-                                }
-                              })
-                            }}
-                            className={`p-2 rounded-xl border text-xs font-semibold outline-none focus:border-brand-blue bg-white cursor-pointer
-                              ${enroll.sub_class_id 
-                                ? 'border-gray-200 text-brand-dark' 
-                                : 'border-orange-200 bg-orange-50/50 text-orange-700 font-bold'
-                              }
-                            `}
-                            disabled={isPending}
-                          >
-                            <option value="">-- Pilih Peminatan (Belum Ditentukan) --</option>
-                            {subClasses.map((sub) => (
-                              <option key={sub.id} value={sub.id}>
-                                {sub.title}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <button
-                            onClick={() => setConfirmDeleteStudent({ isOpen: true, id: enroll.id })}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors inline-flex items-center justify-center"
-                            title="Keluarkan dari Kelas"
-                            disabled={isPending}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
 
         {/* TOP SECTION: Detail Kelas Card */}
         <div className="bg-white rounded-[32px] border border-gray-100 shadow-card p-8">

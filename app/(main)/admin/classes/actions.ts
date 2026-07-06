@@ -143,7 +143,9 @@ export async function assignMultipleStudents(classId: string, studentIds: string
     status: 'active'
   }))
 
-  const { error } = await supabase.from('enrollments').insert(enrollmentsToInsert)
+  const { error } = await supabase
+    .from('enrollments')
+    .upsert(enrollmentsToInsert, { onConflict: 'class_id,student_id' })
 
   if (error) {
     if (error.code === '23505') return { error: "Salah satu atau beberapa student sudah terdaftar." }
@@ -268,13 +270,15 @@ export async function createSubClass(prevState: ActionState, formData: FormData)
   const classId = formData.get('classId') as string
   const title = formData.get('title') as string
   const description = formData.get('description') as string || null
+  const sessionOffset = parseInt(formData.get('session_offset') as string || '0', 10) || 0
 
   if (!classId || !title) return { error: "Nama sub kelas wajib diisi!" }
 
   const { error } = await supabase.from('sub_classes').insert({
     class_id: classId,
     title: title,
-    description: description
+    description: description,
+    session_offset: sessionOffset,
   })
 
   if (error) return { error: error.message }
@@ -289,12 +293,14 @@ export async function updateSubClass(prevState: ActionState, formData: FormData)
   const id = formData.get('id') as string
   const title = formData.get('title') as string
   const description = formData.get('description') as string || null
+  const sessionOffset = parseInt(formData.get('session_offset') as string || '0', 10) || 0
 
   if (!id || !title) return { error: "Nama sub kelas wajib diisi!" }
 
   const { error } = await supabase.from('sub_classes').update({
     title: title,
-    description: description
+    description: description,
+    session_offset: sessionOffset,
   }).eq('id', id)
 
   if (error) return { error: error.message }

@@ -43,6 +43,7 @@ type SubClass = {
   class_id: string
   title: string
   description: string | null
+  session_offset: number
   created_at: string
 }
 

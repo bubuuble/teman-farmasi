@@ -43,11 +43,11 @@ export default async function MentorClassDetailPage({
   const isPharmacamp = kelas?.title?.startsWith('Pharmacamp')
 
   // Fetch subclass if subClassId is present
-  let subClassData = null
+  let subClassData: { id: string; title: string; session_offset: number } | null = null
   if (subClassId) {
     const { data } = await supabase
       .from('sub_classes')
-      .select('id, title')
+      .select('id, title, session_offset')
       .eq('id', subClassId)
       .single()
     subClassData = data
@@ -152,7 +152,7 @@ export default async function MentorClassDetailPage({
                 <div className="flex flex-col md:flex-row md:items-center justify-between p-5 gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center font-bold text-brand-dark text-lg border border-gray-100 flex-shrink-0">
-                      {idx + 1}
+                      {(subClassData?.session_offset ?? 0) + idx + 1}
                     </div>
                     <div>
                       <h5 className="font-bold text-brand-dark leading-tight">{session.title}</h5>

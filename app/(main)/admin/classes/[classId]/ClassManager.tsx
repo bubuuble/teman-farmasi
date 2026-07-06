@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useTransition } from 'react'
+import { useState, useRef, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Info, 
@@ -110,6 +110,7 @@ type SubClass = {
   class_id: string
   title: string
   description: string | null
+  session_offset: number
   created_at: string
 }
 
@@ -150,10 +151,12 @@ export default function ClassManager({
   const [subClassActiveTab, setSubClassActiveTab] = useState<'detail' | 'students' | 'mentors' | 'resources'>('detail')
   const [newSubClassTitle, setNewSubClassTitle] = useState('')
   const [newSubClassDescription, setNewSubClassDescription] = useState('')
+  const [newSubClassOffset, setNewSubClassOffset] = useState(0)
   const [isCreatingSubClass, setIsCreatingSubClass] = useState(false)
   const [editingSubClassId, setEditingSubClassId] = useState<string | null>(null)
   const [editingSubClassTitle, setEditingSubClassTitle] = useState('')
   const [editingSubClassDescription, setEditingSubClassDescription] = useState('')
+  const [editingSubClassOffset, setEditingSubClassOffset] = useState(0)
   const [confirmDeleteSubClassId, setConfirmDeleteSubClassId] = useState<string | null>(null)
 
   // Helper untuk parse title kelas yang sudah ada (misal: "Pharma Research Mentoring 3")
@@ -222,7 +225,23 @@ export default function ClassManager({
     : kelas.class_resources.filter(r => r.sub_class_id === selectedSubClassId)
 
   const enrolledStudentIds = new Set(currentEnrollments.map(e => e.student_id))
-  const enrollableStudents = sortedStudents.filter(s => !enrolledStudentIds.has(s.id))
+  
+  const enrollableStudents = useMemo(() => {
+    const list = sortedStudents.filter(s => !enrolledStudentIds.has(s.id))
+    return list.sort((a, b) => {
+      const enrollA = kelas.enrollments.find(e => e.student_id === a.id)
+      const enrollB = kelas.enrollments.find(e => e.student_id === b.id)
+      
+      const scoreA = enrollA ? (enrollA.sub_class_id === null ? 2 : 1) : 0
+      const scoreB = enrollB ? (enrollB.sub_class_id === null ? 2 : 1) : 0
+      
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA
+      }
+      
+      return (a.full_name || a.email).localeCompare(b.full_name || b.email, 'id')
+    })
+  }, [sortedStudents, enrolledStudentIds, kelas.enrollments])
 
   const filteredStudents = enrollableStudents.filter(s => {
     const searchLower = studentSearch.toLowerCase()
@@ -487,6 +506,7 @@ export default function ClassManager({
       formData.append('classId', kelas.id)
       formData.append('title', newSubClassTitle.trim())
       formData.append('description', newSubClassDescription.trim())
+      formData.append('session_offset', String(newSubClassOffset || 0))
       const res = await createSubClass({}, formData)
       if (res.error) {
         showFeedback('', res.error)
@@ -494,6 +514,7 @@ export default function ClassManager({
         showFeedback('Sub kelas berhasil dibuat!', '')
         setNewSubClassTitle('')
         setNewSubClassDescription('')
+        setNewSubClassOffset(0)
         setIsCreatingSubClass(false)
         router.refresh()
       }
@@ -508,6 +529,7 @@ export default function ClassManager({
       formData.append('id', editingSubClassId)
       formData.append('title', editingSubClassTitle.trim())
       formData.append('description', editingSubClassDescription.trim())
+      formData.append('session_offset', String(editingSubClassOffset || 0))
       const res = await updateSubClass({}, formData)
       if (res.error) {
         showFeedback('', res.error)
@@ -516,6 +538,7 @@ export default function ClassManager({
         setEditingSubClassId(null)
         setEditingSubClassTitle('')
         setEditingSubClassDescription('')
+        setEditingSubClassOffset(0)
         router.refresh()
       }
     })
@@ -554,6 +577,104 @@ export default function ClassManager({
             {errorMsg}
           </div>
         )}
+
+        {/* Unassigned subclass warning */}
+        {kelas.enrollments.filter(e => e.sub_class_id === null).length > 0 && (
+          <div className="p-4 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-3 text-sm text-orange-850 shadow-sm animate-in fade-in duration-200">
+            <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-bold text-orange-950">Ada Student Belum Masuk Sub Kelas</p>
+              <p className="text-xs text-orange-800/80 mt-0.5">
+                Terdapat <span className="font-bold text-orange-900">{kelas.enrollments.filter(e => e.sub_class_id === null).length} student</span> yang sudah terdaftar di kelas ini (via pembayaran/order), tetapi belum dimasukkan ke sub kelas (peminatan) mana pun. Silakan pilih sub kelas di sebelah kiri, buka tab <strong>Assign Student</strong>, lalu masukkan mereka.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* NEW SECTION: Class Student Directory */}
+        <div className="bg-white rounded-[32px] border border-gray-100 shadow-card p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 pb-4">
+            <div>
+              <h3 className="font-heading font-bold text-lg text-brand-dark">Direktori Student Kelas</h3>
+              <p className="text-xs text-brand-gray mt-0.5 font-medium">Daftar seluruh student yang terdaftar di kelas ini beserta peminatan (sub kelas) mereka.</p>
+            </div>
+            <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full border border-green-100 w-fit">
+              Total {kelas.enrollments?.length || 0} Student
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            {kelas.enrollments?.length === 0 ? (
+              <p className="text-sm text-gray-400 italic py-8 text-center">Belum ada student terdaftar di kelas ini.</p>
+            ) : (
+              <table className="w-full text-left border-collapse min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-gray-100 text-xs font-bold text-brand-gray uppercase bg-gray-50/50">
+                    <th className="py-3 px-4 rounded-l-xl">Nama Student</th>
+                    <th className="py-3 px-4">Email</th>
+                    <th className="py-3 px-4">Peminatan (Sub Kelas)</th>
+                    <th className="py-3 px-4 text-center rounded-r-xl">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {kelas.enrollments.map((enroll) => {
+                    return (
+                      <tr key={enroll.id} className="hover:bg-gray-50/30 transition-colors text-sm">
+                        <td className="py-3.5 px-4 font-bold text-brand-dark">
+                          {enroll.profiles?.full_name || 'Tanpa Nama'}
+                        </td>
+                        <td className="py-3.5 px-4 text-brand-gray">
+                          {enroll.profiles?.email}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <select
+                            value={enroll.sub_class_id || ''}
+                            onChange={(e) => {
+                              const newSubId = e.target.value || undefined
+                              startTransition(async () => {
+                                const res = await assignMultipleStudents(kelas.id, [enroll.student_id], newSubId)
+                                if (res.error) {
+                                  showFeedback('', res.error)
+                                } else {
+                                  showFeedback('Peminatan student berhasil diperbarui!', '')
+                                  router.refresh()
+                                }
+                              })
+                            }}
+                            className={`p-2 rounded-xl border text-xs font-semibold outline-none focus:border-brand-blue bg-white cursor-pointer
+                              ${enroll.sub_class_id 
+                                ? 'border-gray-200 text-brand-dark' 
+                                : 'border-orange-200 bg-orange-50/50 text-orange-700 font-bold'
+                              }
+                            `}
+                            disabled={isPending}
+                          >
+                            <option value="">-- Pilih Peminatan (Belum Ditentukan) --</option>
+                            {subClasses.map((sub) => (
+                              <option key={sub.id} value={sub.id}>
+                                {sub.title}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <button
+                            onClick={() => setConfirmDeleteStudent({ isOpen: true, id: enroll.id })}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors inline-flex items-center justify-center"
+                            title="Keluarkan dari Kelas"
+                            disabled={isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
 
         {/* TOP SECTION: Detail Kelas Card */}
         <div className="bg-white rounded-[32px] border border-gray-100 shadow-card p-8">
@@ -784,6 +905,22 @@ export default function ClassManager({
                       disabled={isPending}
                     />
                   </div>
+                  <div className="space-y-1 bg-amber-50/60 border border-amber-100 rounded-xl p-3">
+                    <label className="text-[10px] font-bold text-amber-700 uppercase">Mulai dari Sesi ke- (Opsional)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={newSubClassOffset || ''}
+                      onChange={(e) => setNewSubClassOffset(parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-full p-3 rounded-xl border border-amber-200 outline-none focus:border-amber-400 bg-white text-sm"
+                      disabled={isPending}
+                    />
+                    <p className="text-[10px] text-amber-600 leading-relaxed">
+                      Isi ini jika kelas sudah berjalan beberapa sesi secara manual sebelum migrasi ke sistem ini. 
+                      Contoh: isi <strong>2</strong> jika sudah ada 2 sesi manual → sesi baru di sistem akan mulai dari <strong>Sesi 3</strong>.
+                    </p>
+                  </div>
                   <div className="flex gap-2 justify-end">
                     <button
                       type="button"
@@ -893,6 +1030,14 @@ export default function ClassManager({
                                 {selectedSubClass.description || "Tidak ada deskripsi."}
                               </p>
                             </div>
+
+                            {selectedSubClass.session_offset > 0 && (
+                              <div className="flex items-center gap-2 mt-3">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-full">
+                                  ⚡ Mulai dari Sesi {selectedSubClass.session_offset + 1} (offset: {selectedSubClass.session_offset} sesi manual)
+                                </span>
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex gap-3 pt-2">
@@ -901,6 +1046,7 @@ export default function ClassManager({
                                 setEditingSubClassId(selectedSubClass.id)
                                 setEditingSubClassTitle(selectedSubClass.title)
                                 setEditingSubClassDescription(selectedSubClass.description || '')
+                                setEditingSubClassOffset(selectedSubClass.session_offset || 0)
                               }}
                               className="flex items-center gap-2 px-5 py-3 bg-brand-cream text-brand-dark rounded-xl text-xs font-bold hover:bg-brand-darkblue hover:text-white transition-all shadow-sm"
                             >
@@ -941,6 +1087,22 @@ export default function ClassManager({
                               disabled={isPending}
                             />
                           </div>
+                          <div className="space-y-1 bg-amber-50/60 border border-amber-100 rounded-xl p-3">
+                            <label className="text-[10px] font-bold text-amber-700 uppercase">Mulai dari Sesi ke- (Opsional)</label>
+                            <input
+                              type="number"
+                              min={0}
+                              value={editingSubClassOffset || ''}
+                              onChange={(e) => setEditingSubClassOffset(parseInt(e.target.value) || 0)}
+                              placeholder="0"
+                              className="w-full p-3 rounded-xl border border-amber-200 outline-none focus:border-amber-400 bg-white text-sm"
+                              disabled={isPending}
+                            />
+                            <p className="text-[10px] text-amber-600 leading-relaxed">
+                              Isi ini jika kelas sudah berjalan beberapa sesi secara manual sebelum migrasi ke sistem ini.
+                              Contoh: isi <strong>2</strong> jika sudah ada 2 sesi manual → sesi baru di sistem akan mulai dari <strong>Sesi 3</strong>.
+                            </p>
+                          </div>
                           <div className="flex gap-2 pt-2">
                             <button
                               type="submit"
@@ -965,14 +1127,13 @@ export default function ClassManager({
 
                   {/* TAB: Assign Student */}
                   {subClassActiveTab === 'students' && (
-                    <div className="space-y-6 animate-in fade-in duration-200">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-200">
 
-                      {/* STEP 1: Daftarkan student ke sub kelas ini */}
-                      <div className="bg-gray-50 rounded-2xl border border-gray-100 p-5 space-y-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="w-6 h-6 bg-brand-darkblue text-white rounded-full flex items-center justify-center text-[10px] font-black">1</div>
+                      {/* Left Column: Enroll Student Form */}
+                      <div className="lg:col-span-5 bg-gray-50 p-5 rounded-2xl border border-gray-100 h-fit space-y-4">
+                        <div>
                           <h4 className="font-bold text-sm text-brand-dark">Enroll Student ke Peminatan Ini</h4>
-                          <span className="text-[10px] bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full font-bold ml-auto">{currentEnrollments.length} Terdaftar</span>
+                          <p className="text-xs text-brand-gray mt-0.5">Daftarkan atau pindahkan student ke peminatan ini.</p>
                         </div>
                         <form onSubmit={handleAddStudentSubmit} className="space-y-2">
                           <input
@@ -983,7 +1144,7 @@ export default function ClassManager({
                             className="w-full p-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white"
                             disabled={isPending}
                           />
-                          <div className="border border-gray-200 rounded-xl max-h-44 overflow-y-auto bg-white">
+                          <div className="border border-gray-200 rounded-xl max-h-56 overflow-y-auto bg-white">
                             {filteredStudents.length === 0 ? (
                               <p className="text-xs text-gray-400 italic py-4 text-center">
                                 {studentSearch ? 'Tidak ada yang cocok.' : 'Semua student sudah terdaftar di peminatan ini.'}
@@ -1007,10 +1168,28 @@ export default function ClassManager({
                                         className="rounded text-brand-blue focus:ring-brand-blue"
                                         disabled={isPending}
                                       />
-                                      <div className="min-w-0">
+                                      <div className="min-w-0 flex-1">
                                         <p className="font-bold text-brand-dark truncate text-xs">{s.full_name || 'Tanpa Nama'}</p>
                                         <p className="text-[10px] text-gray-400 truncate">{s.email}</p>
                                       </div>
+                                      {(() => {
+                                        const mainClassEnrollment = kelas.enrollments.find(e => e.student_id === s.id)
+                                        if (!mainClassEnrollment) return null
+                                        if (mainClassEnrollment.sub_class_id === null) {
+                                          return (
+                                            <span className="text-[9px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold flex-shrink-0">
+                                              Belum ada Peminatan
+                                            </span>
+                                          )
+                                        } else {
+                                          const otherSubClass = subClasses.find(sc => sc.id === mainClassEnrollment.sub_class_id)
+                                          return (
+                                            <span className="text-[9px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold flex-shrink-0 max-w-[120px] truncate" title={otherSubClass?.title || "Peminatan Lain"}>
+                                              Peminatan: {otherSubClass?.title || "Lain"}
+                                            </span>
+                                          )
+                                        }
+                                      })()}
                                     </label>
                                   )
                                 })}
@@ -1028,220 +1207,255 @@ export default function ClassManager({
                         </form>
                       </div>
 
-                      {/* STEP 2: Assign student ke mentor */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-brand-pink text-white rounded-full flex items-center justify-center text-[10px] font-black">2</div>
-                          <h4 className="font-bold text-sm text-brand-dark">Assign Student ke Mentor</h4>
-                          {unassignedStudents.length > 0 && (
-                            <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" />
-                              {unassignedStudents.length} belum di-assign
+                      {/* Right Column: Enrolled Students List & Mentor Assignment */}
+                      <div className="lg:col-span-7 space-y-6">
+                        
+                        {/* Section: Student Terdaftar di Peminatan */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-heading font-bold text-sm text-brand-dark">Student Terdaftar di Peminatan</h4>
+                            <span className="text-[10px] bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded-full font-bold">
+                              {currentEnrollments.length} Terdaftar
                             </span>
-                          )}
+                          </div>
+
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-2 bg-gray-50/30 p-3 rounded-2xl border border-gray-100/80">
+                            {currentEnrollments.length === 0 ? (
+                              <p className="text-xs text-gray-400 italic py-6 text-center">Belum ada student di peminatan ini.</p>
+                            ) : (
+                              currentEnrollments.map((item) => (
+                                <div key={item.id} className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-gray-100 hover:border-brand-blue/20 transition-colors">
+                                  <div className="flex items-center gap-2.5 overflow-hidden">
+                                    <div className="w-8 h-8 bg-brand-cream text-brand-dark rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                                      {item.profiles?.full_name?.[0] || 'S'}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-xs text-brand-dark truncate">{item.profiles?.full_name || 'Tanpa Nama'}</p>
+                                      <p className="text-[10px] text-gray-400 truncate">{item.profiles?.email}</p>
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    onClick={() => setConfirmDeleteStudent({ isOpen: true, id: item.id })}
+                                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                    title="Keluarkan dari peminatan"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
 
-                        {currentMentors.length === 0 ? (
-                          <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5 text-center">
-                            <AlertTriangle className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                            <p className="text-sm font-bold text-orange-700">Belum ada mentor di peminatan ini</p>
-                            <p className="text-xs text-orange-500 mt-1">Assign mentor di tab "Assign Mentor" terlebih dahulu.</p>
+                        {/* Section: Assign ke Mentor */}
+                        <div className="border-t border-gray-100 pt-5 space-y-4">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-heading font-bold text-sm text-brand-dark">Assign Student ke Mentor</h4>
+                            {unassignedStudents.length > 0 && (
+                              <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" />
+                                {unassignedStudents.length} belum di-assign
+                              </span>
+                            )}
                           </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {/* Form assign: pilih mentor, lalu pilih student */}
-                            <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 space-y-3">
-                              <p className="text-[10px] font-bold text-brand-blue uppercase tracking-wider">Form Assign Student → Mentor</p>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {/* Pilih Mentor */}
-                                <div>
-                                  <label className="text-[10px] font-bold text-brand-dark uppercase mb-1 block">Pilih Mentor</label>
-                                  <select
-                                    value={selectedMentorForStudents}
-                                    onChange={(e) => {
-                                      setSelectedMentorForStudents(e.target.value)
-                                      setSelectedStudentIdsForMentor([])
-                                      setStudentSearchForMentor('')
-                                    }}
-                                    className="w-full p-2.5 rounded-xl border border-gray-200 outline-none focus:border-brand-blue bg-white text-sm"
-                                    disabled={isPending}
-                                  >
-                                    <option value="">-- Pilih Mentor --</option>
-                                    {currentMentors.map(m => (
-                                      <option key={m.id} value={m.mentor_id}>
-                                        {m.profiles?.full_name || m.profiles?.email || 'Mentor'}
-                                      </option>
-                                    ))}
-                                  </select>
+
+                          {currentMentors.length === 0 ? (
+                            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 text-center">
+                              <AlertTriangle className="w-6 h-6 text-orange-400 mx-auto mb-1.5" />
+                              <p className="text-xs font-bold text-orange-700">Belum ada mentor di peminatan ini</p>
+                              <p className="text-[10px] text-orange-500 mt-0.5">Assign mentor di tab "Assign Mentor" terlebih dahulu.</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {/* Form assign: pilih mentor, lalu pilih student */}
+                              <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 space-y-3">
+                                <p className="text-[10px] font-bold text-brand-blue uppercase tracking-wider">Form Assign Student → Mentor</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  {/* Pilih Mentor */}
+                                  <div>
+                                    <label className="text-[10px] font-bold text-brand-dark uppercase mb-1 block">Pilih Mentor</label>
+                                    <select
+                                      value={selectedMentorForStudents}
+                                      onChange={(e) => {
+                                        setSelectedMentorForStudents(e.target.value)
+                                        setSelectedStudentIdsForMentor([])
+                                        setStudentSearchForMentor('')
+                                      }}
+                                      className="w-full p-2.5 rounded-xl border border-gray-200 outline-none focus:border-brand-blue bg-white text-sm"
+                                      disabled={isPending}
+                                    >
+                                      <option value="">-- Pilih Mentor --</option>
+                                      {currentMentors.map(m => (
+                                        <option key={m.id} value={m.mentor_id}>
+                                          {m.profiles?.full_name || m.profiles?.email || 'Mentor'}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  {/* Cari Student */}
+                                  {selectedMentorForStudents && (
+                                    <div>
+                                      <label className="text-[10px] font-bold text-brand-dark uppercase mb-1 block">Cari Student</label>
+                                      <input
+                                        type="text"
+                                        value={studentSearchForMentor}
+                                        onChange={(e) => setStudentSearchForMentor(e.target.value)}
+                                        placeholder="Nama atau email..."
+                                        className="w-full p-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white"
+                                        disabled={isPending}
+                                      />
+                                    </div>
+                                  )}
                                 </div>
 
-                                {/* Cari Student */}
                                 {selectedMentorForStudents && (
-                                  <div>
-                                    <label className="text-[10px] font-bold text-brand-dark uppercase mb-1 block">Cari Student</label>
-                                    <input
-                                      type="text"
-                                      value={studentSearchForMentor}
-                                      onChange={(e) => setStudentSearchForMentor(e.target.value)}
-                                      placeholder="Nama atau email..."
-                                      className="w-full p-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white"
-                                      disabled={isPending}
-                                    />
-                                  </div>
+                                  <form onSubmit={handleAssignStudentsToMentor} className="space-y-2">
+                                    <div className="border border-gray-200 rounded-xl max-h-40 overflow-y-auto bg-white">
+                                      {filteredStudentsForMentor.length === 0 ? (
+                                        <p className="text-xs text-gray-400 italic py-4 text-center">
+                                          {currentEnrollments.length === 0
+                                            ? 'Belum ada student enrolled di peminatan ini.'
+                                            : 'Semua student sudah di-assign ke mentor ini.'}
+                                        </p>
+                                      ) : (
+                                        <div className="p-2 space-y-1">
+                                          {filteredStudentsForMentor.map((e) => {
+                                            const isChecked = selectedStudentIdsForMentor.includes(e.student_id)
+                                            // Find if this student is already assigned to another mentor
+                                            const existingAssignment = currentMSAssignments.find(a => a.student_id === e.student_id)
+                                            const existingMentorData = existingAssignment
+                                              ? currentMentors.find(m => m.mentor_id === existingAssignment.mentor_id)
+                                              : null
+                                            return (
+                                              <label key={e.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isChecked}
+                                                  onChange={(ev) => {
+                                                    if (ev.target.checked) {
+                                                      setSelectedStudentIdsForMentor([...selectedStudentIdsForMentor, e.student_id])
+                                                    } else {
+                                                      setSelectedStudentIdsForMentor(selectedStudentIdsForMentor.filter(id => id !== e.student_id))
+                                                    }
+                                                  }}
+                                                  className="rounded text-brand-blue focus:ring-brand-blue"
+                                                  disabled={isPending}
+                                                />
+                                                <div className="min-w-0 flex-1">
+                                                  <p className="font-bold text-brand-dark truncate text-xs">{e.profiles?.full_name || 'Tanpa Nama'}</p>
+                                                  <p className="text-[10px] text-gray-400 truncate">{e.profiles?.email}</p>
+                                                </div>
+                                                {existingMentorData && (
+                                                  <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">
+                                                    Di mentor lain
+                                                  </span>
+                                                )}
+                                              </label>
+                                            )
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <button
+                                      type="submit"
+                                      disabled={isPending || selectedStudentIdsForMentor.length === 0}
+                                      className="w-full flex items-center justify-center gap-2 bg-brand-pink text-white py-2.5 rounded-xl text-xs font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
+                                    >
+                                      {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
+                                      Assign {selectedStudentIdsForMentor.length > 0 ? `${selectedStudentIdsForMentor.length} ` : ''}Student ke Mentor Ini
+                                    </button>
+                                  </form>
                                 )}
                               </div>
 
-                              {selectedMentorForStudents && (
-                                <form onSubmit={handleAssignStudentsToMentor} className="space-y-2">
-                                  <div className="border border-gray-200 rounded-xl max-h-40 overflow-y-auto bg-white">
-                                    {filteredStudentsForMentor.length === 0 ? (
-                                      <p className="text-xs text-gray-400 italic py-4 text-center">
-                                        {currentEnrollments.length === 0
-                                          ? 'Belum ada student enrolled di peminatan ini.'
-                                          : 'Semua student sudah di-assign ke mentor ini.'}
-                                      </p>
-                                    ) : (
-                                      <div className="p-2 space-y-1">
-                                        {filteredStudentsForMentor.map((e) => {
-                                          const isChecked = selectedStudentIdsForMentor.includes(e.student_id)
-                                          // Find if this student is already assigned to another mentor
-                                          const existingAssignment = currentMSAssignments.find(a => a.student_id === e.student_id)
-                                          const existingMentorData = existingAssignment
-                                            ? currentMentors.find(m => m.mentor_id === existingAssignment.mentor_id)
-                                            : null
-                                          return (
-                                            <label key={e.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                                              <input
-                                                type="checkbox"
-                                                checked={isChecked}
-                                                onChange={(ev) => {
-                                                  if (ev.target.checked) {
-                                                    setSelectedStudentIdsForMentor([...selectedStudentIdsForMentor, e.student_id])
-                                                  } else {
-                                                    setSelectedStudentIdsForMentor(selectedStudentIdsForMentor.filter(id => id !== e.student_id))
-                                                  }
-                                                }}
-                                                className="rounded text-brand-blue focus:ring-brand-blue"
-                                                disabled={isPending}
-                                              />
-                                              <div className="min-w-0 flex-1">
-                                                <p className="font-bold text-brand-dark truncate text-xs">{e.profiles?.full_name || 'Tanpa Nama'}</p>
-                                                <p className="text-[10px] text-gray-400 truncate">{e.profiles?.email}</p>
+                              {/* List mentor + student mereka */}
+                              <div className="space-y-2">
+                                <p className="text-[10px] font-bold text-brand-gray uppercase tracking-wider px-1">Daftar Mentor & Student Mereka</p>
+                                {currentMentors.map(mentor => {
+                                  const mentorStudents = getStudentsForMentor(mentor.mentor_id)
+                                  const isExpanded = expandedMentors.has(mentor.mentor_id)
+                                  return (
+                                    <div key={mentor.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                                      <button
+                                        onClick={() => toggleMentorExpand(mentor.mentor_id)}
+                                        className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+                                      >
+                                        <div className="w-9 h-9 bg-blue-50 text-brand-blue rounded-xl flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                          {mentor.profiles?.full_name?.[0] || 'M'}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <p className="font-bold text-sm text-brand-dark truncate">{mentor.profiles?.full_name || 'Tanpa Nama'}</p>
+                                          <p className="text-[10px] text-gray-400 truncate">{mentor.profiles?.email}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${mentorStudents.length === 0 ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-700'}`}>
+                                            {mentorStudents.length} Student
+                                          </span>
+                                          {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                                        </div>
+                                      </button>
+
+                                      {isExpanded && (
+                                        <div className="border-t border-gray-50 divide-y divide-gray-50">
+                                          {mentorStudents.length === 0 ? (
+                                            <p className="text-xs text-gray-400 italic py-4 text-center">Belum ada student di-assign ke mentor ini.</p>
+                                          ) : (
+                                            mentorStudents.map(item => (
+                                              <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50/50 transition-colors">
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                  <div className="w-8 h-8 bg-brand-cream text-brand-dark rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                                                    {item.profiles?.full_name?.[0] || 'S'}
+                                                  </div>
+                                                  <div className="min-w-0">
+                                                    <p className="font-bold text-xs text-brand-dark truncate">{item.profiles?.full_name || 'Tanpa Nama'}</p>
+                                                    <p className="text-[10px] text-gray-400 truncate">{item.profiles?.email}</p>
+                                                  </div>
+                                                </div>
+                                                <button
+                                                  onClick={() => setConfirmDeleteMentorStudentAssignment({ isOpen: true, id: item.assignmentId })}
+                                                  className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                                  title="Unassign dari mentor ini"
+                                                >
+                                                  <Trash2 className="w-3 h-3" />
+                                                </button>
                                               </div>
-                                              {existingMentorData && (
-                                                <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">
-                                                  Di mentor lain
-                                                </span>
-                                              )}
-                                            </label>
-                                          )
-                                        })}
+                                            ))
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+
+                              {/* Student yang belum di-assign ke mentor mana pun */}
+                              {unassignedStudents.length > 0 && (
+                                <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
+                                  <p className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    Student Belum Di-assign ke Mentor ({unassignedStudents.length})
+                                  </p>
+                                  <div className="space-y-1.5">
+                                    {unassignedStudents.map(e => (
+                                      <div key={e.id} className="flex items-center gap-2 bg-white rounded-xl p-2.5">
+                                        <div className="w-7 h-7 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-[10px]">
+                                          {e.profiles?.full_name?.[0] || 'S'}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <p className="font-bold text-xs text-brand-dark truncate">{e.profiles?.full_name || 'Tanpa Nama'}</p>
+                                          <p className="text-[10px] text-gray-400 truncate">{e.profiles?.email}</p>
+                                        </div>
                                       </div>
-                                    )}
+                                    ))}
                                   </div>
-                                  <button
-                                    type="submit"
-                                    disabled={isPending || selectedStudentIdsForMentor.length === 0}
-                                    className="w-full flex items-center justify-center gap-2 bg-brand-pink text-white py-2.5 rounded-xl text-xs font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
-                                  >
-                                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
-                                    Assign {selectedStudentIdsForMentor.length > 0 ? `${selectedStudentIdsForMentor.length} ` : ''}Student ke Mentor Ini
-                                  </button>
-                                </form>
+                                </div>
                               )}
                             </div>
+                          )}
+                        </div>
 
-                            {/* List mentor + student mereka */}
-                            <div className="space-y-2">
-                              <p className="text-[10px] font-bold text-brand-gray uppercase tracking-wider px-1">Daftar Mentor & Student Mereka</p>
-                              {currentMentors.map(mentor => {
-                                const mentorStudents = getStudentsForMentor(mentor.mentor_id)
-                                const isExpanded = expandedMentors.has(mentor.mentor_id)
-                                return (
-                                  <div key={mentor.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                                    <button
-                                      onClick={() => toggleMentorExpand(mentor.mentor_id)}
-                                      className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
-                                    >
-                                      <div className="w-9 h-9 bg-blue-50 text-brand-blue rounded-xl flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                        {mentor.profiles?.full_name?.[0] || 'M'}
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <p className="font-bold text-sm text-brand-dark truncate">{mentor.profiles?.full_name || 'Tanpa Nama'}</p>
-                                        <p className="text-[10px] text-gray-400 truncate">{mentor.profiles?.email}</p>
-                                      </div>
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${mentorStudents.length === 0 ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-700'}`}>
-                                          {mentorStudents.length} Student
-                                        </span>
-                                        {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                                      </div>
-                                    </button>
-
-                                    {isExpanded && (
-                                      <div className="border-t border-gray-50 divide-y divide-gray-50">
-                                        {mentorStudents.length === 0 ? (
-                                          <p className="text-xs text-gray-400 italic py-4 text-center">Belum ada student di-assign ke mentor ini.</p>
-                                        ) : (
-                                          mentorStudents.map(item => (
-                                            <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50/50 transition-colors">
-                                              <div className="flex items-center gap-3 overflow-hidden">
-                                                <div className="w-8 h-8 bg-brand-cream text-brand-dark rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0">
-                                                  {item.profiles?.full_name?.[0] || 'S'}
-                                                </div>
-                                                <div className="min-w-0">
-                                                  <p className="font-bold text-xs text-brand-dark truncate">{item.profiles?.full_name || 'Tanpa Nama'}</p>
-                                                  <p className="text-[10px] text-gray-400 truncate">{item.profiles?.email}</p>
-                                                </div>
-                                              </div>
-                                              <button
-                                                onClick={() => setConfirmDeleteMentorStudentAssignment({ isOpen: true, id: item.assignmentId })}
-                                                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                                                title="Unassign dari mentor ini"
-                                              >
-                                                <Trash2 className="w-3 h-3" />
-                                              </button>
-                                            </div>
-                                          ))
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                )
-                              })}
-                            </div>
-
-                            {/* Student yang belum di-assign ke mentor mana pun */}
-                            {unassignedStudents.length > 0 && (
-                              <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
-                                <p className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1">
-                                  <AlertTriangle className="w-4 h-4" />
-                                  Student Belum Di-assign ke Mentor ({unassignedStudents.length})
-                                </p>
-                                <div className="space-y-1.5">
-                                  {unassignedStudents.map(e => (
-                                    <div key={e.id} className="flex items-center gap-2 bg-white rounded-xl p-2.5">
-                                      <div className="w-7 h-7 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-[10px]">
-                                        {e.profiles?.full_name?.[0] || 'S'}
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <p className="font-bold text-xs text-brand-dark truncate">{e.profiles?.full_name || 'Tanpa Nama'}</p>
-                                        <p className="text-[10px] text-gray-400 truncate">{e.profiles?.email}</p>
-                                      </div>
-                                      <button
-                                        onClick={() => setConfirmDeleteStudent({ isOpen: true, id: e.id })}
-                                        className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                                        title="Keluarkan dari peminatan"
-                                      >
-                                        <Trash2 className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}

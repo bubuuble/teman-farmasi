@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { 
   BookOpen, 
   Settings, 
@@ -125,6 +125,14 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
+  // Restore category filter from sessionStorage on mount
+  useEffect(() => {
+    const storedCategory = sessionStorage.getItem('admin-classes-category')
+    if (storedCategory) {
+      setSelectedCategory(storedCategory)
+    }
+  }, [])
+
   // Filter kelas berdasarkan kata kunci pencarian
   const filteredClasses = useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
@@ -223,7 +231,11 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
           <div className="relative min-w-[220px]">
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value
+                setSelectedCategory(value)
+                sessionStorage.setItem('admin-classes-category', value)
+              }}
               className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white font-bold text-sm text-brand-dark outline-none focus:border-brand-blue appearance-none transition-all shadow-sm cursor-pointer"
             >
               <option value="all">Semua Kategori ({totalClassesCount})</option>

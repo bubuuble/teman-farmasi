@@ -26,6 +26,7 @@ type ClassDetail = {
     profiles: {
       full_name: string | null
       email: string
+      institusi: string | null
     } | null
   }[]
   class_resources: {
@@ -61,7 +62,7 @@ export default async function AdminClassDetailPage({
     .select(`
       *,
       class_mentors ( id, mentor_id, sub_class_id, profiles ( full_name, email ) ),
-      enrollments ( id, student_id, sub_class_id, profiles ( full_name, email ) ),
+      enrollments ( id, student_id, sub_class_id, profiles ( full_name, email, institusi ) ),
       class_resources ( id, title, sub_class_id, file_url, file_path, created_at )
     `)
     .eq('id', classId)
@@ -89,7 +90,7 @@ export default async function AdminClassDetailPage({
   // 4. Fetch list of all Students
   const { data: allStudents } = await supabase
     .from('profiles')
-    .select('id, full_name, email')
+    .select('id, full_name, email, institusi')
     .eq('role', 'student')
 
   // 5. Fetch Mentor-Student Assignments for this class

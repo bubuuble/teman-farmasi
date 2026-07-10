@@ -92,6 +92,7 @@ type ClassDetail = {
     profiles: {
       full_name: string | null
       email: string
+      institusi: string | null
     } | null
   }[]
   class_resources: {
@@ -248,7 +249,8 @@ export default function ClassManager({
     const searchLower = studentSearch.toLowerCase()
     const fullName = (s.full_name || '').toLowerCase()
     const email = (s.email || '').toLowerCase()
-    return fullName.includes(searchLower) || email.includes(searchLower)
+    const institusi = (s.institusi || '').toLowerCase()
+    return fullName.includes(searchLower) || email.includes(searchLower) || institusi.includes(searchLower)
   })
 
   const assignedMentorIds = new Set(currentMentors.map(m => m.mentor_id))
@@ -317,7 +319,8 @@ export default function ClassManager({
     const searchLower = studentSearchForMentor.toLowerCase()
     const fullName = (s.full_name || '').toLowerCase()
     const email = (s.email || '').toLowerCase()
-    return fullName.includes(searchLower) || email.includes(searchLower)
+    const institusi = (s.institusi || '').toLowerCase()
+    return fullName.includes(searchLower) || email.includes(searchLower) || institusi.includes(searchLower)
   })
 
   const filteredMentors = assignableMentors.filter(m => {
@@ -1233,7 +1236,10 @@ export default function ClassManager({
                                                 disabled={isPending}
                                               />
                                               <div className="min-w-0 flex-1">
-                                                <p className="font-bold text-brand-dark truncate text-xs">{s.full_name || 'Tanpa Nama'}</p>
+                                                <p className="font-bold text-brand-dark truncate text-xs">
+                                                  {s.full_name || 'Tanpa Nama'}
+                                                  {s.institusi && <span className="text-[10px] text-brand-gray font-normal ml-1.5">({s.institusi})</span>}
+                                                </p>
                                                 <p className="text-[10px] text-gray-400 truncate">{s.email}</p>
                                               </div>
                                               {(() => {
@@ -1330,7 +1336,10 @@ export default function ClassManager({
                                                     {item.profiles?.full_name?.[0] || 'S'}
                                                   </div>
                                                   <div className="min-w-0">
-                                                    <p className="font-bold text-xs text-brand-dark truncate">{item.profiles?.full_name || 'Tanpa Nama'}</p>
+                                                    <p className="font-bold text-xs text-brand-dark truncate">
+                                                      {item.profiles?.full_name || 'Tanpa Nama'}
+                                                      {item.profiles?.institusi && <span className="text-[9px] text-brand-gray font-normal ml-1.5">({item.profiles.institusi})</span>}
+                                                    </p>
                                                     <p className="text-[10px] text-gray-400 truncate">{item.profiles?.email}</p>
                                                   </div>
                                                 </div>
@@ -1366,7 +1375,10 @@ export default function ClassManager({
                                         {e.profiles?.full_name?.[0] || 'S'}
                                       </div>
                                       <div className="min-w-0 flex-1">
-                                        <p className="font-bold text-xs text-brand-dark truncate">{e.profiles?.full_name || 'Tanpa Nama'}</p>
+                                        <p className="font-bold text-xs text-brand-dark truncate">
+                                          {e.profiles?.full_name || 'Tanpa Nama'}
+                                          {e.profiles?.institusi && <span className="text-[9px] text-brand-gray font-normal ml-1.5">({e.profiles.institusi})</span>}
+                                        </p>
                                         <p className="text-[10px] text-gray-400 truncate">{e.profiles?.email}</p>
                                       </div>
                                     </div>
@@ -1923,7 +1935,7 @@ export default function ClassManager({
                     type="text"
                     value={studentSearch}
                     onChange={(e) => setStudentSearch(e.target.value)}
-                    placeholder="Cari nama atau email..."
+                    placeholder="Cari nama, email, atau institusi..."
                     className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white mb-2"
                     disabled={isPending}
                   />
@@ -1953,7 +1965,10 @@ export default function ClassManager({
                               disabled={isPending}
                             />
                             <div className="min-w-0">
-                              <p className="font-bold text-brand-dark truncate">{s.full_name || 'Tanpa Nama'}</p>
+                              <p className="font-bold text-brand-dark truncate">
+                                {s.full_name || 'Tanpa Nama'}
+                                {s.institusi && <span className="text-[10px] text-brand-gray font-normal ml-1.5">({s.institusi})</span>}
+                              </p>
                               <p className="text-xs text-gray-500 truncate">{s.email}</p>
                             </div>
                           </label>
@@ -1989,7 +2004,10 @@ export default function ClassManager({
                           {item.profiles?.full_name?.[0] || 'S'}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-sm text-brand-dark truncate">{item.profiles?.full_name || 'Tanpa Nama'}</p>
+                          <p className="font-bold text-sm text-brand-dark truncate">
+                            {item.profiles?.full_name || 'Tanpa Nama'}
+                            {item.profiles?.institusi && <span className="text-xs text-brand-gray font-normal ml-1.5">({item.profiles.institusi})</span>}
+                          </p>
                           <p className="text-xs text-gray-400 truncate">{item.profiles?.email}</p>
                         </div>
                       </div>

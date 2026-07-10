@@ -208,7 +208,7 @@ export default async function StudentClassDetailPage({
                                 </p>
                             </div>
                             <div className="bg-white px-5 py-2 rounded-2xl font-bold text-brand-dark shadow-sm text-xs border border-gray-50">
-                                {batch.attendance_sessions.length} Sesi
+                                {batch.attendance_sessions.length} dari {kelas?.level || '-'} Sesi
                             </div>
                         </div>
                         

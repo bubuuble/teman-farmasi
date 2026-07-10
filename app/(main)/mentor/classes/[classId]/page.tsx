@@ -126,7 +126,7 @@ export default async function MentorClassDetailPage({
                 </span>
               )}
               <span className="bg-brand-blue/10 text-brand-blue text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                {kelas?.level}
+                {sessions.length} dari {kelas?.level || '-'} Sesi
               </span>
             </div>
             <p className="text-brand-gray text-xs">Kelola jadwal sesi dan materi kelas.</p>
@@ -139,7 +139,7 @@ export default async function MentorClassDetailPage({
 
         {/* KOLOM KIRI: DAFTAR SESI */}
         <div className="lg:col-span-2 space-y-4">
-          <h3 className="font-heading font-bold text-lg text-brand-dark px-2">Jadwal Sesi</h3>
+          <h3 className="font-heading font-bold text-lg text-brand-dark px-2">Jadwal Sesi ({sessions.length} dari {kelas?.level || '-'} Sesi)</h3>
 
           {sessions.length === 0 ? (
             <div className="py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-200">

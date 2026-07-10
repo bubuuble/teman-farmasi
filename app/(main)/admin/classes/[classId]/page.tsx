@@ -99,6 +99,12 @@ export default async function AdminClassDetailPage({
     .select('id, mentor_id, student_id, class_id, sub_class_id, created_at')
     .eq('class_id', classId)
 
+  // 6. Fetch Attendance Sessions for this class
+  const { data: attendanceSessions } = await supabase
+    .from('attendance_sessions')
+    .select('id, class_id, sub_class_id')
+    .eq('class_id', classId)
+
   return (
     <div className="space-y-8">
       {/* Navigation Header */}
@@ -122,6 +128,7 @@ export default async function AdminClassDetailPage({
         allStudents={allStudents || []} 
         allMentors={allMentors || []}
         mentorStudentAssignments={(mentorStudentAssignments as any) || []}
+        attendanceSessions={(attendanceSessions as any) || []}
       />
     </div>
   )

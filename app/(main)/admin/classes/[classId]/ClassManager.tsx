@@ -131,12 +131,14 @@ export default function ClassManager({
   allStudents,
   allMentors,
   mentorStudentAssignments,
+  attendanceSessions = [],
 }: {
   kelas: ClassDetail
   subClasses: SubClass[]
   allStudents: any[]
   allMentors: any[]
   mentorStudentAssignments: MentorStudentAssignment[]
+  attendanceSessions?: any[]
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabType>('detail')
@@ -620,7 +622,12 @@ export default function ClassManager({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 bg-brand-blue/10 text-brand-blue text-[10px] font-bold rounded-full uppercase tracking-wider">
-                    {kelas.level || "Regular"}
+                    {kelas.level 
+                      ? (kelas.title?.startsWith('Pharmacamp') 
+                          ? `${attendanceSessions.filter(s => s.sub_class_id === null).length} dari ${kelas.level} Hari Terbuat` 
+                          : `${kelas.level} Sesi`)
+                      : "Regular"
+                    }
                   </span>
                   <span className="px-2.5 py-1 bg-brand-pink/10 text-brand-pink text-[10px] font-bold rounded-full uppercase tracking-wider">
                     Kelas Wrapper (Peminatan)
@@ -790,6 +797,14 @@ export default function ClassManager({
                     <h4 className="font-bold text-brand-dark text-base line-clamp-2">
                       {sub.title}
                     </h4>
+                    {(() => {
+                      const subSessions = attendanceSessions.filter(s => s.sub_class_id === sub.id)
+                      return (
+                        <p className="text-[10px] text-brand-blue font-bold mt-1">
+                          {subSessions.length} dari {kelas.level || '-'} Sesi Terbuat
+                        </p>
+                      )
+                    })()}
                     <div className="grid grid-cols-3 gap-2 mt-2 pt-3 border-t border-gray-50 text-[10px] font-bold text-brand-gray text-center">
                       <div className="bg-gray-50 p-2 rounded-xl">
                         <span className="block text-brand-dark text-sm">{studCount}</span>
@@ -945,20 +960,26 @@ export default function ClassManager({
                             <h3 className="font-heading font-bold text-2xl text-brand-dark mt-3">{selectedSubClass.title}</h3>
                             <p className="text-xs text-brand-gray mt-1">Dibuat pada {new Date(selectedSubClass.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-pink/10 border border-brand-pink/20 text-brand-pink text-xs font-bold rounded-full">
+                                📊 {(() => {
+                                  const subSessions = attendanceSessions.filter(s => s.sub_class_id === selectedSubClass.id)
+                                  return `${subSessions.length} dari ${kelas.level || '-'} Sesi Terbuat`
+                                })()}
+                              </span>
+                              {selectedSubClass.session_offset > 0 && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-full">
+                                  ⚡ Mulai dari Sesi {selectedSubClass.session_offset + 1} (offset: {selectedSubClass.session_offset} sesi manual)
+                                </span>
+                              )}
+                            </div>
+                            
                             <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 max-w-2xl mt-4">
                               <h4 className="text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1.5 opacity-60">Deskripsi Sub Kelas / Peminatan</h4>
                               <p className="text-brand-dark text-sm leading-relaxed whitespace-pre-line">
                                 {selectedSubClass.description || "Tidak ada deskripsi."}
                               </p>
                             </div>
-
-                            {selectedSubClass.session_offset > 0 && (
-                              <div className="flex items-center gap-2 mt-3">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-full">
-                                  ⚡ Mulai dari Sesi {selectedSubClass.session_offset + 1} (offset: {selectedSubClass.session_offset} sesi manual)
-                                </span>
-                              </div>
-                            )}
                           </div>
 
                           <div className="flex gap-3 pt-2">
@@ -1673,7 +1694,9 @@ export default function ClassManager({
                 <div>
                   <span className="px-2.5 py-1 bg-brand-blue/10 text-brand-blue text-[10px] font-bold rounded-full uppercase tracking-wider">
                     {kelas.level 
-                      ? (kelas.title?.startsWith('Pharmacamp') ? `${kelas.level} Hari` : `${kelas.level}x Pertemuan`) 
+                      ? (kelas.title?.startsWith('Pharmacamp') 
+                          ? `${attendanceSessions.filter(s => s.sub_class_id === null).length} dari ${kelas.level} Hari Terbuat` 
+                          : `${kelas.level}x Pertemuan`) 
                       : '-'
                     }
                   </span>

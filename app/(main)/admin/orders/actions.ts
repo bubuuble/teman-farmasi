@@ -47,27 +47,6 @@ export async function updateOrderStatus(orderId: string, newStatus: string, clas
     .eq('id', orderId)
 
   if (error) return { error: error.message }
-
-  // LOGIC PINTAR: Jika status jadi PAID, otomatis enroll student ke kelas
-  if (newStatus === 'paid') {
-    // Cek dulu udah enroll belum?
-    const { data: existing } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('class_id', classId)
-      .eq('student_id', studentId)
-      .single()
-
-    // Kalau belum, masukkan!
-    if (!existing) {
-      await supabase.from('enrollments').insert({
-        class_id: classId,
-        student_id: studentId,
-        status: 'active'
-      })
-    }
-  }
-
   revalidatePath('/admin/orders')
   return { success: "Status diperbarui" }
 }

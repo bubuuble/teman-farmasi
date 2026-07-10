@@ -610,19 +610,6 @@ export default function ClassManager({
           </div>
         )}
 
-        {/* Unassigned subclass warning */}
-        {kelas.enrollments.filter(e => e.sub_class_id === null).length > 0 && (
-          <div className="p-4 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-3 text-sm text-orange-850 shadow-sm animate-in fade-in duration-200">
-            <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-bold text-orange-950">Ada Student Belum Masuk Peminatan/Mentor</p>
-              <p className="text-xs text-orange-800/80 mt-0.5">
-                Terdapat <span className="font-bold text-orange-900">{kelas.enrollments.filter(e => e.sub_class_id === null).length} student</span> yang sudah terdaftar di kelas ini (via pembayaran/order), tetapi belum dimasukkan ke peminatan (mentor) mana pun. Silakan pilih sub kelas di sebelah kiri, buka tab <strong>Mentor & Peminatan</strong>, lalu assign mereka ke mentor di Step 2.
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* TOP SECTION: Detail Kelas Card */}
         <div className="bg-white rounded-[32px] border border-gray-100 shadow-card p-8">
           {!isEditMode ? (

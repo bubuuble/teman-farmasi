@@ -60,19 +60,20 @@ export async function createUser(prevState: ActionState, formData: FormData): Pr
     return { error: error.message }
   }
 
-  // Update Username & Institusi Manual
+  // Update Full Name, Role, Username & Institusi ke tabel profiles
   if (data.user) {
-    const profileUpdate: Record<string, string> = {}
+    const profileUpdate: Record<string, string | null> = {
+      full_name: fullName,
+      role: role,
+    }
     if (username) profileUpdate.username = username
     if (role === 'student' && institusi) profileUpdate.institusi = institusi
 
-    if (Object.keys(profileUpdate).length > 0) {
-      const { error: updateError } = await supabaseAdmin
-        .from('profiles')
-        .update(profileUpdate)
-        .eq('id', data.user.id)
-      if (updateError) console.error("Gagal update profile:", updateError)
-    }
+    const { error: updateError } = await supabaseAdmin
+      .from('profiles')
+      .update(profileUpdate)
+      .eq('id', data.user.id)
+    if (updateError) console.error("Gagal update profile:", updateError)
   }
 
   revalidatePath('/admin/users')

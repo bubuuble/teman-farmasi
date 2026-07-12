@@ -3,6 +3,8 @@ import AddUserForm from "./AddUserForm"
 import UserTable from "./UserTable"
 import { redirect } from "next/navigation"
 
+type EnrollmentMap = Record<string, { classId: string; classTitle: string; subClassTitle: string | null }[]>
+
 export default async function AdminUsersPage() {
   const supabase = await createClient()
 
@@ -38,6 +40,25 @@ export default async function AdminUsersPage() {
 
   const { data: users } = await query
 
+  // 4. Fetch enrollments untuk semua students (join ke classes & sub_classes)
+  const { data: enrollments } = await supabase
+    .from('enrollments')
+    .select('student_id, class_id, classes(title), sub_classes:sub_class_id(title)')
+
+  // Buat map: student_id -> list kelas yang diikuti
+  const enrollmentMap: EnrollmentMap = {}
+  for (const e of enrollments || []) {
+    const classData = e.classes as { title: string } | null
+    const subClassData = e.sub_classes as { title: string } | null
+    if (!classData) continue
+    if (!enrollmentMap[e.student_id]) enrollmentMap[e.student_id] = []
+    enrollmentMap[e.student_id].push({
+      classId: e.class_id,
+      classTitle: classData.title,
+      subClassTitle: subClassData?.title ?? null,
+    })
+  }
+
   return (
     <div className="space-y-6">
       
@@ -51,7 +72,7 @@ export default async function AdminUsersPage() {
       </div>
 
       {/* Tabel User Client Component (Dengan Filter Dropdown) */}
-      <UserTable users={users || []} currentUserRole={currentUserRole} isSuperAdmin={isSuperAdmin} />
+      <UserTable users={users || []} currentUserRole={currentUserRole} isSuperAdmin={isSuperAdmin} enrollmentMap={enrollmentMap} />
       
     </div>
   )

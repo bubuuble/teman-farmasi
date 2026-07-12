@@ -10,6 +10,7 @@ import {
   CreditCard, 
   Settings,
   BarChart3,
+  BarChart2,
   X,
 } from 'lucide-react'
 import SignOutButton from '../SignOutButton'
@@ -19,6 +20,7 @@ const menuItems = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'Manajemen Kelas', href: '/admin/classes', icon: BookOpen },
   { label: 'Manajemen User', href: '/admin/users', icon: Users },
+  { label: 'Rekap Mentor', href: '/admin/mentor-summary', icon: BarChart2 },
   { label: 'Rekap Absensi', href: '/admin/attendances', icon: FileSpreadsheet },
   { label: 'Keuangan / Order', href: '/admin/orders', icon: CreditCard },
   { label: 'Web Performance', href: '/admin/web-performance', icon: BarChart3 },

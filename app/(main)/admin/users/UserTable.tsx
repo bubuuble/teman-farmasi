@@ -14,13 +14,22 @@ type UserProfile = {
   institusi?: string | null
 }
 
+type EnrollmentEntry = {
+  classId: string
+  classTitle: string
+  subClassTitle: string | null
+}
+
+type EnrollmentMap = Record<string, EnrollmentEntry[]>
+
 interface UserTableProps {
   users: UserProfile[]
   currentUserRole: string
   isSuperAdmin: boolean
+  enrollmentMap: EnrollmentMap
 }
 
-export default function UserTable({ users, currentUserRole, isSuperAdmin }: UserTableProps) {
+export default function UserTable({ users, currentUserRole, isSuperAdmin, enrollmentMap }: UserTableProps) {
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
@@ -120,6 +129,24 @@ export default function UserTable({ users, currentUserRole, isSuperAdmin }: User
                     {user.role === 'student' && user.institusi && (
                       <div className="text-xs text-brand-gray mt-0.5">{user.institusi}</div>
                     )}
+                    {/* Tampilkan kelas yang diikuti student */}
+                    {user.role === 'student' && (() => {
+                      const classes = enrollmentMap[user.id] || []
+                      if (classes.length === 0) return null
+                      return (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {classes.map((e, i) => (
+                            <span
+                              key={i}
+                              title={e.subClassTitle ? `${e.classTitle} → ${e.subClassTitle}` : e.classTitle}
+                              className="inline-block max-w-[180px] truncate px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-blue/10 text-brand-blue border border-brand-blue/20"
+                            >
+                              {e.subClassTitle ? `${e.classTitle} › ${e.subClassTitle}` : e.classTitle}
+                            </span>
+                          ))}
+                        </div>
+                      )
+                    })()}
                   </td>
                   <td className="p-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide

@@ -55,14 +55,14 @@ export default function MentorSidebar() {
             </Link>
           )
         })}
-      </nav>
 
-      {/* Footer / Logout */}
-      <div className="p-4 border-t border-white/10">
-        <div className="bg-white/5 rounded-xl p-4 w-full">
-           <SignOutButton />
+        {/* Footer / Logout */}
+        <div className="pt-4 border-t border-white/10 mt-4">
+          <div className="bg-white/5 rounded-xl p-4 w-full">
+             <SignOutButton />
+          </div>
         </div>
-      </div>
+      </nav>
     </aside>
   )
 }

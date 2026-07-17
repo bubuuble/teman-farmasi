@@ -85,16 +85,16 @@ export default function AdminSidebar() {
               </Link>
             )
           })}
-        </nav>
 
-        {/* Footer / Logout */}
-        <div className="p-4 border-t border-white/10">
-          <div className="bg-white/5 rounded-xl p-4 flex items-center justify-between">
-             <div className="w-full">
-               <SignOutButton />
-             </div>
+          {/* Footer / Logout */}
+          <div className="pt-4 border-t border-white/10 mt-4">
+            <div className="bg-white/5 rounded-xl p-4 flex items-center justify-between">
+               <div className="w-full">
+                 <SignOutButton />
+               </div>
+            </div>
           </div>
-        </div>
+        </nav>
       </aside>
     </>
   )

@@ -58,14 +58,14 @@ export default function StudentSidebar() {
             </Link>
           )
         })}
-      </nav>
 
-      {/* Footer / Logout */}
-      <div className="p-4 border-t border-gray-50">
-        <div className="bg-gray-50 rounded-2xl p-2 w-full">
-           <SignOutButton />
+        {/* Footer / Logout */}
+        <div className="pt-4 border-t border-gray-50 mt-4">
+          <div className="bg-gray-50 rounded-2xl p-2 w-full">
+             <SignOutButton />
+          </div>
         </div>
-      </div>
+      </nav>
     </aside>
   )
 }

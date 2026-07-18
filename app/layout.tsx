@@ -25,18 +25,7 @@ export const metadata: Metadata = {
   title: "Teman Farmasi | Bimbingan Riset Farmasi Privat",
   description: "Platform bimbingan riset farmasi terbesar di Indonesia.",
   icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/images/logo3.png', type: 'image/png', sizes: '32x32' },
-      { url: '/images/logo3.png', type: 'image/png', sizes: '48x48' },
-      { url: '/images/logo3.png', type: 'image/png', sizes: '96x96' },
-      { url: '/images/logo3.png', type: 'image/png', sizes: '144x144' },
-      { url: '/images/logo3.png', type: 'image/png', sizes: '192x192' },
-      { url: '/images/logo3.png', type: 'image/png', sizes: '512x512' },
-    ],
-    apple: [
-      { url: '/images/logo3.png', sizes: '180x180', type: 'image/png' },
-    ],
+    icon: '/images/logo3.png',
   }
 };
 

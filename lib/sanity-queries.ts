@@ -199,7 +199,7 @@ export async function getFeaturedMentors() {
 }
 
 export async function getFeaturedTestimonials() {
-  const queryFeatured = `*[_type == "testimonial" && featured == true] | order(order asc) [0...3] {
+  const query = `*[_type == "testimonial" && featured == true] | order(order asc) [0...3] {
     _id,
     name,
     role,
@@ -210,25 +210,7 @@ export async function getFeaturedTestimonials() {
     featured,
     order
   }`;
-  const featured = await client.fetch(queryFeatured);
-
-  if (featured && featured.length > 0) {
-    return featured;
-  }
-
-  // Fallback: fetch any 3 testimonials if none are featured
-  const queryAll = `*[_type == "testimonial"] | order(order asc) [0...3] {
-    _id,
-    name,
-    role,
-    text,
-    image,
-    screenshotImage,
-    cardColor,
-    featured,
-    order
-  }`;
-  return await client.fetch(queryAll);
+  return await client.fetch(query);
 }
 
 export async function getHeroContent() {

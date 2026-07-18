@@ -18,12 +18,65 @@ export interface Testimonial {
   text: string;
   image?: SanityImage;
   screenshotImage?: SanityImage; // Screenshot WhatsApp asli
+  cardColor?: string;
 }
 
 interface Props {
   testimonials: Testimonial[];
   isFullPage?: boolean;
 }
+
+const colorThemes: Record<string, {
+  cardBg: string;
+  border: string;
+  headerBg: string;
+  headerText: string;
+  headerSubText: string;
+  sendBtnBg: string;
+  sendBtnText: string;
+  chatBubbleBg: string;
+  inputBg: string;
+  roleText: string;
+}> = {
+  'bg-brand-yellow': {
+    cardBg: 'bg-[#FDF9F0]',
+    border: 'border-brand-yellow/50',
+    headerBg: 'bg-brand-yellow',
+    headerText: 'text-brand-dark',
+    headerSubText: 'text-brand-dark/60',
+    sendBtnBg: 'bg-brand-yellow',
+    sendBtnText: 'text-brand-dark',
+    chatBubbleBg: 'bg-white',
+    inputBg: 'bg-yellow-50/70',
+    roleText: 'text-amber-600',
+  },
+  'bg-brand-pink': {
+    cardBg: 'bg-pink-50/40',
+    border: 'border-brand-pink/30',
+    headerBg: 'bg-brand-pink',
+    headerText: 'text-brand-cream',
+    headerSubText: 'text-pink-100 opacity-90',
+    sendBtnBg: 'bg-brand-pink',
+    sendBtnText: 'text-white',
+    chatBubbleBg: 'bg-white',
+    inputBg: 'bg-pink-100/30',
+    roleText: 'text-brand-pink',
+  },
+  'bg-brand-blue': {
+    cardBg: 'bg-blue-50/40',
+    border: 'border-brand-blue/40',
+    headerBg: 'bg-brand-blue',
+    headerText: 'text-white',
+    headerSubText: 'text-blue-100 opacity-90',
+    sendBtnBg: 'bg-brand-blue',
+    sendBtnText: 'text-white',
+    chatBubbleBg: 'bg-white',
+    inputBg: 'bg-blue-100/30',
+    roleText: 'text-brand-blue',
+  }
+};
+
+const defaultTheme = colorThemes['bg-brand-pink'];
 
 export default function Testimonials({ testimonials = [], isFullPage = false }: Props) {
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
@@ -40,6 +93,7 @@ export default function Testimonials({ testimonials = [], isFullPage = false }: 
         {displayItems.map((item, idx) => {
           const imageUrl = item.image ? urlFor(item.image).width(100).height(100).url() : null;
           const screenshotUrl = item.screenshotImage ? urlFor(item.screenshotImage).width(800).url() : null;
+          const theme = colorThemes[item.cardColor || 'bg-brand-pink'] || defaultTheme;
           
           const transformations = !isFullPage ? [
             "md:rotate-[-8deg] md:translate-y-8 md:translate-x-4 z-0 scale-90",
@@ -50,7 +104,7 @@ export default function Testimonials({ testimonials = [], isFullPage = false }: 
           return (
             <div 
               key={item._id} 
-              className={`flex flex-col bg-pink-50 w-full rounded-[1.5rem] shadow-lg border-2 border-brand-pink/20 transition-all duration-300 hover:z-30 hover:scale-[1.02] h-full relative
+              className={`flex flex-col ${theme.cardBg} w-full rounded-[1.5rem] shadow-lg border-2 ${theme.border} transition-all duration-300 hover:z-30 hover:scale-[1.02] h-full relative
               ${!isFullPage ? transformations[idx % 3] : ""}`}
             >
               {/* Badge "Bukti Asli" - Sticky di pojok kanan atas */}
@@ -69,7 +123,7 @@ export default function Testimonials({ testimonials = [], isFullPage = false }: 
               )}
 
               {/* Header WhatsApp */}
-              <div className="bg-brand-pink p-3 px-4 flex items-center justify-between text-white flex-shrink-0 rounded-t-[1.5rem]">
+              <div className={`p-3 px-4 flex items-center justify-between flex-shrink-0 rounded-t-[1.5rem] ${theme.headerBg} ${theme.headerText}`}>
                 <div className="flex items-center gap-3">
                   <div className="relative w-9 h-9 rounded-full overflow-hidden bg-white/20 flex-shrink-0">
                     {imageUrl ? (
@@ -81,8 +135,8 @@ export default function Testimonials({ testimonials = [], isFullPage = false }: 
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-[13px] font-bold truncate leading-tight text-brand-cream">{item.name}</h4>
-                    <p className="text-[10px] text-pink-100 opacity-90">online</p>
+                    <h4 className="text-[13px] font-bold truncate leading-tight">{item.name}</h4>
+                    <p className={`text-[10px] ${theme.headerSubText}`}>online</p>
                   </div>
                 </div>
                 <div className="flex gap-3 text-xs opacity-80 flex-shrink-0">
@@ -91,13 +145,13 @@ export default function Testimonials({ testimonials = [], isFullPage = false }: 
               </div>
 
               {/* Chat Body */}
-              <div className="p-4 relative bg-pink-50 flex-grow flex flex-col justify-center overflow-hidden">
+              <div className={`p-4 relative ${theme.cardBg} flex-grow flex flex-col justify-center overflow-hidden`}>
                 <div className="absolute inset-0 opacity-[0.05] pointer-events-none" 
                      style={{ backgroundImage: `url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')` }}>
                 </div>
 
                 <div className="relative bg-white p-3.5 rounded-2xl rounded-tl-none shadow-sm self-start max-w-[95%] z-10">
-                  <span className="block text-[10px] font-bold text-brand-pink mb-1.5 uppercase tracking-wide">
+                  <span className={`block text-[10px] font-bold ${theme.roleText} mb-1.5 uppercase tracking-wide`}>
                     {item.role}
                   </span>
                   <p className="text-[13.5px] text-gray-700 leading-relaxed pr-4">
@@ -111,11 +165,11 @@ export default function Testimonials({ testimonials = [], isFullPage = false }: 
               </div>
               
               {/* Footer Input */}
-              <div className="bg-pink-100/50 p-3 flex items-center gap-2 flex-shrink-0 mt-auto rounded-b-[1.5rem] overflow-hidden">
+              <div className={`${theme.inputBg} p-3 flex items-center gap-2 flex-shrink-0 mt-auto rounded-b-[1.5rem] overflow-hidden`}>
                 <div className="flex-1 bg-white rounded-full py-2 px-4 text-[12px] text-gray-400 shadow-sm">
                   Ketik pesan...
                 </div>
-                <div className="w-9 h-9 bg-brand-pink rounded-full flex items-center justify-center text-white text-xs shadow-md flex-shrink-0">
+                <div className={`w-9 h-9 ${theme.sendBtnBg} ${theme.sendBtnText} rounded-full flex items-center justify-center text-xs shadow-md flex-shrink-0`}>
                   <FaPaperPlane />
                 </div>
               </div>

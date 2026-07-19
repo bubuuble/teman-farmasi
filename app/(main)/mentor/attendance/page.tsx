@@ -39,7 +39,7 @@ export default async function MentorAttendancePage({
         .select(`
             class_id,
             sub_class_id,
-            classes ( id, title ),
+            classes ( id, title, level ),
             sub_classes ( id, title )
         `)
         .eq('mentor_id', user.id)
@@ -71,11 +71,22 @@ export default async function MentorAttendancePage({
         : [classId, undefined]
 
     // 3. Jika kelas dipilih, ambil sesi + siswa + absensi
-    let sessions: SessionItem[] = []
+    let sessions: any[] = []
     let students: StudentItem[] = []
     const attendanceMap: Record<string, string> = {}
+    let isPrivate = false
+    let maxSessions = 0
 
     if (selectedClassId) {
+        const activeClassMatch = classMentorData.find(item => 
+            item.class_id === selectedClassId && 
+            (selectedSubClassId ? item.sub_class_id === selectedSubClassId : !item.sub_class_id)
+        )
+        const selectedClass = activeClassMatch?.classes as any
+        const isPharmacore = selectedClass?.title?.startsWith('Pharmacore')
+        isPrivate = selectedClass ? !isPharmacore : false
+        maxSessions = selectedClass?.level || 0
+
         // Sesi langsung dari class_id & sub_class_id
         const sessionsQuery = supabase
             .from('attendance_sessions')
@@ -89,7 +100,7 @@ export default async function MentorAttendancePage({
         }
 
         const { data: sData } = await sessionsQuery.order('date_time', { ascending: true })
-        sessions = (sData as SessionItem[]) || []
+        sessions = (sData as any[]) || []
 
         // Siswa terdaftar
         const enrollQuery = supabase
@@ -113,6 +124,19 @@ export default async function MentorAttendancePage({
                 .filter((p): p is StudentItem => p !== null && p.full_name !== null) as StudentItem[]
             // Sort A-Z
             students.sort((a, b) => a.full_name.localeCompare(b.full_name, 'id'))
+        }
+
+        // Fetch session_students mapping if private
+        if (isPrivate && sessions.length > 0) {
+            const { data: ssData } = await supabase
+                .from('session_students')
+                .select('session_id, student_id')
+                .in('session_id', sessions.map(s => s.id))
+            
+            sessions = sessions.map(s => ({
+                ...s,
+                assigned_student_ids: ssData?.filter(ss => ss.session_id === s.id).map(ss => ss.student_id) || []
+            }))
         }
 
         // Record absensi
@@ -147,6 +171,8 @@ export default async function MentorAttendancePage({
                     sessions={sessions}
                     students={students}
                     initialRecords={attendanceMap}
+                    isPrivate={isPrivate}
+                    maxSessions={maxSessions}
                 />
             ) : (
                 <div className="p-24 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center">

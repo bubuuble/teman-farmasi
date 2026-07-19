@@ -160,7 +160,7 @@ export default function MentorManageResources({
               type="file"
               accept=".pdf,.doc,.docx,.ppt,.pptx"
               onChange={(e) => e.target.files?.[0] && setSelectedFile(e.target.files[0])}
-              className="flex-1 p-2 rounded-xl border border-gray-200 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
+              className="flex-1 min-w-0 p-2 rounded-xl border border-gray-200 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
               required
               disabled={isPending}
             />

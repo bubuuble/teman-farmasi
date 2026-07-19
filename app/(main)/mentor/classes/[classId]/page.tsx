@@ -43,7 +43,7 @@ export default async function MentorClassDetailPage({
 
   const isPharmacore = kelas?.title?.startsWith('Pharmacore')
   const isPharmacamp = kelas?.title?.startsWith('Pharmacamp')
-  const isPrivate = !isPharmacore && !isPharmacamp
+  const isPrivate = !isPharmacore
 
   // Fetch subclass if subClassId is present
   let subClassData: { id: string; title: string; session_offset: number } | null = null
@@ -150,7 +150,7 @@ export default async function MentorClassDetailPage({
                 </span>
               )}
               <span className="bg-brand-blue/10 text-brand-blue text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                {sessions.length} dari {kelas?.level || '-'} Sesi
+                {isPrivate ? `Total Sesi: ${sessions.length}` : `${sessions.length} dari ${kelas?.level || '-'} Sesi`}
               </span>
             </div>
             <p className="text-brand-gray text-xs">Kelola jadwal sesi dan materi kelas.</p>
@@ -168,7 +168,9 @@ export default async function MentorClassDetailPage({
 
         {/* KOLOM KIRI: DAFTAR SESI */}
         <div className="lg:col-span-2 space-y-4">
-          <h3 className="font-heading font-bold text-lg text-brand-dark px-2">Jadwal Sesi ({sessions.length} dari {kelas?.level || '-'} Sesi)</h3>
+          <h3 className="font-heading font-bold text-lg text-brand-dark px-2">
+            {isPrivate ? "Jadwal Sesi per Student" : `Jadwal Sesi (${sessions.length} dari ${kelas?.level || '-'} Sesi)`}
+          </h3>
 
           {isPrivate ? (
             <div className="space-y-6">
@@ -190,7 +192,7 @@ export default async function MentorClassDetailPage({
                         </div>
                       </div>
                       <span className="bg-brand-blue/10 text-brand-blue text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                        {studentSessions.length} Sesi
+                        {studentSessions.length} dari {kelas?.level || '-'} Sesi
                       </span>
                     </div>
 

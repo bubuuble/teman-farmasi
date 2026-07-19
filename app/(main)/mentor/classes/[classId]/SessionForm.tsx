@@ -130,7 +130,7 @@ export default function SessionForm({
                 </div>
               )}
 
-              {classType === 'private' && (
+              {classType !== 'pharmacore' && (
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-brand-dark uppercase">Pilih Student</label>
                   {availableStudents.length === 0 ? (

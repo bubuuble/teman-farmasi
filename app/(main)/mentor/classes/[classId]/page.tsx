@@ -170,79 +170,163 @@ export default async function MentorClassDetailPage({
         <div className="lg:col-span-2 space-y-4">
           <h3 className="font-heading font-bold text-lg text-brand-dark px-2">Jadwal Sesi ({sessions.length} dari {kelas?.level || '-'} Sesi)</h3>
 
-          {sessions.length === 0 ? (
-            <div className="py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-200">
-              <p className="text-brand-gray font-medium text-sm">Belum ada sesi di kelas ini.</p>
-              <p className="text-gray-400 text-xs mt-1">Klik &quot;Tambah Sesi&quot; untuk mulai.</p>
-            </div>
-          ) : (
-            sessions.map((session, idx) => (
-              <div key={session.id} className="bg-white rounded-[32px] shadow-card border border-gray-100 overflow-hidden">
-                <div className="flex flex-col md:flex-row md:items-center justify-between p-5 gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center font-bold text-brand-dark text-lg border border-gray-100 flex-shrink-0">
-                      {(subClassData?.session_offset ?? 0) + idx + 1}
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-brand-dark leading-tight">{session.title}</h5>
-                      {isPrivate && session.assigned_student_ids && session.assigned_student_ids.length > 0 && (
-                        <div className="text-[10px] text-gray-500 mt-1">
-                          <span className="font-bold">Student: </span>
-                          {session.assigned_student_ids
-                            .map(id => availableStudents.find(s => s.id === id)?.name)
-                            .filter(Boolean)
-                            .join(', ')}
+          {isPrivate ? (
+            <div className="space-y-6">
+              {students.map((studentItem) => {
+                const studentId = studentItem.profiles?.id;
+                const studentName = studentItem.profiles?.full_name || 'Tanpa Nama';
+                const studentSessions = sessions.filter(s => s.assigned_student_ids?.includes(studentId || ''));
+
+                return (
+                  <div key={studentId} className="bg-brand-cream/10 p-6 rounded-[32px] border border-brand-cream/30 space-y-4 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-brand-cream/40 pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-brand-cream flex items-center justify-center font-bold text-brand-dark text-sm border border-white shadow-sm flex-shrink-0">
+                          {studentName[0] || 'S'}
                         </div>
-                      )}
-                      <div className="flex items-center gap-3 text-[11px] text-gray-500 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(session.date_time).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                          {session.session_time && ` pukul ${session.session_time.slice(0, 5)} WIB`}
-                        </span>
-                        {!isPharmacamp && session.zoom_link && (
-                          <a href={session.zoom_link} target="_blank" className="flex items-center gap-1 text-brand-blue hover:underline font-bold">
-                            <Video className="w-3 h-3" /> Zoom
-                          </a>
-                        )}
-                        {isPharmacamp && (
-                          <span className="text-[10px] font-bold text-brand-pink bg-brand-pink/5 px-2 py-0.5 rounded">
-                            Offline: Mini Lab TF
-                          </span>
-                        )}
+                        <div>
+                          <h4 className="font-bold text-brand-dark text-sm leading-tight">{studentName}</h4>
+                          <p className="text-[10px] text-gray-400">{studentItem.profiles?.email || '-'}</p>
+                        </div>
                       </div>
+                      <span className="bg-brand-blue/10 text-brand-blue text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                        {studentSessions.length} Sesi
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {studentSessions.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic py-2 px-2">Belum ada sesi dijadwalkan untuk student ini.</p>
+                      ) : (
+                        studentSessions.map((session, idx) => (
+                          <div key={session.id} className="bg-white rounded-2xl shadow-card border border-gray-50 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-brand-cream rounded-lg flex items-center justify-center font-bold text-brand-dark text-xs border border-gray-100 flex-shrink-0">
+                                {idx + 1}
+                              </div>
+                              <div>
+                                <h5 className="font-bold text-brand-dark text-sm leading-tight">{session.title}</h5>
+                                <div className="flex items-center gap-3 text-[10px] text-gray-500 mt-1">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {new Date(session.date_time).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                    {session.session_time && ` pukul ${session.session_time.slice(0, 5)} WIB`}
+                                  </span>
+                                  {!isPharmacamp && session.zoom_link && (
+                                    <a href={session.zoom_link} target="_blank" className="flex items-center gap-1 text-brand-blue hover:underline font-bold">
+                                      <Video className="w-3.5 h-3.5" /> Zoom
+                                    </a>
+                                  )}
+                                  {isPharmacamp && (
+                                    <span className="text-[9px] font-bold text-brand-pink bg-brand-pink/5 px-1.5 py-0.5 rounded">
+                                      Offline: Mini Lab TF
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2">
+                              {session.mentor_status === 'present' ? (
+                                <div className="flex items-center gap-2 px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-[9px] font-bold border border-green-200">
+                                  <CheckCircle className="w-3 h-3" /> Absen Selesai
+                                </div>
+                              ) : (
+                                <AbsenButton sessionId={session.id} classId={classId} />
+                              )}
+                              <div className="flex items-center gap-1 pl-2 border-l border-gray-100">
+                                <SessionForm 
+                                  classId={classId} 
+                                  subClassId={subClassId} 
+                                  existingData={{
+                                    id: session.id,
+                                    title: session.title,
+                                    date_time: session.date_time,
+                                    session_time: session.session_time,
+                                    zoom_link: session.zoom_link,
+                                    assigned_student_ids: session.assigned_student_ids
+                                  }}
+                                  classType={isPharmacamp ? 'pharmacamp' : isPharmacore ? 'pharmacore' : 'private'}
+                                  availableStudents={availableStudents}
+                                />
+                                <DeleteSessionButton sessionId={session.id} classId={classId} />
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-end gap-2">
-                    {session.mentor_status === 'present' ? (
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-xl text-[10px] font-bold border border-green-200">
-                        <CheckCircle className="w-3.5 h-3.5" /> Absen Selesai
+                );
+              })}
+              {students.length === 0 && (
+                <div className="py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-200">
+                  <p className="text-brand-gray font-medium text-sm">Belum ada student terdaftar.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Pharmacore (Public Group)
+            sessions.length === 0 ? (
+              <div className="py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-200">
+                <p className="text-brand-gray font-medium text-sm">Belum ada sesi di kelas ini.</p>
+                <p className="text-gray-400 text-xs mt-1">Klik &quot;Tambah Sesi&quot; untuk mulai.</p>
+              </div>
+            ) : (
+              sessions.map((session, idx) => (
+                <div key={session.id} className="bg-white rounded-[32px] shadow-card border border-gray-100 overflow-hidden">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between p-5 gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center font-bold text-brand-dark text-lg border border-gray-100 flex-shrink-0">
+                        {(subClassData?.session_offset ?? 0) + idx + 1}
                       </div>
-                    ) : (
-                      <AbsenButton sessionId={session.id} classId={classId} />
-                    )}
-                    <div className="flex items-center gap-1 pl-2 border-l border-gray-200">
-                      <SessionForm 
-                        classId={classId} 
-                        subClassId={subClassId} 
-                        existingData={{
-                          id: session.id,
-                          title: session.title,
-                          date_time: session.date_time,
-                          session_time: session.session_time,
-                          zoom_link: session.zoom_link,
-                          assigned_student_ids: session.assigned_student_ids
-                        }}
-                        classType={isPharmacamp ? 'pharmacamp' : isPharmacore ? 'pharmacore' : 'private'}
-                        availableStudents={availableStudents}
-                      />
-                      <DeleteSessionButton sessionId={session.id} classId={classId} />
+                      <div>
+                        <h5 className="font-bold text-brand-dark leading-tight">{session.title}</h5>
+                        <div className="flex items-center gap-3 text-[11px] text-gray-500 mt-1">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(session.date_time).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            {session.session_time && ` pukul ${session.session_time.slice(0, 5)} WIB`}
+                          </span>
+                          {session.zoom_link && (
+                            <a href={session.zoom_link} target="_blank" className="flex items-center gap-1 text-brand-blue hover:underline font-bold">
+                              <Video className="w-3 h-3" /> Zoom
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2">
+                      {session.mentor_status === 'present' ? (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-xl text-[10px] font-bold border border-green-200">
+                          <CheckCircle className="w-3.5 h-3.5" /> Absen Selesai
+                        </div>
+                      ) : (
+                        <AbsenButton sessionId={session.id} classId={classId} />
+                      )}
+                      <div className="flex items-center gap-1 pl-2 border-l border-gray-200">
+                        <SessionForm 
+                          classId={classId} 
+                          subClassId={subClassId} 
+                          existingData={{
+                            id: session.id,
+                            title: session.title,
+                            date_time: session.date_time,
+                            session_time: session.session_time,
+                            zoom_link: session.zoom_link,
+                            assigned_student_ids: session.assigned_student_ids
+                          }}
+                          classType={isPharmacamp ? 'pharmacamp' : isPharmacore ? 'pharmacore' : 'private'}
+                          availableStudents={availableStudents}
+                        />
+                        <DeleteSessionButton sessionId={session.id} classId={classId} />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              ))
+            )
           )}
         </div>
 

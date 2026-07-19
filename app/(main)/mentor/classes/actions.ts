@@ -21,7 +21,7 @@ export async function createSession(prevState: ActionState, formData: FormData) 
   const zoomLink = formData.get('zoomLink') as string | null
   const subClassId = formData.get('subClassId') as string || null
   const time = formData.get('time') as string || null
-  const studentIds = formData.getAll('studentIds') as string[]
+  const studentId = formData.get('studentId') as string | null
 
   const { data: classInfo } = await supabase
     .from('classes')
@@ -31,7 +31,7 @@ export async function createSession(prevState: ActionState, formData: FormData) 
 
   const isPharmacore = classInfo?.title?.startsWith('Pharmacore')
   const isPharmacamp = classInfo?.title?.startsWith('Pharmacamp')
-  const isPrivate = !isPharmacore && !isPharmacamp
+  const isPrivate = !isPharmacore
 
   const { data: newSession, error } = await supabase.from('attendance_sessions').insert({
     class_id: classId,
@@ -46,14 +46,13 @@ export async function createSession(prevState: ActionState, formData: FormData) 
   if (error) return { error: error.message }
 
   // Jika kelas private, simpan relasi many-to-many ke session_students
-  if (isPrivate && studentIds.length > 0) {
-    const sessionStudentsToInsert = studentIds.map(studentId => ({
-      session_id: newSession?.id,
-      student_id: studentId,
-    }))
+  if (isPrivate && studentId) {
     const { error: ssError } = await supabase
       .from('session_students')
-      .insert(sessionStudentsToInsert)
+      .insert({
+        session_id: newSession?.id,
+        student_id: studentId,
+      })
     if (ssError) return { error: ssError.message }
   }
 
@@ -69,34 +68,50 @@ export async function createSession(prevState: ActionState, formData: FormData) 
         .eq('id', classId)
         .single()
 
-      // Calculate session index
-      let sessionQuery = adminSupabase
-        .from('attendance_sessions')
-        .select('id')
-        .eq('class_id', classId)
-        .order('date_time', { ascending: true })
-
-      if (subClassId) {
-        sessionQuery = sessionQuery.eq('sub_class_id', subClassId)
-      } else {
-        sessionQuery = sessionQuery.is('sub_class_id', null)
-      }
-
-      const { data: classSessions } = await sessionQuery
-
-      const sessionIndex = classSessions ? classSessions.findIndex((s: any) => s.id === newSession?.id) + 1 : 1
-
+      let sessionIndex = 1
       let studentEmails: string[] = []
 
-      if (isPrivate) {
-        if (studentIds.length > 0) {
-          const { data: assigned } = await adminSupabase
-            .from('profiles')
-            .select('email')
-            .in('id', studentIds)
-          studentEmails = assigned?.map((p: any) => p.email).filter(Boolean) || []
+      if (isPrivate && studentId) {
+        // Ambil semua session_id yang diassign ke student ini, urutkan berdasarkan date_time
+        const { data: studentSessions } = await adminSupabase
+          .from('session_students')
+          .select('session_id, attendance_sessions(date_time)')
+          .eq('student_id', studentId)
+        
+        const sorted = (studentSessions || [])
+          .map((ss: any) => ({
+            id: ss.session_id,
+            dateTime: new Date(ss.attendance_sessions?.date_time || 0)
+          }))
+          .sort((a: any, b: any) => a.dateTime.getTime() - b.dateTime.getTime())
+
+        sessionIndex = sorted.findIndex((s: any) => s.id === newSession?.id) + 1
+
+        const { data: assigned } = await adminSupabase
+          .from('profiles')
+          .select('email')
+          .eq('id', studentId)
+          .single()
+        if (assigned?.email) {
+          studentEmails = [assigned.email]
         }
       } else {
+        // Calculate session index for public classes
+        let sessionQuery = adminSupabase
+          .from('attendance_sessions')
+          .select('id')
+          .eq('class_id', classId)
+          .order('date_time', { ascending: true })
+
+        if (subClassId) {
+          sessionQuery = sessionQuery.eq('sub_class_id', subClassId)
+        } else {
+          sessionQuery = sessionQuery.is('sub_class_id', null)
+        }
+
+        const { data: classSessions } = await sessionQuery
+        sessionIndex = classSessions ? classSessions.findIndex((s: any) => s.id === newSession?.id) + 1 : 1
+
         let enrollQuery = adminSupabase
           .from('enrollments')
           .select('profiles ( email )')
@@ -109,13 +124,12 @@ export async function createSession(prevState: ActionState, formData: FormData) 
         }
 
         const { data: enrolledStudents } = await enrollQuery
-
         studentEmails = enrolledStudents
           ?.map((item: any) => item.profiles?.email)
           .filter((email: any): email is string => !!email) || []
       }
 
-      console.log(`[Email] Mengirim notifikasi sesi baru ke ${studentEmails.length} student(s) (private: ${isPrivate})...`)
+      console.log(`[Email] Mengirim notifikasi sesi baru ke ${studentEmails.length} student(s) (private: ${isPrivate}, studentId: ${studentId})...`)
 
       if (studentEmails.length > 0 && classData?.title) {
         const result = await sendNewSessionNotification({
@@ -186,7 +200,7 @@ export async function updateSession(prevState: ActionState, formData: FormData):
   const date = formData.get('date') as string
   const zoomLink = formData.get('zoomLink') as string
   const time = formData.get('time') as string || null
-  const studentIds = formData.getAll('studentIds') as string[]
+  const studentId = formData.get('studentId') as string | null
 
   if (!sessionId || !title || !date) return { error: "Data wajib diisi" }
 
@@ -198,7 +212,7 @@ export async function updateSession(prevState: ActionState, formData: FormData):
 
   const isPharmacore = classInfo?.title?.startsWith('Pharmacore')
   const isPharmacamp = classInfo?.title?.startsWith('Pharmacamp')
-  const isPrivate = !isPharmacore && !isPharmacamp
+  const isPrivate = !isPharmacore
 
   const { error } = await supabase.from('attendance_sessions').update({
     title,
@@ -215,14 +229,13 @@ export async function updateSession(prevState: ActionState, formData: FormData):
     await supabase.from('session_students').delete().eq('session_id', sessionId)
 
     // Insert relasi baru
-    if (studentIds.length > 0) {
-      const sessionStudentsToInsert = studentIds.map(studentId => ({
-        session_id: sessionId,
-        student_id: studentId,
-      }))
+    if (studentId) {
       const { error: ssError } = await supabase
         .from('session_students')
-        .insert(sessionStudentsToInsert)
+        .insert({
+          session_id: sessionId,
+          student_id: studentId,
+        })
       if (ssError) return { error: ssError.message }
     }
   }
@@ -248,33 +261,50 @@ export async function updateSession(prevState: ActionState, formData: FormData):
         .eq('id', classId)
         .single()
 
-      // Calculate session index — filter berdasarkan sub_class_id yang sama
-      let sessionIndexQuery = adminSupabase
-        .from('attendance_sessions')
-        .select('id')
-        .eq('class_id', classId)
-        .order('date_time', { ascending: true })
-
-      if (subClassId) {
-        sessionIndexQuery = sessionIndexQuery.eq('sub_class_id', subClassId)
-      } else {
-        sessionIndexQuery = sessionIndexQuery.is('sub_class_id', null)
-      }
-
-      const { data: classSessions } = await sessionIndexQuery
-      const sessionIndex = classSessions ? classSessions.findIndex((s: any) => s.id === sessionId) + 1 : 1
-
+      let sessionIndex = 1
       let studentEmails: string[] = []
 
-      if (isPrivate) {
-        if (studentIds.length > 0) {
-          const { data: assigned } = await adminSupabase
-            .from('profiles')
-            .select('email')
-            .in('id', studentIds)
-          studentEmails = assigned?.map((p: any) => p.email).filter(Boolean) || []
+      if (isPrivate && studentId) {
+        // Ambil semua session_id yang diassign ke student ini, urutkan berdasarkan date_time
+        const { data: studentSessions } = await adminSupabase
+          .from('session_students')
+          .select('session_id, attendance_sessions(date_time)')
+          .eq('student_id', studentId)
+        
+        const sorted = (studentSessions || [])
+          .map((ss: any) => ({
+            id: ss.session_id,
+            dateTime: new Date(ss.attendance_sessions?.date_time || 0)
+          }))
+          .sort((a: any, b: any) => a.dateTime.getTime() - b.dateTime.getTime())
+
+        sessionIndex = sorted.findIndex((s: any) => s.id === sessionId) + 1
+
+        const { data: assigned } = await adminSupabase
+          .from('profiles')
+          .select('email')
+          .eq('id', studentId)
+          .single()
+        if (assigned?.email) {
+          studentEmails = [assigned.email]
         }
       } else {
+        // Calculate session index — filter berdasarkan sub_class_id yang sama
+        let sessionIndexQuery = adminSupabase
+          .from('attendance_sessions')
+          .select('id')
+          .eq('class_id', classId)
+          .order('date_time', { ascending: true })
+
+        if (subClassId) {
+          sessionIndexQuery = sessionIndexQuery.eq('sub_class_id', subClassId)
+        } else {
+          sessionIndexQuery = sessionIndexQuery.is('sub_class_id', null)
+        }
+
+        const { data: classSessions } = await sessionIndexQuery
+        sessionIndex = classSessions ? classSessions.findIndex((s: any) => s.id === sessionId) + 1 : 1
+
         // Ambil student yang enrolled di sub_class yang sama dengan sesi ini
         let enrollQuery = adminSupabase
           .from('enrollments')
@@ -294,7 +324,7 @@ export async function updateSession(prevState: ActionState, formData: FormData):
           .filter((email: any): email is string => !!email) || []
       }
 
-      console.log(`[Email] Mengirim notifikasi revisi sesi ke ${studentEmails.length} student(s) (sub_class_id: ${subClassId ?? 'null'}, private: ${isPrivate})...`)
+      console.log(`[Email] Mengirim notifikasi revisi sesi ke ${studentEmails.length} student(s) (sub_class_id: ${subClassId ?? 'null'}, private: ${isPrivate}, studentId: ${studentId})...`)
 
       if (studentEmails.length > 0 && classData?.title) {
         const result = await sendNewSessionNotification({

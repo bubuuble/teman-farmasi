@@ -131,28 +131,24 @@ export default function SessionForm({
               )}
 
               {classType === 'private' && (
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-brand-dark uppercase">Assign Student ke Sesi</label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-brand-dark uppercase">Pilih Student</label>
                   {availableStudents.length === 0 ? (
                     <p className="text-xs text-red-500 font-bold">Belum ada student di kelas/peminatan ini.</p>
                   ) : (
-                    <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
-                      {availableStudents.map(student => {
-                        const isChecked = existingData?.assigned_student_ids?.includes(student.id) || false;
-                        return (
-                          <label key={student.id} className="flex items-center gap-2 text-sm text-brand-dark cursor-pointer font-medium hover:text-brand-blue">
-                            <input 
-                              type="checkbox" 
-                              name="studentIds" 
-                              value={student.id} 
-                              defaultChecked={isChecked}
-                              className="rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
-                            />
-                            {student.name}
-                          </label>
-                        )
-                      })}
-                    </div>
+                    <select
+                      name="studentId"
+                      defaultValue={existingData?.assigned_student_ids?.[0] || ''}
+                      className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue bg-white text-sm"
+                      required
+                    >
+                      <option value="">-- Pilih Student --</option>
+                      {availableStudents.map(student => (
+                        <option key={student.id} value={student.id}>
+                          {student.name}
+                        </option>
+                      ))}
+                    </select>
                   )}
                 </div>
               )}

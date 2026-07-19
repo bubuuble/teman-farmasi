@@ -127,7 +127,7 @@ export default function SessionCard({
                                 <MapPin className="w-6 h-6 flex-shrink-0" /> Buka Lokasi: Mini Lab Teman Farmasi (Gmaps)
                             </a>
                             <p className="text-[10px] text-gray-400 px-1 text-center font-semibold">
-                              Lokasi: Mini Lab Teman Farmasi, Jl. Kaliurang KM 8, Sleman, DIY
+                              Lokasi: Mini Lab Teman Farmasi, Villa Kos Saraswati, Tirtajaya, Depok, Jawa Barat
                             </p>
                         </div>
                     ) : session.zoom_link && session.zoom_link.trim() !== "" ? (

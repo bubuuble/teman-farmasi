@@ -45,7 +45,7 @@ export async function sendNewSessionNotification({
 
   const isPharmacamp = classTitle.startsWith('Pharmacamp')
   const mapLink = 'https://maps.app.goo.gl/4VKwJoh5JXUHKdwY7'
-  const locationName = 'Mini Lab Teman Farmasi (Jl. Kaliurang KM 8, Sleman, DIY)'
+  const locationName = 'Mini Lab Teman Farmasi (Villa Kos Saraswati, Tirtajaya, Depok, Jawa Barat)'
 
   let sessionNumberRow = ''
   if (sessionNumber) {

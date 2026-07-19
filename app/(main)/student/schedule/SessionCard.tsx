@@ -10,6 +10,7 @@ type Session = {
   id: string
   title: string
   date_time: string
+  session_time?: string | null
   zoom_link: string | null
   is_open: boolean
   classes: {
@@ -67,7 +68,7 @@ export default function SessionCard({
                 <div className="w-8 h-8 bg-brand-cream rounded-lg flex items-center justify-center">
                     <Calendar className="w-4 h-4 text-brand-pink" />
                 </div>
-                <span>{dateStr}</span>
+                <span>{dateStr} {session.session_time && `• ${session.session_time.slice(0, 5)} WIB`}</span>
             </div>
         </div>
 
@@ -104,19 +105,30 @@ export default function SessionCard({
                                  <Calendar className="w-4 h-4 text-brand-pink" /> {dateStr}
                              </div>
                          </div>
+                         {session.session_time && (
+                            <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100">
+                                 <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Jam</label>
+                                 <div className="flex items-center gap-2 font-bold text-brand-dark text-sm">
+                                     <span className="text-brand-pink">●</span> {session.session_time.slice(0, 5)} WIB
+                                 </div>
+                             </div>
+                         )}
                     </div>
 
                     {session.classes?.title?.startsWith('Pharmacamp') ? (
                         <div className="space-y-3">
                             <label className="text-[10px] font-bold text-gray-400 uppercase px-1">Lokasi Kegiatan (Offline)</label>
                             <a 
-                                href={session.zoom_link || 'https://maps.app.goo.gl/4VKwJoh5JXUHKdwY7'} 
+                                href="https://maps.app.goo.gl/4VKwJoh5JXUHKdwY7" 
                                 target="_blank"
                                 rel="noreferrer"
                                 className="w-full bg-brand-darkblue text-white p-5 rounded-3xl font-bold flex items-center justify-center gap-3 hover:bg-brand-dark transition-all shadow-xl shadow-brand-darkblue/20 text-center"
                             >
                                 <MapPin className="w-6 h-6 flex-shrink-0" /> Buka Lokasi: Mini Lab Teman Farmasi (Gmaps)
                             </a>
+                            <p className="text-[10px] text-gray-400 px-1 text-center font-semibold">
+                              Lokasi: Mini Lab Teman Farmasi, Jl. Kaliurang KM 8, Sleman, DIY
+                            </p>
                         </div>
                     ) : session.zoom_link && session.zoom_link.trim() !== "" ? (
                         <div className="space-y-3">

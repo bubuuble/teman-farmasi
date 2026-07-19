@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { sendNewSessionNotification } from "@/lib/email"
@@ -19,60 +20,120 @@ export async function createSession(prevState: ActionState, formData: FormData) 
   const date = formData.get('date') as string
   const zoomLink = formData.get('zoomLink') as string | null
   const subClassId = formData.get('subClassId') as string || null
+  const time = formData.get('time') as string || null
+  const studentIds = formData.getAll('studentIds') as string[]
+
+  const { data: classInfo } = await supabase
+    .from('classes')
+    .select('title')
+    .eq('id', classId)
+    .single()
+
+  const isPharmacore = classInfo?.title?.startsWith('Pharmacore')
+  const isPharmacamp = classInfo?.title?.startsWith('Pharmacamp')
+  const isPrivate = !isPharmacore && !isPharmacamp
 
   const { data: newSession, error } = await supabase.from('attendance_sessions').insert({
     class_id: classId,
     sub_class_id: subClassId,
     title,
     date_time: date,
-    zoom_link: zoomLink,
+    session_time: time,
+    zoom_link: isPharmacamp ? null : zoomLink,
     is_open: true,
   }).select('id').single()
 
   if (error) return { error: error.message }
 
+  // Jika kelas private, simpan relasi many-to-many ke session_students
+  if (isPrivate && studentIds.length > 0) {
+    const sessionStudentsToInsert = studentIds.map(studentId => ({
+      session_id: newSession?.id,
+      student_id: studentId,
+    }))
+    const { error: ssError } = await supabase
+      .from('session_students')
+      .insert(sessionStudentsToInsert)
+    if (ssError) return { error: ssError.message }
+  }
+
   // Send email notifications asynchronously in the background
+  // Gunakan adminClient agar tidak bergantung pada session cookies yang bisa expired setelah response dikirim
   after(async () => {
     try {
-      const { data: classData } = await supabase
+      const adminSupabase = createAdminClient()
+
+      const { data: classData } = await adminSupabase
         .from('classes')
         .select('title, level')
         .eq('id', classId)
         .single()
 
       // Calculate session index
-      const { data: classSessions } = await supabase
+      let sessionQuery = adminSupabase
         .from('attendance_sessions')
         .select('id')
         .eq('class_id', classId)
-        .eq('sub_class_id', subClassId || null)
         .order('date_time', { ascending: true })
+
+      if (subClassId) {
+        sessionQuery = sessionQuery.eq('sub_class_id', subClassId)
+      } else {
+        sessionQuery = sessionQuery.is('sub_class_id', null)
+      }
+
+      const { data: classSessions } = await sessionQuery
 
       const sessionIndex = classSessions ? classSessions.findIndex((s: any) => s.id === newSession?.id) + 1 : 1
 
-      const { data: enrolledStudents } = await supabase
-        .from('enrollments')
-        .select('profiles ( email )')
-        .eq('class_id', classId)
-        .eq('sub_class_id', subClassId || null)
+      let studentEmails: string[] = []
 
-      const studentEmails = enrolledStudents
-        ?.map((item: any) => item.profiles?.email)
-        .filter((email: any): email is string => !!email) || []
+      if (isPrivate) {
+        if (studentIds.length > 0) {
+          const { data: assigned } = await adminSupabase
+            .from('profiles')
+            .select('email')
+            .in('id', studentIds)
+          studentEmails = assigned?.map((p: any) => p.email).filter(Boolean) || []
+        }
+      } else {
+        let enrollQuery = adminSupabase
+          .from('enrollments')
+          .select('profiles ( email )')
+          .eq('class_id', classId)
+
+        if (subClassId) {
+          enrollQuery = enrollQuery.eq('sub_class_id', subClassId)
+        } else {
+          enrollQuery = enrollQuery.is('sub_class_id', null)
+        }
+
+        const { data: enrolledStudents } = await enrollQuery
+
+        studentEmails = enrolledStudents
+          ?.map((item: any) => item.profiles?.email)
+          .filter((email: any): email is string => !!email) || []
+      }
+
+      console.log(`[Email] Mengirim notifikasi sesi baru ke ${studentEmails.length} student(s) (private: ${isPrivate})...`)
 
       if (studentEmails.length > 0 && classData?.title) {
-        await sendNewSessionNotification({
+        const result = await sendNewSessionNotification({
           toEmails: studentEmails,
           classTitle: classData.title,
           sessionTitle: title,
           sessionDateTime: date,
-          zoomLink: zoomLink,
+          zoomLink: isPharmacamp ? null : zoomLink,
           sessionNumber: sessionIndex > 0 ? sessionIndex : undefined,
           totalSessions: classData.level || undefined,
+          sessionTime: time,
         })
+        console.log('[Email] Hasil pengiriman:', result)
+      } else {
+        console.log('[Email] Tidak ada student terdaftar atau data kelas tidak ditemukan, email tidak dikirim.')
       }
     } catch (err) {
-      console.error('Failed to send session notifications in background:', err)
+      console.error('[Email] Gagal mengirim notifikasi sesi baru:', err)
     }
   })
 
@@ -124,58 +185,135 @@ export async function updateSession(prevState: ActionState, formData: FormData):
   const title = formData.get('title') as string
   const date = formData.get('date') as string
   const zoomLink = formData.get('zoomLink') as string
+  const time = formData.get('time') as string || null
+  const studentIds = formData.getAll('studentIds') as string[]
 
   if (!sessionId || !title || !date) return { error: "Data wajib diisi" }
+
+  const { data: classInfo } = await supabase
+    .from('classes')
+    .select('title')
+    .eq('id', classId)
+    .single()
+
+  const isPharmacore = classInfo?.title?.startsWith('Pharmacore')
+  const isPharmacamp = classInfo?.title?.startsWith('Pharmacamp')
+  const isPrivate = !isPharmacore && !isPharmacamp
 
   const { error } = await supabase.from('attendance_sessions').update({
     title,
     date_time: date,
-    zoom_link: zoomLink
+    session_time: time,
+    zoom_link: isPharmacamp ? null : zoomLink
   }).eq('id', sessionId)
 
   if (error) return { error: error.message }
 
+  // Jika kelas private, update relasi many-to-many ke session_students
+  if (isPrivate) {
+    // Hapus relasi lama
+    await supabase.from('session_students').delete().eq('session_id', sessionId)
+
+    // Insert relasi baru
+    if (studentIds.length > 0) {
+      const sessionStudentsToInsert = studentIds.map(studentId => ({
+        session_id: sessionId,
+        student_id: studentId,
+      }))
+      const { error: ssError } = await supabase
+        .from('session_students')
+        .insert(sessionStudentsToInsert)
+      if (ssError) return { error: ssError.message }
+    }
+  }
+
   // Send update email notifications asynchronously in the background
+  // Gunakan adminClient agar tidak bergantung pada session cookies yang bisa expired setelah response dikirim
   after(async () => {
     try {
-      const { data: classData } = await supabase
+      const adminSupabase = createAdminClient()
+
+      // Ambil sub_class_id dari sesi yang di-update agar filter konsisten
+      const { data: sessionData } = await adminSupabase
+        .from('attendance_sessions')
+        .select('sub_class_id')
+        .eq('id', sessionId)
+        .single()
+
+      const subClassId = sessionData?.sub_class_id ?? null
+
+      const { data: classData } = await adminSupabase
         .from('classes')
         .select('title, level')
         .eq('id', classId)
         .single()
 
-      // Calculate session index
-      const { data: classSessions } = await supabase
+      // Calculate session index — filter berdasarkan sub_class_id yang sama
+      let sessionIndexQuery = adminSupabase
         .from('attendance_sessions')
         .select('id')
         .eq('class_id', classId)
         .order('date_time', { ascending: true })
 
+      if (subClassId) {
+        sessionIndexQuery = sessionIndexQuery.eq('sub_class_id', subClassId)
+      } else {
+        sessionIndexQuery = sessionIndexQuery.is('sub_class_id', null)
+      }
+
+      const { data: classSessions } = await sessionIndexQuery
       const sessionIndex = classSessions ? classSessions.findIndex((s: any) => s.id === sessionId) + 1 : 1
 
-      const { data: enrolledStudents } = await supabase
-        .from('enrollments')
-        .select('profiles ( email )')
-        .eq('class_id', classId)
+      let studentEmails: string[] = []
 
-      const studentEmails = enrolledStudents
-        ?.map((item: any) => item.profiles?.email)
-        .filter((email: any): email is string => !!email) || []
+      if (isPrivate) {
+        if (studentIds.length > 0) {
+          const { data: assigned } = await adminSupabase
+            .from('profiles')
+            .select('email')
+            .in('id', studentIds)
+          studentEmails = assigned?.map((p: any) => p.email).filter(Boolean) || []
+        }
+      } else {
+        // Ambil student yang enrolled di sub_class yang sama dengan sesi ini
+        let enrollQuery = adminSupabase
+          .from('enrollments')
+          .select('profiles ( email )')
+          .eq('class_id', classId)
+
+        if (subClassId) {
+          enrollQuery = enrollQuery.eq('sub_class_id', subClassId)
+        } else {
+          enrollQuery = enrollQuery.is('sub_class_id', null)
+        }
+
+        const { data: enrolledStudents } = await enrollQuery
+
+        studentEmails = enrolledStudents
+          ?.map((item: any) => item.profiles?.email)
+          .filter((email: any): email is string => !!email) || []
+      }
+
+      console.log(`[Email] Mengirim notifikasi revisi sesi ke ${studentEmails.length} student(s) (sub_class_id: ${subClassId ?? 'null'}, private: ${isPrivate})...`)
 
       if (studentEmails.length > 0 && classData?.title) {
-        await sendNewSessionNotification({
+        const result = await sendNewSessionNotification({
           toEmails: studentEmails,
           classTitle: classData.title,
           sessionTitle: title,
           sessionDateTime: date,
-          zoomLink: zoomLink,
+          zoomLink: isPharmacamp ? null : zoomLink,
           isRevision: true,
           sessionNumber: sessionIndex > 0 ? sessionIndex : undefined,
           totalSessions: classData.level || undefined,
+          sessionTime: time,
         })
+        console.log('[Email] Hasil pengiriman revisi:', result)
+      } else {
+        console.log('[Email] Tidak ada student terdaftar atau data kelas tidak ditemukan, email tidak dikirim.')
       }
     } catch (err) {
-      console.error('Failed to send session update notifications in background:', err)
+      console.error('[Email] Gagal mengirim notifikasi revisi sesi:', err)
     }
   })
 

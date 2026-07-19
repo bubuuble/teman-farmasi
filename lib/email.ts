@@ -11,6 +11,7 @@ interface SendSessionEmailParams {
   isRevision?: boolean
   sessionNumber?: number
   totalSessions?: string
+  sessionTime?: string | null
 }
 
 export async function sendNewSessionNotification({
@@ -22,6 +23,7 @@ export async function sendNewSessionNotification({
   isRevision = false,
   sessionNumber,
   totalSessions,
+  sessionTime,
 }: SendSessionEmailParams) {
   if (toEmails.length === 0) return { success: true, message: 'No recipients.' }
 
@@ -42,8 +44,8 @@ export async function sendNewSessionNotification({
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://temanfarmasi.com'
 
   const isPharmacamp = classTitle.startsWith('Pharmacamp')
-  const mapLink = zoomLink || 'https://maps.app.goo.gl/4VKwJoh5JXUHKdwY7'
-  const locationName = 'Mini Lab Teman Farmasi'
+  const mapLink = 'https://maps.app.goo.gl/4VKwJoh5JXUHKdwY7'
+  const locationName = 'Mini Lab Teman Farmasi (Jl. Kaliurang KM 8, Sleman, DIY)'
 
   let sessionNumberRow = ''
   if (sessionNumber) {
@@ -65,14 +67,28 @@ export async function sendNewSessionNotification({
   }
 
   let zoomRow = ''
-  if (isPharmacamp || zoomLink) {
-    const label = isPharmacamp ? 'Lokasi (Offline)' : 'Link Sesi'
-    const value = isPharmacamp ? locationName : zoomLink
-    const linkUrl = isPharmacamp ? mapLink : zoomLink
+  if (isPharmacamp) {
     zoomRow = `
               <tr>
-                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">${label}</td>
-                <td style="padding: 6px 0; color: #0d9488; font-weight: 600; vertical-align: top;">: <a href="${linkUrl}" style="color: #0d9488; text-decoration: underline;">${value}</a></td>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Lokasi (Offline)</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${locationName} (<a href="${mapLink}" style="color: #0d9488; text-decoration: underline;">Google Maps</a>)</td>
+              </tr>
+    `
+  } else if (zoomLink) {
+    zoomRow = `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Link Sesi</td>
+                <td style="padding: 6px 0; color: #0d9488; font-weight: 600; vertical-align: top;">: <a href="${zoomLink}" style="color: #0d9488; text-decoration: underline;">${zoomLink}</a></td>
+              </tr>
+    `
+  }
+
+  let timeRow = ''
+  if (sessionTime) {
+    timeRow = `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Jam</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${sessionTime.slice(0, 5)} WIB</td>
               </tr>
     `
   }
@@ -113,6 +129,7 @@ export async function sendNewSessionNotification({
                 <td style="padding: 6px 0; color: #64748b; font-weight: 500; vertical-align: top;">Hari & Tanggal</td>
                 <td style="padding: 6px 0; color: #0f172a; font-weight: 600; vertical-align: top;">: ${formattedDate}</td>
               </tr>
+              ${timeRow}
               ${sessionNumberRow}
               ${zoomRow}
             </table>
@@ -129,13 +146,19 @@ export async function sendNewSessionNotification({
             <a href="${appUrl}" 
                style="background-color: #0d9488; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block; margin-right: 8px; margin-bottom: 8px;"
             >
-              Buka Dashboard Kelas
+               Buka Dashboard Kelas
             </a>
-            ${(isPharmacamp || zoomLink) ? `
-            <a href="${isPharmacamp ? mapLink : zoomLink}" 
+            ${isPharmacamp ? `
+            <a href="${mapLink}" 
                style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block; margin-bottom: 8px;"
             >
-              ${isPharmacamp ? 'Buka Google Maps' : 'Gabung Pertemuan'}
+               Buka Google Maps
+            </a>
+            ` : zoomLink ? `
+            <a href="${zoomLink}" 
+               style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block; margin-bottom: 8px;"
+            >
+               Gabung Pertemuan
             </a>
             ` : ''}
           </div>

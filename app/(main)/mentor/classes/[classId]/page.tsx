@@ -8,7 +8,8 @@ import AbsenButton from "./AbsenButton"
 
 // --- DEFINISI TIPE DATA ---
 type Session = {
-  id: string; title: string; date_time: string; zoom_link: string | null; mentor_status: string | null;
+  id: string; title: string; date_time: string; session_time: string | null; zoom_link: string | null; mentor_status: string | null;
+  assigned_student_ids?: string[];
 }
 
 type Resource = {
@@ -16,7 +17,7 @@ type Resource = {
 }
 
 type AssignedStudent = {
-  profiles: { full_name: string | null; email: string | null } | null;
+  profiles: { id: string; full_name: string | null; email: string | null } | null;
 }
 
 export default async function MentorClassDetailPage({
@@ -40,7 +41,9 @@ export default async function MentorClassDetailPage({
     .eq('id', classId)
     .single()
 
+  const isPharmacore = kelas?.title?.startsWith('Pharmacore')
   const isPharmacamp = kelas?.title?.startsWith('Pharmacamp')
+  const isPrivate = !isPharmacore && !isPharmacamp
 
   // Fetch subclass if subClassId is present
   let subClassData: { id: string; title: string; session_offset: number } | null = null
@@ -56,7 +59,7 @@ export default async function MentorClassDetailPage({
   // 2. Sesi langsung dari class_id & subClassId
   const sessionsQuery = supabase
     .from('attendance_sessions')
-    .select('id, title, date_time, zoom_link, mentor_status')
+    .select('id, title, date_time, session_time, zoom_link, mentor_status')
     .eq('class_id', classId)
   
   if (subClassId) {
@@ -66,7 +69,23 @@ export default async function MentorClassDetailPage({
   }
 
   const { data: rawSessions } = await sessionsQuery.order('date_time', { ascending: true })
-  const sessions = (rawSessions as Session[]) || []
+  let sessions = (rawSessions as Session[]) || []
+
+  // Fetch session_students if private
+  if (isPrivate && sessions.length > 0) {
+    const { data: sessionStudents } = await supabase
+      .from('session_students')
+      .select('session_id, student_id')
+      .in('session_id', sessions.map(s => s.id))
+    
+    sessions = sessions.map(s => {
+      const assigned = sessionStudents?.filter(ss => ss.session_id === s.id).map(ss => ss.student_id) || []
+      return {
+        ...s,
+        assigned_student_ids: assigned
+      }
+    })
+  }
 
   // 3. E-Book / Materi
   const resourcesQuery = supabase
@@ -90,7 +109,7 @@ export default async function MentorClassDetailPage({
     // Pharmacamp: tampilkan semua student enrolled di kelas
     const { data: rawEnrollments } = await supabase
       .from('enrollments')
-      .select('profiles:student_id ( full_name, email )')
+      .select('profiles:student_id ( id, full_name, email )')
       .eq('class_id', classId)
       .eq('status', 'active')
       .is('sub_class_id', null)
@@ -100,13 +119,18 @@ export default async function MentorClassDetailPage({
     if (subClassId) {
       const { data: rawAssignments } = await supabase
         .from('mentor_student_assignments')
-        .select('profiles:student_id ( full_name, email )')
+        .select('profiles:student_id ( id, full_name, email )')
         .eq('mentor_id', user.id)
         .eq('class_id', classId)
         .eq('sub_class_id', subClassId)
       students = (rawAssignments as unknown as AssignedStudent[]) || []
     }
   }
+
+  const availableStudents = students.map(s => ({
+    id: s.profiles?.id || '',
+    name: s.profiles?.full_name || ''
+  })).filter(s => s.id !== '')
 
   return (
     <div className="space-y-8">
@@ -132,7 +156,12 @@ export default async function MentorClassDetailPage({
             <p className="text-brand-gray text-xs">Kelola jadwal sesi dan materi kelas.</p>
           </div>
         </div>
-        <SessionForm classId={classId} subClassId={subClassId} />
+        <SessionForm 
+          classId={classId} 
+          subClassId={subClassId} 
+          classType={isPharmacamp ? 'pharmacamp' : isPharmacore ? 'pharmacore' : 'private'}
+          availableStudents={availableStudents}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -156,15 +185,30 @@ export default async function MentorClassDetailPage({
                     </div>
                     <div>
                       <h5 className="font-bold text-brand-dark leading-tight">{session.title}</h5>
+                      {isPrivate && session.assigned_student_ids && session.assigned_student_ids.length > 0 && (
+                        <div className="text-[10px] text-gray-500 mt-1">
+                          <span className="font-bold">Student: </span>
+                          {session.assigned_student_ids
+                            .map(id => availableStudents.find(s => s.id === id)?.name)
+                            .filter(Boolean)
+                            .join(', ')}
+                        </div>
+                      )}
                       <div className="flex items-center gap-3 text-[11px] text-gray-500 mt-1">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {new Date(session.date_time).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          {session.session_time && ` pukul ${session.session_time.slice(0, 5)} WIB`}
                         </span>
-                        {session.zoom_link && (
+                        {!isPharmacamp && session.zoom_link && (
                           <a href={session.zoom_link} target="_blank" className="flex items-center gap-1 text-brand-blue hover:underline font-bold">
                             <Video className="w-3 h-3" /> Zoom
                           </a>
+                        )}
+                        {isPharmacamp && (
+                          <span className="text-[10px] font-bold text-brand-pink bg-brand-pink/5 px-2 py-0.5 rounded">
+                            Offline: Mini Lab TF
+                          </span>
                         )}
                       </div>
                     </div>
@@ -179,7 +223,20 @@ export default async function MentorClassDetailPage({
                       <AbsenButton sessionId={session.id} classId={classId} />
                     )}
                     <div className="flex items-center gap-1 pl-2 border-l border-gray-200">
-                      <SessionForm classId={classId} subClassId={subClassId} existingData={session} />
+                      <SessionForm 
+                        classId={classId} 
+                        subClassId={subClassId} 
+                        existingData={{
+                          id: session.id,
+                          title: session.title,
+                          date_time: session.date_time,
+                          session_time: session.session_time,
+                          zoom_link: session.zoom_link,
+                          assigned_student_ids: session.assigned_student_ids
+                        }}
+                        classType={isPharmacamp ? 'pharmacamp' : isPharmacore ? 'pharmacore' : 'private'}
+                        availableStudents={availableStudents}
+                      />
                       <DeleteSessionButton sessionId={session.id} classId={classId} />
                     </div>
                   </div>

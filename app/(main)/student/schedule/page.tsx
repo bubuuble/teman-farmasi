@@ -11,6 +11,7 @@ type SessionData = {
   id: string
   title: string
   date_time: string
+  session_time: string | null
   zoom_link: string
   is_open: boolean
   classes: { id: string; title: string; level: string } | null
@@ -50,14 +51,34 @@ export default async function StudentSchedulePage() {
       const { data: rawSessions } = await supabase
         .from('attendance_sessions')
         .select(`
-            id, title, date_time, zoom_link, is_open, class_id, sub_class_id,
+            id, title, date_time, session_time, zoom_link, is_open, class_id, sub_class_id,
             classes ( id, title, level ),
             sub_classes ( id, title )
         `)
         .or(orParts.join(','))
         .order('date_time', { ascending: true })
 
-      sessions = (rawSessions as unknown as SessionData[]) || []
+      const allSessions = (rawSessions as unknown as SessionData[]) || []
+
+      // Ambil daftar session_id private yang diassign ke student ini
+      const { data: assignedPrivateSessions } = await supabase
+        .from('session_students')
+        .select('session_id')
+        .eq('student_id', user.id)
+
+      const assignedSessionIds = new Set(assignedPrivateSessions?.map(aps => aps.session_id) || [])
+
+      // Filter: jika kelas private, hanya tampilkan jika diassign. Jika Pharmacore/Pharmacamp, tampilkan semua (public).
+      sessions = allSessions.filter(session => {
+        const classTitle = session.classes?.title || ''
+        const isPharmacore = classTitle.startsWith('Pharmacore')
+        const isPharmacamp = classTitle.startsWith('Pharmacamp')
+        
+        if (isPharmacore || isPharmacamp) {
+          return true
+        }
+        return assignedSessionIds.has(session.id)
+      })
   }
 
   // 3. Ambil Data Kehadiran

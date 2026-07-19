@@ -10,17 +10,23 @@ type SessionData = {
   id: string
   title: string
   date_time: string
+  session_time: string | null
   zoom_link: string | null
+  assigned_student_ids?: string[]
 }
 
 export default function SessionForm({ 
   classId, 
   subClassId,
-  existingData 
+  existingData,
+  classType,
+  availableStudents = []
 }: { 
   classId: string,
   subClassId?: string | null,
-  existingData?: SessionData 
+  existingData?: SessionData,
+  classType: 'pharmacore' | 'pharmacamp' | 'private',
+  availableStudents?: { id: string; name: string }[]
 }) {
   const [isOpen, setIsOpen] = useState(false)
   
@@ -82,7 +88,7 @@ export default function SessionForm({
                   name="title" 
                   type="text" 
                   defaultValue={existingData?.title}
-                  placeholder="Contoh: Pertemuan 1 - Pengenalan" 
+                  placeholder={classType === 'pharmacamp' ? "Contoh: Kegiatan Hari ke-1" : "Contoh: Pertemuan 1 - Pengenalan"} 
                   className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue" 
                   required 
                 />
@@ -99,18 +105,57 @@ export default function SessionForm({
                       required 
                     />
                 </div>
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-brand-dark uppercase">Jam</label>
+                    <input 
+                      name="time" 
+                      type="time" 
+                      defaultValue={existingData?.session_time ? existingData.session_time.slice(0, 5) : ''}
+                      className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue" 
+                      required 
+                    />
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-brand-dark uppercase">Link Zoom / GMeet</label>
-                <input 
-                  name="zoomLink" 
-                  type="url" 
-                  defaultValue={existingData?.zoom_link || ''}
-                  placeholder="https://zoom.us/j/..." 
-                  className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue" 
-                />
-              </div>
+              {classType !== 'pharmacamp' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-brand-dark uppercase">Link Zoom / GMeet</label>
+                  <input 
+                    name="zoomLink" 
+                    type="url" 
+                    defaultValue={existingData?.zoom_link || ''}
+                    placeholder="https://zoom.us/j/..." 
+                    className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue" 
+                  />
+                </div>
+              )}
+
+              {classType === 'private' && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-brand-dark uppercase">Assign Student ke Sesi</label>
+                  {availableStudents.length === 0 ? (
+                    <p className="text-xs text-red-500 font-bold">Belum ada student di kelas/peminatan ini.</p>
+                  ) : (
+                    <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
+                      {availableStudents.map(student => {
+                        const isChecked = existingData?.assigned_student_ids?.includes(student.id) || false;
+                        return (
+                          <label key={student.id} className="flex items-center gap-2 text-sm text-brand-dark cursor-pointer font-medium hover:text-brand-blue">
+                            <input 
+                              type="checkbox" 
+                              name="studentIds" 
+                              value={student.id} 
+                              defaultChecked={isChecked}
+                              className="rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+                            />
+                            {student.name}
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
 

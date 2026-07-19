@@ -48,8 +48,8 @@ export default async function AdminUsersPage() {
   // Buat map: student_id -> list kelas yang diikuti
   const enrollmentMap: EnrollmentMap = {}
   for (const e of enrollments || []) {
-    const classData = e.classes as { title: string } | null
-    const subClassData = e.sub_classes as { title: string } | null
+    const classData = (e.classes as unknown) as { title: string } | null
+    const subClassData = (e.sub_classes as unknown) as { title: string } | null
     if (!classData) continue
     if (!enrollmentMap[e.student_id]) enrollmentMap[e.student_id] = []
     enrollmentMap[e.student_id].push({

@@ -17,7 +17,7 @@ type QuestionData = {
   question_text: string
   question_image_url: string | null
   explanation: string | null
-  difficulty: string
+  difficulty?: string
   question_options?: OptionData[]
 }
 
@@ -105,35 +105,19 @@ export default function QuestionForm({
               {isEditing && <input type="hidden" name="id" value={question.id} />}
               <input type="hidden" name="correct_option" value={correctOption} />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Tingkat Kesulitan
-                  </label>
-                  <select
-                    name="difficulty"
-                    defaultValue={question?.difficulty || 'medium'}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink bg-white"
-                  >
-                    <option value="easy">Mudah (Easy)</option>
-                    <option value="medium">Sedang (Medium)</option>
-                    <option value="hard">Sulit (Hard)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    URL Gambar Lampiran (Opsional)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="url"
-                      name="question_image_url"
-                      defaultValue={question?.question_image_url || ''}
-                      placeholder="https://... (jika ada gambar struktur/kurva)"
-                      className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
-                    />
-                    <ImageIcon className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
-                  </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  URL Gambar Lampiran (Opsional)
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    name="question_image_url"
+                    defaultValue={question?.question_image_url || ''}
+                    placeholder="https://... (jika ada gambar struktur/kurva)"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
+                  />
+                  <ImageIcon className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
                 </div>
               </div>
 

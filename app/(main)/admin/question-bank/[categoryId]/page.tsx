@@ -16,14 +16,11 @@ import DeleteQuestionBtn from "../DeleteQuestionBtn"
 export const dynamic = 'force-dynamic'
 
 export default async function CategoryQuestionsPage({
-  params,
-  searchParams
+  params
 }: {
   params: Promise<{ categoryId: string }>
-  searchParams: Promise<{ difficulty?: string }>
 }) {
   const { categoryId } = await params
-  const { difficulty = 'all' } = await searchParams
 
   const supabase = await createClient()
   const adminDb = createAdminClient()
@@ -48,7 +45,7 @@ export default async function CategoryQuestionsPage({
   if (!category) return notFound()
 
   // 2. Fetch soal & opsi
-  let qQuery = (category ? adminDb : supabase)
+  const { data: questions = [] } = await (category ? adminDb : supabase)
     .from('questions')
     .select(`
       *,
@@ -56,12 +53,6 @@ export default async function CategoryQuestionsPage({
     `)
     .eq('category_id', categoryId)
     .order('created_at', { ascending: false })
-
-  if (difficulty && difficulty !== 'all') {
-    qQuery = qQuery.eq('difficulty', difficulty)
-  }
-
-  const { data: questions = [] } = await qQuery
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -94,53 +85,13 @@ export default async function CategoryQuestionsPage({
         </div>
       </div>
 
-      {/* FILTER DIFFICULTY */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
-          <Link
-            href={`/admin/question-bank/${categoryId}?difficulty=all`}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              difficulty === 'all'
-                ? 'bg-brand-dark text-white shadow-sm'
-                : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
-            }`}
-          >
-            Semua Tingkat ({questions?.length || 0})
-          </Link>
-          <Link
-            href={`/admin/question-bank/${categoryId}?difficulty=easy`}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              difficulty === 'easy'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
-            }`}
-          >
-            Mudah
-          </Link>
-          <Link
-            href={`/admin/question-bank/${categoryId}?difficulty=medium`}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              difficulty === 'medium'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
-            }`}
-          >
-            Sedang
-          </Link>
-          <Link
-            href={`/admin/question-bank/${categoryId}?difficulty=hard`}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              difficulty === 'hard'
-                ? 'bg-red-600 text-white shadow-sm'
-                : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
-            }`}
-          >
-            Sulit
-          </Link>
+      {/* STATS BAR */}
+      <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="text-sm font-semibold text-gray-600">
+          Daftar Butir Soal
         </div>
-
         <div className="text-xs font-semibold text-gray-500">
-          Total Butir Soal: <span className="font-extrabold text-brand-dark">{questions?.length || 0}</span>
+          Total: <span className="font-extrabold text-brand-dark">{questions?.length || 0}</span> butir soal
         </div>
       </div>
 
@@ -163,13 +114,6 @@ export default async function CategoryQuestionsPage({
               a.label.localeCompare(b.label)
             )
 
-            const diffColor =
-              q.difficulty === 'easy'
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                : q.difficulty === 'hard'
-                ? 'bg-red-50 text-red-700 border-red-100'
-                : 'bg-amber-50 text-amber-700 border-amber-100'
-
             return (
               <div
                 key={q.id}
@@ -179,9 +123,6 @@ export default async function CategoryQuestionsPage({
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-xl bg-brand-dark/5 font-extrabold text-brand-dark flex items-center justify-center text-xs">
                       #{idx + 1}
-                    </span>
-                    <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border ${diffColor}`}>
-                      {q.difficulty}
                     </span>
                     {q.question_image_url && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-brand-blue bg-brand-blue/10 px-2 py-0.5 rounded-md">

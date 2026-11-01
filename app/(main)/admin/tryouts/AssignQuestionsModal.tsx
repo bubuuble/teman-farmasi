@@ -7,7 +7,7 @@ import { assignQuestionsToTryout } from './actions'
 type QuestionItem = {
   id: string
   question_text: string
-  difficulty: string
+  difficulty?: string
   category_id: string
   question_categories?: { name: string }
 }
@@ -24,7 +24,6 @@ export default function AssignQuestionsModal({
   const [isOpen, setIsOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterDifficulty, setFilterDifficulty] = useState('all')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Filter out questions that are already in this tryout
@@ -33,8 +32,7 @@ export default function AssignQuestionsModal({
   const filtered = unassigned.filter(q => {
     const matchesSearch = q.question_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
       q.question_categories?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesDiff = filterDifficulty === 'all' || q.difficulty === filterDifficulty
-    return matchesSearch && matchesDiff
+    return matchesSearch
   })
 
   const toggleSelect = (id: string) => {
@@ -101,7 +99,7 @@ export default function AssignQuestionsModal({
             </div>
 
             {/* SEARCH & FILTERS */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-4 shrink-0">
+            <div className="flex items-center gap-3 mb-4 shrink-0">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
                 <input
@@ -112,17 +110,6 @@ export default function AssignQuestionsModal({
                   className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
                 />
               </div>
-
-              <select
-                value={filterDifficulty}
-                onChange={(e) => setFilterDifficulty(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink bg-white"
-              >
-                <option value="all">Semua Kesulitan</option>
-                <option value="easy">Mudah</option>
-                <option value="medium">Sedang</option>
-                <option value="hard">Sulit</option>
-              </select>
 
               {filtered.length > 0 && (
                 <button
@@ -171,12 +158,6 @@ export default function AssignQuestionsModal({
                               {q.question_categories.name}
                             </span>
                           )}
-                          <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
-                            q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700' :
-                            q.difficulty === 'hard' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-                          }`}>
-                            {q.difficulty}
-                          </span>
                         </div>
                         <p className="text-xs text-gray-700 font-medium line-clamp-2 leading-relaxed">
                           {q.question_text}

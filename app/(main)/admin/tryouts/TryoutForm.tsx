@@ -184,7 +184,7 @@ export default function TryoutForm({
                     defaultValue={tryout?.max_attempts?.toString() || '1'}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink bg-white"
                   >
-                    <option value="1">1x Kesempatan (Ketemu Tryout Resmi)</option>
+                    <option value="1">1x Kesempatan</option>
                     <option value="2">2x Kesempatan</option>
                     <option value="3">3x Kesempatan</option>
                     <option value="5">5x Kesempatan</option>

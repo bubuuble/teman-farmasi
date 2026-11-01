@@ -249,12 +249,6 @@ export default async function TryoutDetailPage({
                             {q.question_categories.name}
                           </span>
                         )}
-                        <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-md ${
-                          q?.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700' :
-                          q?.difficulty === 'hard' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-                        }`}>
-                          {q?.difficulty}
-                        </span>
                       </div>
 
                       <RemoveQuestionBtn

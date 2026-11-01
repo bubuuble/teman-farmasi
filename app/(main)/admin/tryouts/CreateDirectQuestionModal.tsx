@@ -67,37 +67,20 @@ export default function CreateDirectQuestionModal({
               <input type="hidden" name="tryout_id" value={tryoutId} />
               <input type="hidden" name="correct_option" value={correctOption} />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Kategori Bank Soal *
-                  </label>
-                  <select
-                    name="category_id"
-                    required
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink bg-white"
-                  >
-                    <option value="">Pilih Kategori Bank Soal</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Tingkat Kesulitan
-                  </label>
-                  <select
-                    name="difficulty"
-                    defaultValue="medium"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink bg-white"
-                  >
-                    <option value="easy">Mudah</option>
-                    <option value="medium">Sedang</option>
-                    <option value="hard">Sulit</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Kategori Bank Soal *
+                </label>
+                <select
+                  name="category_id"
+                  required
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink bg-white"
+                >
+                  <option value="">Pilih Kategori Bank Soal</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div>

@@ -42,34 +42,7 @@ import {
 import ConfirmModal from '@/app/components/ConfirmModal'
 import { formatRupiah } from '@/lib/currency'
 
-// Pre-defined programs matching ClassForm
-const PROGRAMS = [
-  {
-    value: 'PharmaCore Class',
-    label: 'PharmaCore Class',
-    description: 'Kelas pendampingan Mata Kuliah Farmasi (Basic Science, Chemistry, Pharmaceutics, Pharmacology, Phytochemistry, dll) berbasis blok. Program ini dirancang khusus untuk memperkuat pemahaman teori & praktikum, membantu persiapan ujian (UTS/UAS), pembahasan modul praktikum, serta latihan bank soal kefarmasian secara intensif.',
-  },
-  {
-    value: 'Pharma Research Mentoring',
-    label: 'Pharma Research Mentoring',
-    description: 'Bimbingan privat riset & skripsi farmasi secara end-to-end (Private Monitoring Riset). Program meliputi pendampingan penentuan judul/topik riset, penyusunan outline proposal (Bab 1-3), bimbingan desain penelitian & metodologi lab, analisis data & statistika (SPSS), pembahasan hasil praktikum, hingga simulasi sidang skripsi.',
-  },
-  {
-    value: 'PharmaPublish Academy',
-    label: 'PharmaPublish Academy',
-    description: 'Kelas khusus penulisan manuskrip jurnal ilmiah farmasi untuk publikasi nasional (SINTA) maupun internasional bereputasi (Scopus). Program mencakup drafting naskah, review artikel komprehensif, pemilihan jurnal target yang tepat, pendampingan proses submit, hingga strategi merespons revisi dari reviewer.',
-  },
-  {
-    value: 'Pharma Impact',
-    label: 'Pharma Impact',
-    description: 'Kelas pendampingan intensif untuk kompetisi ilmiah kemahasiswaan nasional seperti PKM-RE (Riset Eksakta), P2MW (Wirausaha), PPK Ormawa, Program Mahasiswa Wirausaha, dan Lomba Karya Tulis Ilmiah (LKTI). Pendampingan dilakukan dari pencarian ide, penyusunan proposal berkualitas, pembuatan prototype, hingga persiapan presentasi penilaian.',
-  },
-  {
-    value: 'Pharmacamp',
-    label: 'Pharmacamp - Formulation Cosmetics Class',
-    description: 'Program edukasi intensif formulasi kosmetik (skincare & personal care) dan sains formulasi. Menjembatani teori akademik dengan praktik industri nyata melalui pembelajaran hands-on lab, pengenalan bahan baku & fungsinya, teknik troubleshooting formula, regulasi dasar (CPKB, BPOM, Halal), serta business mentoring (costing, pricing, branding).',
-  },
-]
+import { PROGRAMS } from '../ClassForm'
 
 type ClassDetail = {
   id: string
@@ -631,7 +604,7 @@ export default function ClassManager({
                     }
                   </span>
                   <span className="px-2.5 py-1 bg-brand-pink/10 text-brand-pink text-[10px] font-bold rounded-full uppercase tracking-wider">
-                    Kelas Wrapper (Peminatan)
+                    Kelas Induk
                   </span>
                 </div>
                 <h2 className="font-heading font-bold text-3xl text-brand-dark">{kelas.title}</h2>
@@ -769,7 +742,7 @@ export default function ClassManager({
           {/* LEFT COLUMN: Sub Classes Cards */}
           <div className="lg:col-span-4 space-y-4">
             <h3 className="font-heading font-bold text-lg text-brand-dark flex items-center justify-between px-2">
-              <span>Sub Kelas (Peminatan)</span>
+              <span>Sub Kelas</span>
               <span className="bg-gray-100 text-gray-500 text-xs px-2.5 py-1 rounded-full font-bold">
                 {subClasses.length}
               </span>

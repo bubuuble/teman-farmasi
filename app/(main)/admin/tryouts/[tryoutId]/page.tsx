@@ -32,7 +32,7 @@ export default async function TryoutDetailPage({
   const adminDb = createAdminClient()
 
   // 1. Fetch Tryout details
-  let { data: tryout, error: tryoutErr } = await supabase
+  const { data: tryout } = await adminDb
     .from('tryouts')
     .select(`
       *,
@@ -41,22 +41,10 @@ export default async function TryoutDetailPage({
     .eq('id', tryoutId)
     .single()
 
-  if (tryoutErr || !tryout) {
-    const { data: adminTryout } = await adminDb
-      .from('tryouts')
-      .select(`
-        *,
-        classes(id, title)
-      `)
-      .eq('id', tryoutId)
-      .single()
-    tryout = adminTryout
-  }
-
   if (!tryout) return notFound()
 
   // 2. Fetch Assigned questions in order
-  const { data: assignedRows = [] } = await supabase
+  const { data: assignedRows = [] } = await adminDb
     .from('tryout_questions')
     .select(`
       question_id,
@@ -74,7 +62,7 @@ export default async function TryoutDetailPage({
     .order('question_order', { ascending: true })
 
   // 3. Fetch all bank questions matching this program_type (for assignment picker)
-  const { data: bankQuestions = [] } = await supabase
+  const { data: bankQuestions = [] } = await adminDb
     .from('questions')
     .select(`
       id,
@@ -86,13 +74,13 @@ export default async function TryoutDetailPage({
     .eq('question_categories.program_type', tryout.program_type)
 
   // 4. Fetch categories for direct question creation
-  const { data: categories = [] } = await supabase
+  const { data: categories = [] } = await adminDb
     .from('question_categories')
     .select('id, name')
     .eq('program_type', tryout.program_type)
 
   // 5. Fetch attempt results
-  const { data: attempts = [] } = await supabase
+  const { data: attempts = [] } = await adminDb
     .from('tryout_attempts')
     .select(`
       *,

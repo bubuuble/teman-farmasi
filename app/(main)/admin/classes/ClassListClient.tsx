@@ -11,7 +11,9 @@ import {
   Trophy,
   Sparkles,
   ChevronDown,
-  X
+  X,
+  GraduationCap,
+  Award
 } from "lucide-react"
 import Link from "next/link"
 import ClassForm, { PROGRAMS } from "./ClassForm"
@@ -110,6 +112,22 @@ const CATEGORY_META: Record<string, {
     badgeBg: 'bg-brand-purple/10',
     badgeText: 'text-brand-purple',
     textColor: 'text-brand-purple'
+  },
+  'UKAI Series - Masuk Apoteker': {
+    label: 'UKAI Series - Masuk Apoteker',
+    icon: GraduationCap,
+    borderColor: 'hover:border-orange-500/30',
+    badgeBg: 'bg-orange-50',
+    badgeText: 'text-orange-700',
+    textColor: 'text-orange-700'
+  },
+  'UKAI Series - Kelas UKMPPAI': {
+    label: 'UKAI Series - Kelas UKMPPAI',
+    icon: Award,
+    borderColor: 'hover:border-rose-500/30',
+    badgeBg: 'bg-rose-50',
+    badgeText: 'text-rose-700',
+    textColor: 'text-rose-700'
   },
   'Lainnya': {
     label: 'Program Lainnya',

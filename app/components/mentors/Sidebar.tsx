@@ -7,12 +7,16 @@ import {
   BookOpen, 
   CalendarDays, 
   ClipboardCheck, 
+  FileQuestion,
+  Laptop,
 } from 'lucide-react'
 import SignOutButton from '../../components/SignOutButton'
 
 const menuItems = [
   { label: 'Dashboard', href: '/mentor/dashboard', icon: LayoutDashboard },
   { label: 'Kelas Saya', href: '/mentor/classes', icon: BookOpen }, // Lihat kelas & Buat Batch
+  { label: 'Bank Soal', href: '/mentor/question-bank', icon: FileQuestion },
+  { label: 'Kelola Tryout', href: '/mentor/tryouts', icon: Laptop },
   { label: 'Jadwal Mengajar', href: '/mentor/schedule', icon: CalendarDays }, // Kalender
   { label: 'Input Absensi', href: '/mentor/attendance', icon: ClipboardCheck }, // Buka link absen
 ]

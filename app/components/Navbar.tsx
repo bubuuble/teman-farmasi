@@ -19,6 +19,7 @@ export default function Navbar() {
     { title: 'PharmaCore Class', desc: 'Kelas Mata Kuliah Farmasi', href: '/programs?cat=pharmacore' },
     { title: 'Pharma Research', desc: 'Monitoring Riset & Skripsi', href: '/programs?cat=research' },
     { title: 'PharmaPublish Academy', desc: 'Publikasi Ilmiah & Jurnal', href: '/programs?cat=publish' },
+    { title: 'UKAI Series', desc: 'Masuk Apoteker & Kelas UKMPPAI (CBT)', href: '/programs?cat=ukai' },
     { title: 'PharmaImpact', desc: 'Program Pengabdian Masyarakat', href: '/programs?cat=impact' },
     { title: 'Pharmacamp', desc: 'Kelas Kosmetik dan PKRT Offline', href: '/programs?cat=pharmacamp' },
   ];

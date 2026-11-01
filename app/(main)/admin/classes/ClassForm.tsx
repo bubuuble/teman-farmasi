@@ -40,6 +40,16 @@ export const PROGRAMS = [
     label: 'Pharmacamp',
     description: 'Program edukasi intensif formulasi kosmetik (skincare & personal care) dan sains formulasi. Menjembatani teori akademik dengan praktik industri nyata melalui pembelajaran hands-on lab, pengenalan bahan baku & fungsinya, teknik troubleshooting formula, regulasi dasar (CPKB, BPOM, Halal), serta business mentoring (costing, pricing, branding).',
   },
+  {
+    value: 'UKAI Series - Masuk Apoteker',
+    label: 'UKAI Series - Masuk Apoteker',
+    description: 'Bimbel masuk apoteker untuk kampus tertentu. Tersedia kelas bimbel (private 2-5 orang, reguler 10-15 orang) dan simulasi ujian masuk apoteker berbasis CBT.',
+  },
+  {
+    value: 'UKAI Series - Kelas UKMPPAI',
+    label: 'UKAI Series - Kelas UKMPPAI',
+    description: 'Persiapan ujian sertifikasi profesi apoteker (UKMPPAI). Tersedia kelas bimbel (private 3-5 orang, reguler 10-15 orang) dan simulasi tryout UKAI nasional berbasis CBT.',
+  },
 ]
 
 const initialState: ActionState = { error: '', success: '' }

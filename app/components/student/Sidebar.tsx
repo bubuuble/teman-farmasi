@@ -6,13 +6,15 @@ import {
   LayoutDashboard, 
   BookOpen, 
   CalendarCheck, 
-  History
+  History,
+  FileCheck,
 } from 'lucide-react'
 import SignOutButton from '../SignOutButton'
 
 const menuItems = [
   { label: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
   { label: 'Kelas & Materi', href: '/student/classes', icon: BookOpen },
+  { label: 'Tryout CBT', href: '/student/tryouts', icon: FileCheck },
   { label: 'Jadwal & Absensi', href: '/student/schedule', icon: CalendarCheck },
   { label: 'Riwayat Pembayaran', href: '/student/orders', icon: History },
 ]

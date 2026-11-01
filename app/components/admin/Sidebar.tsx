@@ -12,6 +12,8 @@ import {
   BarChart3,
   BarChart2,
   X,
+  FileQuestion,
+  ClipboardCheck,
 } from 'lucide-react'
 import SignOutButton from '../SignOutButton'
 import { useAdmin } from './AdminProvider'
@@ -19,6 +21,8 @@ import { useAdmin } from './AdminProvider'
 const menuItems = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'Manajemen Kelas', href: '/admin/classes', icon: BookOpen },
+  { label: 'Bank Soal', href: '/admin/question-bank', icon: FileQuestion },
+  { label: 'Kelola Tryout', href: '/admin/tryouts', icon: ClipboardCheck },
   { label: 'Manajemen User', href: '/admin/users', icon: Users },
   { label: 'Rekap Mentor', href: '/admin/mentor-summary', icon: BarChart2 },
   { label: 'Rekap Absensi', href: '/admin/attendances', icon: FileSpreadsheet },

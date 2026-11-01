@@ -7,7 +7,7 @@ import Footer from "@/app/components/Footer";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 
 // Optimasi Ikon (Satu per satu)
-import { FaWhatsapp, FaCheck, FaBookOpen, FaLayerGroup, FaStar } from "react-icons/fa6";
+import { FaWhatsapp, FaCheck, FaBookOpen, FaLayerGroup, FaStar, FaLaptopCode, FaGraduationCap, FaAward, FaCircleCheck } from "react-icons/fa6";
 import { createClient } from 'next-sanity';
 
 // --- 1. TIPE DATA ---
@@ -50,13 +50,15 @@ const getStylesByColor = (colorClass: string) => {
 };
 
 function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) {
+  const isUkai = categoryFilter === 'ukai';
+  const [activeUkaiTab, setActiveUkaiTab] = useState<'masuk_apoteker' | 'ukmppai'>('masuk_apoteker');
   const [programData, setProgramData] = useState<Program | null>(null);
-  const [loading, setLoading] = useState(!!categoryFilter);
+  const [loading, setLoading] = useState(!!categoryFilter && !isUkai);
 
   const WA_NUMBER = "628895587621"; 
 
   useEffect(() => {
-    if (!categoryFilter) return;
+    if (!categoryFilter || categoryFilter === 'ukai') return;
     let isMounted = true;
     client.fetch(`*[_type == "program" && category == $cat][0]`, { cat: categoryFilter })
       .then((data) => {
@@ -74,6 +76,306 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
   };
 
   if (loading) return <LoadingSpinner />;
+
+  // Case UKAI Series (Custom UI with interactive subprograms & CBT highlight)
+  if (isUkai) {
+    const ukaiSubprograms = {
+      masuk_apoteker: {
+        title: 'Masuk Apoteker',
+        badge: 'Bimbel & Tryout Kampus',
+        description: 'Bimbingan intensif persiapan seleksi masuk profesi apoteker untuk berbagai kampus ternama dengan kurikulum teruji dan simulasi CBT.',
+        icon: FaGraduationCap,
+        plans: [
+          {
+            type: 'bimbel_private',
+            name: 'Kelas Bimbel Private',
+            subtitle: '2 - 5 Orang per Kelompok',
+            price: 'Rp 750.000',
+            unit: '/ orang',
+            popular: true,
+            features: [
+              'Kelompok eksklusif 2–5 orang (fokus maksimal)',
+              'Bebas request jadwal & materi target kampus',
+              'Pendampingan intensif mentor spesialis lolos masuk',
+              'Bank soal & pembahasan seleksi kampus terkait',
+              'Simulasi Tryout CBT Masuk Apoteker + Analisis Hasil',
+              'Konsultasi strategi pemilihan kampus & berkas',
+            ]
+          },
+          {
+            type: 'bimbel_reguler',
+            name: 'Kelas Bimbel Reguler',
+            subtitle: '10 - 15 Orang per Kelas',
+            price: 'Rp 350.000',
+            unit: '/ orang',
+            popular: false,
+            features: [
+              'Kelas interaktif 10–15 orang via Zoom',
+              'Kurikulum terstruktur bedah konsep & soal',
+              'Rekaman sesi pembelajaran & rangkuman materi',
+              'Akses Bank Soal seleksi masuk apoteker',
+              '1x Akses Simulasi Tryout CBT Masuk Apoteker',
+              'Grup diskusi & tanya jawab dengan mentor',
+            ]
+          },
+          {
+            type: 'tryout_cbt',
+            name: 'Tryout CBT Simulasi Masuk',
+            subtitle: 'Ujian Mandiri Berbasis CBT',
+            price: 'Rp 75.000',
+            unit: '/ paket tryout',
+            popular: false,
+            features: [
+              'Sistem CBT mirip ujian seleksi asli',
+              'Timer countdown & navigasi soal responsif',
+              'Kunci jawaban & pembahasan komprehensif',
+              'Skor instan, ranking, & statistik kelemahan materi',
+              'Bisa dikerjakan kapan saja (fleksibel)',
+            ]
+          }
+        ]
+      },
+      ukmppai: {
+        title: 'Kelas UKMPPAI',
+        badge: 'Sertifikasi Profesi Apoteker',
+        description: 'Persiapan komprehensif Uji Kompetensi Mahasiswa Program Profesi Apoteker Indonesia (UKMPPAI) dengan bank soal blueprint nasional.',
+        icon: FaAward,
+        plans: [
+          {
+            type: 'bimbel_private',
+            name: 'Kelas Bimbel Private UKMPPAI',
+            subtitle: '3 - 5 Orang per Kelompok',
+            price: 'Rp 950.000',
+            unit: '/ orang',
+            popular: true,
+            features: [
+              'Grup privat 3–5 orang bersama Top Mentor UKMPPAI',
+              'Bedah tuntas blueprint soal UKMPPAI terbaru',
+              'Drilling soal farmakoterapi, teknologi farmasi, sosial klinis',
+              'Akses Paket Tryout CBT UKMPPAI Terpadu',
+              'Review & evaluasi personal per peserta',
+              'Garansi bimbingan sampai siap ujian',
+            ]
+          },
+          {
+            type: 'bimbel_reguler',
+            name: 'Kelas Bimbel Reguler UKMPPAI',
+            subtitle: '10 - 15 Orang per Kelas',
+            price: 'Rp 450.000',
+            unit: '/ orang',
+            popular: false,
+            features: [
+              'Kelas komprehensif 10–15 orang via live Zoom',
+              'Materi lengkap 4 bidang utama blueprint UKMPPAI',
+              'Pembahasan trik cepat analisis kasus klinis & hitungan',
+              'Rekaman kelas + ringkasan materi PDF',
+              '1x Akses Tryout CBT Simulasi Nasional',
+              'Forum diskusi soal harian bersama mentor',
+            ]
+          },
+          {
+            type: 'tryout_cbt',
+            name: 'Tryout CBT Blueprint UKMPPAI',
+            subtitle: 'Simulasi Lengkap 200 Soal',
+            price: 'Rp 99.000',
+            unit: '/ paket tryout',
+            popular: false,
+            features: [
+              '200 Soal standar blueprint UKMPPAI nasional',
+              'Interface CBT presisi dengan durasi waktu riil',
+              'Pembahasan mendalam pada setiap opsi jawaban',
+              'Analisis performa per bidang kompetensi',
+              'Akses pembahasan tanpa batas setelah selesai',
+            ]
+          }
+        ]
+      }
+    };
+
+    const currentSub = ukaiSubprograms[activeUkaiTab];
+
+    return (
+      <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto font-sans">
+        {/* HEADER UKAI SERIES */}
+        <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="inline-flex items-center gap-2 bg-brand-pink/10 text-brand-pink px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-4">
+            <FaLaptopCode size={14} /> CBT & Mentoring Series
+          </div>
+          <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-brand-dark mb-4 tracking-tighter uppercase leading-tight">
+            UKAI Series
+          </h1>
+          <p className="text-gray-600 font-medium text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
+            Program persiapan ujian komprehensif untuk calon apoteker dan mahasiswa profesi farmasi, dilengkapi bimbingan intensif serta <span className="font-bold text-brand-dark">Simulasi Tryout CBT</span> berstandar nasional.
+          </p>
+
+          {/* SUBPROGRAM TOGGLE / TABS */}
+          <div className="flex justify-center mt-8">
+            <div className="bg-white p-1.5 rounded-3xl shadow-md border border-gray-100 inline-flex gap-2">
+              <button
+                onClick={() => setActiveUkaiTab('masuk_apoteker')}
+                className={`px-6 py-3.5 rounded-2xl font-extrabold text-sm transition-all flex items-center gap-2 ${
+                  activeUkaiTab === 'masuk_apoteker'
+                    ? 'bg-brand-dark text-white shadow-md'
+                    : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
+                }`}
+              >
+                <FaGraduationCap size={16} />
+                Masuk Apoteker
+              </button>
+              <button
+                onClick={() => setActiveUkaiTab('ukmppai')}
+                className={`px-6 py-3.5 rounded-2xl font-extrabold text-sm transition-all flex items-center gap-2 ${
+                  activeUkaiTab === 'ukmppai'
+                    ? 'bg-brand-pink text-white shadow-md'
+                    : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
+                }`}
+              >
+                <FaAward size={16} />
+                Kelas UKMPPAI
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SUBPROGRAM INFO BANNER */}
+        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 mb-12 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${
+              activeUkaiTab === 'masuk_apoteker' ? 'bg-orange-50 text-orange-600' : 'bg-rose-50 text-brand-pink'
+            }`}>
+              <currentSub.icon size={30} />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="font-heading text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tight">
+                  {currentSub.title}
+                </h2>
+                <span className="bg-brand-dark/5 text-brand-dark text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                  {currentSub.badge}
+                </span>
+              </div>
+              <p className="text-gray-500 text-sm font-medium mt-1 leading-relaxed max-w-2xl">
+                {currentSub.description}
+              </p>
+            </div>
+          </div>
+          <div className="bg-brand-cream/80 px-6 py-4 rounded-2xl text-center shrink-0 border border-brand-dark/5">
+            <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Sistem Ujian</p>
+            <p className="text-base font-extrabold text-brand-dark mt-0.5 flex items-center gap-1.5 justify-center">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              Real CBT Platform
+            </p>
+          </div>
+        </div>
+
+        {/* PRICING & OPTIONS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {currentSub.plans.map((plan, i) => {
+            const isHighlighted = plan.popular;
+            return (
+              <div
+                key={plan.type}
+                className={`rounded-[3rem] p-8 flex flex-col transition-all duration-500 hover:-translate-y-2 relative overflow-hidden ${
+                  isHighlighted
+                    ? 'bg-gradient-to-b from-brand-dark to-slate-900 text-white shadow-2xl border-2 border-brand-pink'
+                    : 'bg-white text-brand-dark shadow-sm hover:shadow-xl border border-gray-100'
+                }`}
+              >
+                {isHighlighted && (
+                  <div className="absolute top-5 right-6">
+                    <span className="bg-brand-pink text-white text-[10px] font-extrabold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md">
+                      Paling Populer
+                    </span>
+                  </div>
+                )}
+
+                <div className="mb-6">
+                  <span className={`inline-block text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-3 ${
+                    isHighlighted ? 'bg-white/10 text-teal-300' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {plan.subtitle}
+                  </span>
+                  <h3 className={`font-heading text-2xl font-extrabold tracking-tight mb-2 ${
+                    isHighlighted ? 'text-white' : 'text-brand-dark'
+                  }`}>
+                    {plan.name}
+                  </h3>
+                  <div className="mt-4 flex items-baseline gap-1.5">
+                    <span className={`font-heading text-3xl md:text-4xl font-extrabold tracking-tight ${
+                      isHighlighted ? 'text-teal-300' : 'text-brand-dark'
+                    }`}>
+                      {plan.price}
+                    </span>
+                    <span className={`text-xs font-bold ${
+                      isHighlighted ? 'text-white/60' : 'text-gray-400'
+                    }`}>
+                      {plan.unit}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex-1 my-6">
+                  <p className={`text-[10px] font-extrabold uppercase tracking-widest mb-4 ${
+                    isHighlighted ? 'text-white/60' : 'text-gray-400'
+                  }`}>
+                    Fasilitas yang didapat:
+                  </p>
+                  <ul className="space-y-3">
+                    {plan.features.map((feat, idx) => (
+                      <li key={idx} className="flex items-start gap-3 text-xs md:text-sm font-semibold leading-relaxed">
+                        <FaCircleCheck
+                          size={14}
+                          className={`shrink-0 mt-0.5 ${
+                            isHighlighted ? 'text-teal-400' : 'text-brand-pink'
+                          }`}
+                        />
+                        <span className={isHighlighted ? 'text-white/90' : 'text-gray-600'}>
+                          {feat}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => handleWaLink(`UKAI Series - ${currentSub.title} (${plan.name})`)}
+                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${
+                    isHighlighted
+                      ? 'bg-brand-pink hover:bg-white hover:text-brand-dark text-white'
+                      : 'bg-green-500 hover:bg-brand-dark text-white'
+                  }`}
+                >
+                  <FaWhatsapp size={16} />
+                  Daftar via WhatsApp
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* CBT PLATFORM HIGHLIGHT BANNER */}
+        <div className="mt-16 bg-gradient-to-r from-brand-yellow/30 via-brand-cream to-white rounded-[3rem] p-8 md:p-12 border border-brand-yellow/40 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div>
+            <span className="inline-block bg-brand-yellow text-brand-dark text-[10px] font-extrabold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-3">
+              CBT Simulation
+            </span>
+            <h3 className="font-heading text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tight mb-2">
+              Didukung Interface CBT Teman Farmasi
+            </h3>
+            <p className="text-gray-600 text-sm font-medium leading-relaxed max-w-xl">
+              Platform tryout kami dilengkapi timer akurat, ragu-ragu marker, auto-save state, navigasi nomor dinamis, dan pembahasan detail per soal setelah submit.
+            </p>
+          </div>
+          <button
+            onClick={() => handleWaLink(`Konsultasi Tryout CBT UKAI Series`)}
+            className="bg-brand-dark text-white px-8 py-4 rounded-2xl font-extrabold text-xs hover:bg-brand-pink transition-all shadow-md active:scale-95 shrink-0"
+          >
+            Konsultasi Sekarang
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!programData) return (
     <div className="text-center py-40 bg-white rounded-[3rem] border-2 border-dashed border-gray-100 mx-6 font-bold text-gray-400">Kategori belum tersedia.</div>

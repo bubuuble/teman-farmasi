@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { 
@@ -28,9 +29,10 @@ export default async function TryoutDetailPage({
   const { tryoutId } = await params
   const { tab = 'questions' } = await searchParams
   const supabase = await createClient()
+  const adminDb = createAdminClient()
 
   // 1. Fetch Tryout details
-  const { data: tryout } = await supabase
+  let { data: tryout, error: tryoutErr } = await supabase
     .from('tryouts')
     .select(`
       *,
@@ -38,6 +40,18 @@ export default async function TryoutDetailPage({
     `)
     .eq('id', tryoutId)
     .single()
+
+  if (tryoutErr || !tryout) {
+    const { data: adminTryout } = await adminDb
+      .from('tryouts')
+      .select(`
+        *,
+        classes(id, title)
+      `)
+      .eq('id', tryoutId)
+      .single()
+    tryout = adminTryout
+  }
 
   if (!tryout) return notFound()
 

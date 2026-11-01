@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { 
@@ -23,19 +24,31 @@ export default async function CategoryQuestionsPage({
 }) {
   const { categoryId } = await params
   const { difficulty = 'all' } = await searchParams
+
   const supabase = await createClient()
+  const adminDb = createAdminClient()
 
   // 1. Fetch kategori info
-  const { data: category } = await supabase
+  let { data: category, error: catErr } = await supabase
     .from('question_categories')
     .select('*')
     .eq('id', categoryId)
     .single()
 
+  if (catErr || !category) {
+    // Fallback to adminDb if session cookie has RLS evaluation gap
+    const { data: adminCategory } = await adminDb
+      .from('question_categories')
+      .select('*')
+      .eq('id', categoryId)
+      .single()
+    category = adminCategory
+  }
+
   if (!category) return notFound()
 
   // 2. Fetch soal & opsi
-  let qQuery = supabase
+  let qQuery = (category ? adminDb : supabase)
     .from('questions')
     .select(`
       *,

@@ -201,6 +201,7 @@ export default async function StudentTryoutsPage({
               ? Math.max(...completedAttempts.map((a: any) => Number(a.score || 0)))
               : null
 
+            const hasResults = completedAttempts.length > 0
             const isMaxReached = t.max_attempts && myAttempts.length >= t.max_attempts && !inProgressAttempt
 
             return (
@@ -252,8 +253,8 @@ export default async function StudentTryoutsPage({
                   )}
                 </div>
 
-                <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
-                  <span className="text-[11px] text-gray-400 font-medium">
+                <div className="pt-4 border-t border-gray-50 flex items-center justify-between gap-3">
+                  <span className="text-[11px] text-gray-400 font-medium shrink-0">
                     Percobaan: {myAttempts.length} / {t.max_attempts ? `${t.max_attempts}x` : '∞'}
                   </span>
 
@@ -268,13 +269,28 @@ export default async function StudentTryoutsPage({
                     >
                       <RotateCcw className="w-3.5 h-3.5" /> Lanjutkan
                     </Link>
-                  ) : isMaxReached ? (
+                  ) : hasResults && isMaxReached ? (
                     <Link
                       href={`/student/tryouts/${t.id}/result`}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-brand-pink hover:underline"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-dark text-white rounded-xl text-xs font-bold hover:bg-brand-pink transition shadow-sm active:scale-95"
                     >
-                      Lihat Hasil <ChevronRight className="w-4 h-4" />
+                      Lihat Hasil <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
+                  ) : hasResults && !isMaxReached ? (
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/student/tryouts/${t.id}/result`}
+                        className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-brand-dark bg-gray-100 hover:bg-gray-200 rounded-xl transition"
+                      >
+                        Lihat Hasil
+                      </Link>
+                      <Link
+                        href={`/student/tryouts/${t.id}`}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-pink text-white rounded-xl text-xs font-bold hover:bg-brand-dark transition shadow-sm active:scale-95"
+                      >
+                        <Play className="w-3.5 h-3.5" /> Mulai Ujian
+                      </Link>
+                    </div>
                   ) : (
                     <Link
                       href={`/student/tryouts/${t.id}`}

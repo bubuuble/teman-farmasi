@@ -195,7 +195,7 @@ export default function TryoutResultClient({
               <span className={`inline-block mt-1 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
                 isPassed ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
               }`}>
-                {isPassed ? 'Memenuhi Standar' : 'Perlu Evaluasi'}
+                {isPassed ? 'Lulus Tryout' : 'Belum Lulus'}
               </span>
             </div>
 
@@ -446,11 +446,6 @@ export default function TryoutResultClient({
                           {isStudentChoice && !isAnswerKey && (
                             <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md bg-rose-600 text-white shadow-xs">
                               Jawaban Anda
-                            </span>
-                          )}
-                          {isStudentChoice && isAnswerKey && (
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              Pilihan Anda Tepat
                             </span>
                           )}
                         </div>

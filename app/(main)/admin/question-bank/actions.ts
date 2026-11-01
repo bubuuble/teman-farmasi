@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
 export type ActionState = {
@@ -8,13 +9,29 @@ export type ActionState = {
   success?: string
 }
 
+async function verifyStaff() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Silakan login terlebih dahulu" }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isStaff = profile?.role === 'admin' || profile?.role === 'superadmin' || profile?.role === 'mentor'
+  if (!isStaff) return { error: "Akses ditolak. Hanya Admin dan Mentor yang diizinkan." }
+
+  return { user, adminDb: createAdminClient() }
+}
+
 // ----------------------------------------------------
 // KATEGORI SOAL
 // ----------------------------------------------------
 export async function createCategory(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "Silakan login terlebih dahulu" }
+  const auth = await verifyStaff()
+  if (auth.error || !auth.user || !auth.adminDb) return { error: auth.error || "Gagal autentikasi" }
 
   const name = formData.get('name') as string
   const program_type = formData.get('program_type') as string
@@ -23,11 +40,11 @@ export async function createCategory(prevState: ActionState, formData: FormData)
   if (!name?.trim()) return { error: "Nama kategori wajib diisi" }
   if (!program_type) return { error: "Pilih jenis program (Masuk Apoteker / UKMPPAI)" }
 
-  const { error } = await supabase.from('question_categories').insert({
+  const { error } = await auth.adminDb.from('question_categories').insert({
     name: name.trim(),
     program_type,
     description: description?.trim() || null,
-    created_by: user.id
+    created_by: auth.user.id
   })
 
   if (error) return { error: error.message }
@@ -38,7 +55,8 @@ export async function createCategory(prevState: ActionState, formData: FormData)
 }
 
 export async function updateCategory(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const supabase = await createClient()
+  const auth = await verifyStaff()
+  if (auth.error || !auth.adminDb) return { error: auth.error || "Gagal autentikasi" }
 
   const id = formData.get('id') as string
   const name = formData.get('name') as string
@@ -48,7 +66,7 @@ export async function updateCategory(prevState: ActionState, formData: FormData)
   if (!id) return { error: "ID kategori tidak valid" }
   if (!name?.trim()) return { error: "Nama kategori wajib diisi" }
 
-  const { error } = await supabase.from('question_categories').update({
+  const { error } = await auth.adminDb.from('question_categories').update({
     name: name.trim(),
     program_type,
     description: description?.trim() || null
@@ -63,8 +81,10 @@ export async function updateCategory(prevState: ActionState, formData: FormData)
 }
 
 export async function deleteCategory(id: string) {
-  const supabase = await createClient()
-  const { error } = await supabase.from('question_categories').delete().eq('id', id)
+  const auth = await verifyStaff()
+  if (auth.error || !auth.adminDb) return { error: auth.error || "Gagal autentikasi" }
+
+  const { error } = await auth.adminDb.from('question_categories').delete().eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/admin/question-bank')
   revalidatePath('/mentor/question-bank')
@@ -75,29 +95,28 @@ export async function deleteCategory(id: string) {
 // SOAL & OPSI
 // ----------------------------------------------------
 export async function createQuestion(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "Silakan login terlebih dahulu" }
+  const auth = await verifyStaff()
+  if (auth.error || !auth.user || !auth.adminDb) return { error: auth.error || "Gagal autentikasi" }
 
   const category_id = formData.get('category_id') as string
   const question_text = formData.get('question_text') as string
   const question_image_url = formData.get('question_image_url') as string
   const explanation = formData.get('explanation') as string
   const difficulty = (formData.get('difficulty') as string) || 'medium'
-  const correct_option = formData.get('correct_option') as string // 'A', 'B', 'C', 'D', 'E'
+  const correct_option = formData.get('correct_option') as string
 
   if (!category_id) return { error: "Kategori soal wajib dipilih" }
   if (!question_text?.trim()) return { error: "Isi teks pertanyaan wajib diisi" }
   if (!correct_option) return { error: "Pilih salah satu opsi jawaban yang benar (A/B/C/D/E)" }
 
   // 1. Simpan soal
-  const { data: questionData, error: qErr } = await supabase.from('questions').insert({
+  const { data: questionData, error: qErr } = await auth.adminDb.from('questions').insert({
     category_id,
     question_text: question_text.trim(),
     question_image_url: question_image_url?.trim() || null,
     explanation: explanation?.trim() || null,
     difficulty,
-    created_by: user.id
+    created_by: auth.user.id
   }).select('id').single()
 
   if (qErr || !questionData) return { error: qErr?.message || "Gagal menyimpan soal" }
@@ -117,17 +136,16 @@ export async function createQuestion(prevState: ActionState, formData: FormData)
   // Pastikan minimal opsi A, B, C, D terisi
   const emptyRequired = optionsToInsert.slice(0, 4).some(o => !o.option_text)
   if (emptyRequired) {
-    // Rollback soal jika opsi belum lengkap
-    await supabase.from('questions').delete().eq('id', questionData.id)
+    await auth.adminDb.from('questions').delete().eq('id', questionData.id)
     return { error: "Minimal opsi jawaban A sampai D wajib diisi!" }
   }
 
-  const { error: optErr } = await supabase.from('question_options').insert(
+  const { error: optErr } = await auth.adminDb.from('question_options').insert(
     optionsToInsert.filter(o => o.option_text)
   )
 
   if (optErr) {
-    await supabase.from('questions').delete().eq('id', questionData.id)
+    await auth.adminDb.from('questions').delete().eq('id', questionData.id)
     return { error: optErr.message }
   }
 
@@ -138,7 +156,8 @@ export async function createQuestion(prevState: ActionState, formData: FormData)
 }
 
 export async function updateQuestion(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const supabase = await createClient()
+  const auth = await verifyStaff()
+  if (auth.error || !auth.adminDb) return { error: auth.error || "Gagal autentikasi" }
 
   const id = formData.get('id') as string
   const category_id = formData.get('category_id') as string
@@ -153,7 +172,7 @@ export async function updateQuestion(prevState: ActionState, formData: FormData)
   if (!correct_option) return { error: "Pilih jawaban benar" }
 
   // 1. Update pertanyaan
-  const { error: qErr } = await supabase.from('questions').update({
+  const { error: qErr } = await auth.adminDb.from('questions').update({
     question_text: question_text.trim(),
     question_image_url: question_image_url?.trim() || null,
     explanation: explanation?.trim() || null,
@@ -164,7 +183,7 @@ export async function updateQuestion(prevState: ActionState, formData: FormData)
   if (qErr) return { error: qErr.message }
 
   // 2. Update opsi (hapus lalu insert ulang)
-  await supabase.from('question_options').delete().eq('question_id', id)
+  await auth.adminDb.from('question_options').delete().eq('question_id', id)
 
   const labels = ['A', 'B', 'C', 'D', 'E']
   const optionsToInsert = labels.map(label => {
@@ -177,7 +196,7 @@ export async function updateQuestion(prevState: ActionState, formData: FormData)
     }
   }).filter(o => o.option_text)
 
-  const { error: optErr } = await supabase.from('question_options').insert(optionsToInsert)
+  const { error: optErr } = await auth.adminDb.from('question_options').insert(optionsToInsert)
   if (optErr) return { error: optErr.message }
 
   revalidatePath(`/admin/question-bank/${category_id}`)
@@ -187,8 +206,10 @@ export async function updateQuestion(prevState: ActionState, formData: FormData)
 }
 
 export async function deleteQuestion(id: string, categoryId: string) {
-  const supabase = await createClient()
-  const { error } = await supabase.from('questions').delete().eq('id', id)
+  const auth = await verifyStaff()
+  if (auth.error || !auth.adminDb) return { error: auth.error || "Gagal autentikasi" }
+
+  const { error } = await auth.adminDb.from('questions').delete().eq('id', id)
   if (error) return { error: error.message }
 
   revalidatePath(`/admin/question-bank/${categoryId}`)

@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import ClassForm, { PROGRAMS } from "./ClassForm"
+import { formatRupiah } from "@/lib/currency"
 
 type ClassWithRelations = {
   id: string
@@ -363,7 +364,7 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
                       {/* Footer Actions */}
                       <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto gap-4">
                         <div className="text-sm font-bold text-brand-dark">
-                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.price || 0)}
+                          {formatRupiah(item.price)}
                         </div>
                         
                         <Link 

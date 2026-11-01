@@ -40,6 +40,7 @@ import {
   enrollAndAssignToMentor
 } from '../actions'
 import ConfirmModal from '@/app/components/ConfirmModal'
+import { formatRupiah } from '@/lib/currency'
 
 // Pre-defined programs matching ClassForm
 const PROGRAMS = [
@@ -634,8 +635,8 @@ export default function ClassManager({
                   </span>
                 </div>
                 <h2 className="font-heading font-bold text-3xl text-brand-dark">{kelas.title}</h2>
-                <p className="text-xl font-extrabold text-brand-dark" suppressHydrationWarning>
-                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(kelas.price)}
+                <p className="text-xl font-extrabold text-brand-dark">
+                  {formatRupiah(kelas.price)}
                 </p>
                 <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 max-w-4xl mt-3">
                   <h4 className="text-xs font-bold text-brand-dark uppercase tracking-widest mb-1.5 opacity-60">Deskripsi Kelas</h4>
@@ -1701,8 +1702,8 @@ export default function ClassManager({
                     }
                   </span>
                   <h2 className="font-heading font-bold text-2xl text-brand-dark mt-3">{kelas.title}</h2>
-                  <p className="text-xl font-extrabold text-brand-dark mt-2" suppressHydrationWarning>
-                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(kelas.price)}
+                  <p className="text-xl font-extrabold text-brand-dark mt-2">
+                    {formatRupiah(kelas.price)}
                   </p>
                 </div>
 

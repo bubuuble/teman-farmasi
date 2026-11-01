@@ -3,6 +3,7 @@ import { CreditCard } from "lucide-react"
 import CreateOrderForm from "./CreateOrderForm"
 import OrderActions from "./OrderActions"
 import ExportButton from "./ExportButton"
+import { formatRupiah } from "@/lib/currency"
 
 // Definisikan Tipe Data Order Lengkap (Hasil Join)
 type OrderWithDetail = {
@@ -67,7 +68,7 @@ export default async function AdminOrdersPage() {
             <div>
                 <p className="text-white/60 text-xs uppercase tracking-wider">Total Pendapatan</p>
                 <h3 className="font-heading font-bold text-2xl text-brand-yellow">
-                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalRevenue)}
+                    {formatRupiah(totalRevenue)}
                 </h3>
             </div>
         </div>
@@ -116,7 +117,7 @@ export default async function AdminOrdersPage() {
                     </span>
                   </td>
                   <td className="p-6 font-heading font-bold text-brand-dark">
-                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.amount)}
+                    {formatRupiah(order.amount)}
                     {order.notes && (
                         <div className="text-[10px] text-gray-400 mt-1 italic">Note: {order.notes}</div>
                     )}

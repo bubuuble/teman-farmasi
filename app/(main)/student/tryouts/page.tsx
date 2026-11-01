@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import Link from "next/link"
 import { 
   FileCheck, 
@@ -8,7 +9,8 @@ import {
   Award,
   Play,
   RotateCcw,
-  CheckCircle2
+  CheckCircle2,
+  Search
 } from "lucide-react"
 
 export const dynamic = 'force-dynamic'
@@ -16,11 +18,12 @@ export const dynamic = 'force-dynamic'
 export default async function StudentTryoutsPage({
   searchParams
 }: {
-  searchParams: Promise<{ program?: string }>
+  searchParams: Promise<{ program?: string; q?: string }>
 }) {
   const supabase = await createClient()
+  const adminDb = createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { program = 'all' } = await searchParams
+  const { program = 'all', q = '' } = await searchParams
 
   // 1. Ambil kelas di mana student terdaftar
   const { data: enrollments = [] } = await supabase
@@ -31,22 +34,38 @@ export default async function StudentTryoutsPage({
 
   const enrolledClassIds = (enrollments || []).map(e => e.class_id).filter(Boolean)
 
-  // 2. Ambil tryout aktif
-  let query = supabase
+  // 2. Ambil tryout aktif dari UKAI Series (masuk_apoteker + ukmppai) via admin client
+  let query = adminDb
     .from('tryouts')
     .select(`
       *,
       classes(title)
     `)
     .eq('is_active', true)
+    .in('program_type', ['masuk_apoteker', 'ukmppai'])
     .order('created_at', { ascending: false })
 
   if (program && program !== 'all') {
     query = query.eq('program_type', program)
   }
 
+  if (q?.trim()) {
+    query = query.ilike('title', `%${q.trim()}%`)
+  }
+
   const { data: tryouts = [] } = await query
   const tryoutsList = tryouts || []
+
+  // Count totals for badges
+  const { data: allActive = [] } = await adminDb
+    .from('tryouts')
+    .select('program_type')
+    .eq('is_active', true)
+    .in('program_type', ['masuk_apoteker', 'ukmppai'])
+
+  const countAll = allActive?.length || 0
+  const countMasukApoteker = allActive?.filter(t => t.program_type === 'masuk_apoteker').length || 0
+  const countUkmppai = allActive?.filter(t => t.program_type === 'ukmppai').length || 0
 
   // 3. Ambil riwayat attempts student untuk masing-masing tryout
   const { data: userAttempts = [] } = await supabase
@@ -64,7 +83,7 @@ export default async function StudentTryoutsPage({
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider mb-2">
             <FileCheck className="w-3.5 h-3.5" />
-            CBT Portal Siswa
+            UKAI Series — CBT Portal
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-dark">
             Simulasi Tryout CBT
@@ -75,49 +94,96 @@ export default async function StudentTryoutsPage({
         </div>
       </div>
 
-      {/* FILTER PROGRAM */}
-      <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
-        <Link
-          href="/student/tryouts?program=all"
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-            program === 'all'
-              ? 'bg-brand-dark text-white shadow-sm'
-              : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
-          }`}
-        >
-          Semua ({tryouts?.length || 0})
-        </Link>
-        <Link
-          href="/student/tryouts?program=masuk_apoteker"
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-            program === 'masuk_apoteker'
-              ? 'bg-orange-600 text-white shadow-sm'
-              : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
+      {/* FILTER + SEARCH ROW */}
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+        {/* Program Filter Tabs */}
+        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
+          <Link
+            href={`/student/tryouts?program=all${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+              program === 'all'
+                ? 'bg-brand-dark text-white shadow-sm'
+                : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
             }`}
-        >
-          <GraduationCap className="w-3.5 h-3.5" />
-          Masuk Apoteker
-        </Link>
-        <Link
-          href="/student/tryouts?program=ukmppai"
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-            program === 'ukmppai'
-              ? 'bg-rose-600 text-white shadow-sm'
-              : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
-            }`}
-        >
-          <Award className="w-3.5 h-3.5" />
-          Kelas UKMPPAI
-        </Link>
+          >
+            Semua ({countAll})
+          </Link>
+          <Link
+            href={`/student/tryouts?program=masuk_apoteker${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              program === 'masuk_apoteker'
+                ? 'bg-orange-600 text-white shadow-sm'
+                : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
+              }`}
+          >
+            <GraduationCap className="w-3.5 h-3.5" />
+            Masuk Apoteker ({countMasukApoteker})
+          </Link>
+          <Link
+            href={`/student/tryouts?program=ukmppai${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              program === 'ukmppai'
+                ? 'bg-rose-600 text-white shadow-sm'
+                : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
+              }`}
+          >
+            <Award className="w-3.5 h-3.5" />
+            UKMPPAI ({countUkmppai})
+          </Link>
+        </div>
+
+        {/* Search Bar */}
+        <form method="GET" action="/student/tryouts" className="flex items-center gap-2">
+          {program !== 'all' && (
+            <input type="hidden" name="program" value={program} />
+          )}
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              placeholder="Cari tryout..."
+              className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink w-56 shadow-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-brand-dark text-white text-xs font-bold rounded-xl hover:bg-brand-pink transition shadow-sm"
+          >
+            Cari
+          </button>
+          {q && (
+            <Link
+              href={`/student/tryouts${program !== 'all' ? `?program=${program}` : ''}`}
+              className="px-3 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition"
+            >
+              Reset
+            </Link>
+          )}
+        </form>
       </div>
+
+      {/* Search result indicator */}
+      {q && (
+        <div className="text-sm text-gray-500 font-medium">
+          Hasil pencarian untuk <span className="font-bold text-brand-dark">&ldquo;{q}&rdquo;</span>: {tryoutsList.length} tryout ditemukan
+        </div>
+      )}
 
       {/* LIST TRYOUT */}
       {(!tryoutsList || tryoutsList.length === 0) ? (
         <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-gray-200">
-          <FileCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <h3 className="font-bold text-gray-700 text-base">Belum ada tryout aktif</h3>
+          {q ? (
+            <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          ) : (
+            <FileCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          )}
+          <h3 className="font-bold text-gray-700 text-base">
+            {q ? `Tidak ada tryout yang cocok dengan "${q}"` : 'Belum ada tryout aktif'}
+          </h3>
           <p className="text-gray-400 text-xs mt-1">
-            Tryout yang dijadwalkan oleh mentor atau admin akan muncul di sini.
+            {q ? 'Coba kata kunci lain atau reset pencarian.' : 'Tryout yang dijadwalkan oleh mentor atau admin akan muncul di sini.'}
           </p>
         </div>
       ) : (

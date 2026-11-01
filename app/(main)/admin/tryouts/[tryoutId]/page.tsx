@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import AssignQuestionsModal from "../AssignQuestionsModal"
 import CreateDirectQuestionModal from "../CreateDirectQuestionModal"
+import EditQuestionInTryoutModal from "../EditQuestionInTryoutModal"
 import RemoveQuestionBtn from "../RemoveQuestionBtn"
 
 export const dynamic = 'force-dynamic'
@@ -196,6 +197,7 @@ export default async function TryoutDetailPage({
                 tryoutId={tryoutId}
                 availableQuestions={bankQuestions as any[]}
                 existingQuestionIds={existingQuestionIds}
+                categories={categories || []}
               />
               <CreateDirectQuestionModal
                 tryoutId={tryoutId}
@@ -239,10 +241,17 @@ export default async function TryoutDetailPage({
                         )}
                       </div>
 
-                      <RemoveQuestionBtn
-                        tryoutId={tryoutId}
-                        questionId={row.question_id}
-                      />
+                      <div className="flex items-center gap-1">
+                        <EditQuestionInTryoutModal
+                          tryoutId={tryoutId}
+                          question={q}
+                          categories={categories || []}
+                        />
+                        <RemoveQuestionBtn
+                          tryoutId={tryoutId}
+                          questionId={row.question_id}
+                        />
+                      </div>
                     </div>
 
                     <p className="text-brand-dark font-medium text-sm leading-relaxed whitespace-pre-line pl-10">

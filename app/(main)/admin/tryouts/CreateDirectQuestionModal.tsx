@@ -69,14 +69,13 @@ export default function CreateDirectQuestionModal({
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Kategori Bank Soal *
+                  Kategori Bank Soal <span className="text-gray-400 font-normal normal-case">(Opsional - Otomatis jika dikosongkan)</span>
                 </label>
                 <select
                   name="category_id"
-                  required
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink bg-white"
                 >
-                  <option value="">Pilih Kategori Bank Soal</option>
+                  <option value="">(Otomatis / Kategori Umum)</option>
                   {categories.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}

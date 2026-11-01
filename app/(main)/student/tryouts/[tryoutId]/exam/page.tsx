@@ -89,19 +89,58 @@ export default async function ExamPage({
     }
   })
 
-  // Format questions array
-  const formattedQuestions = assignedList.map((r: any) => {
+  // Helper deterministic pseudo-random number generator berdasarkan seed string
+  function getSeededRandom(seed: string) {
+    let hash = 0
+    for (let i = 0; i < seed.length; i++) {
+      hash = ((hash << 5) - hash) + seed.charCodeAt(i)
+      hash |= 0
+    }
+    return function() {
+      hash = (hash * 9301 + 49297) % 233280
+      return Math.abs(hash / 233280)
+    }
+  }
+
+  // Helper shuffle array dengan seeded random
+  function shuffleArray<T>(array: T[], randomFn: () => number): T[] {
+    const arr = [...array]
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(randomFn() * (i + 1))
+      const temp = arr[i]
+      arr[i] = arr[j]
+      arr[j] = temp
+    }
+    return arr
+  }
+
+  // Format questions array & terapkan shuffle jika aktif
+  const defaultLetters = ['A', 'B', 'C', 'D', 'E']
+
+  let questionRows = [...assignedList]
+  if (tryout.shuffle_questions) {
+    const qRng = getSeededRandom(`questions-${attempt.id}`)
+    questionRows = shuffleArray(questionRows, qRng)
+  }
+
+  const formattedQuestions = questionRows.map((r: any) => {
     const q = r.questions
-    const options = (q?.question_options || []).sort((a: any, b: any) =>
-      a.label.localeCompare(b.label)
-    )
+    let rawOptions = [...(q?.question_options || [])]
+
+    if (tryout.shuffle_options) {
+      const optRng = getSeededRandom(`opt-${attempt.id}-${q?.id}`)
+      rawOptions = shuffleArray(rawOptions, optRng)
+    } else {
+      rawOptions.sort((a: any, b: any) => a.label.localeCompare(b.label))
+    }
+
     return {
       id: q?.id,
       question_text: q?.question_text,
       question_image_url: q?.question_image_url,
-      options: options.map((opt: any) => ({
+      options: rawOptions.map((opt: any, optIdx: number) => ({
         id: opt.id,
-        label: opt.label,
+        label: defaultLetters[optIdx] || opt.label,
         option_text: opt.option_text
       }))
     }

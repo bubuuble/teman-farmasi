@@ -194,13 +194,46 @@ export async function createQuestionDirectToTryout(
   const correct_option = formData.get('correct_option') as string
 
   if (!tryout_id) return { error: "ID Tryout tidak ditemukan" }
-  if (!category_id) return { error: "Pilih kategori bank soal tujuan" }
   if (!question_text?.trim()) return { error: "Isi pertanyaan wajib diisi" }
   if (!correct_option) return { error: "Pilih kunci jawaban yang benar" }
 
   // 1. Simpan ke questions
+  let targetCategoryId = category_id
+  if (!targetCategoryId) {
+    // Cari kategori default atau buat jika belum ada untuk program_type ini
+    const { data: tryout } = await auth.adminDb
+      .from('tryouts')
+      .select('program_type')
+      .eq('id', tryout_id)
+      .single()
+
+    const programType = tryout?.program_type || 'masuk_apoteker'
+
+    const { data: existingCat } = await auth.adminDb
+      .from('question_categories')
+      .select('id')
+      .eq('program_type', programType)
+      .limit(1)
+      .maybeSingle()
+
+    if (existingCat?.id) {
+      targetCategoryId = existingCat.id
+    } else {
+      const { data: newCat } = await auth.adminDb
+        .from('question_categories')
+        .insert({
+          name: 'Umum',
+          program_type: programType,
+          description: 'Kategori default soal tryout'
+        })
+        .select('id')
+        .single()
+      targetCategoryId = newCat?.id
+    }
+  }
+
   const { data: questionData, error: qErr } = await auth.adminDb.from('questions').insert({
-    category_id,
+    category_id: targetCategoryId,
     question_text: question_text.trim(),
     question_image_url: question_image_url?.trim() || null,
     explanation: explanation?.trim() || null,
@@ -256,6 +289,135 @@ export async function createQuestionDirectToTryout(
   revalidatePath('/admin/tryouts')
   revalidatePath(`/mentor/tryouts/${tryout_id}`)
   return { success: "Soal berhasil dibuat dan langsung ditautkan ke Tryout!" }
+}
+
+// ----------------------------------------------------
+// EDIT SOAL LANGSUNG DARI TRYOUT
+// ----------------------------------------------------
+export async function updateQuestionInTryout(
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const auth = await verifyStaff()
+  if (auth.error || !auth.user || !auth.adminDb) return { error: auth.error || "Gagal autentikasi" }
+
+  const tryout_id = formData.get('tryout_id') as string
+  const question_id = formData.get('question_id') as string
+  const category_id = formData.get('category_id') as string
+  const question_text = formData.get('question_text') as string
+  const question_image_url = formData.get('question_image_url') as string
+  const explanation = formData.get('explanation') as string
+  const correct_option = formData.get('correct_option') as string
+
+  if (!question_id) return { error: "ID soal tidak ditemukan" }
+  if (!question_text?.trim()) return { error: "Isi pertanyaan wajib diisi" }
+  if (!correct_option) return { error: "Pilih kunci jawaban yang benar" }
+
+  // 1. Update questions
+  const updatePayload: any = {
+    question_text: question_text.trim(),
+    question_image_url: question_image_url?.trim() || null,
+    explanation: explanation?.trim() || null,
+    updated_at: new Date().toISOString()
+  }
+  if (category_id) {
+    updatePayload.category_id = category_id
+  }
+
+  const { error: qErr } = await auth.adminDb
+    .from('questions')
+    .update(updatePayload)
+    .eq('id', question_id)
+
+  if (qErr) return { error: qErr.message }
+
+  // 2. Update options (delete and re-insert)
+  await auth.adminDb.from('question_options').delete().eq('question_id', question_id)
+
+  const labels = ['A', 'B', 'C', 'D', 'E']
+  const optionsToInsert = labels.map(label => {
+    const text = (formData.get(`option_${label}`) as string) || ''
+    return {
+      question_id,
+      label,
+      option_text: text.trim(),
+      is_correct: label === correct_option
+    }
+  }).filter(o => o.option_text)
+
+  const { error: optErr } = await auth.adminDb.from('question_options').insert(optionsToInsert)
+  if (optErr) return { error: optErr.message }
+
+  if (tryout_id) {
+    revalidatePath(`/admin/tryouts/${tryout_id}`)
+    revalidatePath(`/mentor/tryouts/${tryout_id}`)
+  }
+  revalidatePath('/admin/question-bank')
+  return { success: "Soal berhasil diperbarui!" }
+}
+
+// ----------------------------------------------------
+// BULK ASSIGN SOAL BERDASARKAN KATEGORI BANK SOAL
+// ----------------------------------------------------
+export async function assignCategoryQuestionsToTryout(tryoutId: string, categoryId: string) {
+  const auth = await verifyStaff()
+  if (auth.error || !auth.user || !auth.adminDb) return { error: auth.error || "Gagal autentikasi" }
+
+  if (!tryoutId || !categoryId) return { error: "Parameter tidak valid" }
+
+  // Ambil semua ID soal dari kategori ini
+  const { data: catQuestions, error: cqErr } = await auth.adminDb
+    .from('questions')
+    .select('id')
+    .eq('category_id', categoryId)
+
+  if (cqErr) return { error: cqErr.message }
+  if (!catQuestions || catQuestions.length === 0) {
+    return { error: "Tidak ada soal dalam kategori yang dipilih" }
+  }
+
+  // Cek soal yang sudah ada di tryout ini agar tidak duplikat
+  const { data: existingTryoutQuestions } = await auth.adminDb
+    .from('tryout_questions')
+    .select('question_id, question_order')
+    .eq('tryout_id', tryoutId)
+    .order('question_order', { ascending: false })
+
+  const existingIds = new Set((existingTryoutQuestions || []).map(r => r.question_id))
+  const newQuestionIds = catQuestions
+    .map(q => q.id)
+    .filter(id => !existingIds.has(id))
+
+  if (newQuestionIds.length === 0) {
+    return { error: "Semua soal dalam kategori ini sudah pernah ditambahkan ke tryout ini" }
+  }
+
+  let startOrder = ((existingTryoutQuestions?.[0]?.question_order) || 0) + 1
+
+  const rows = newQuestionIds.map((qId, idx) => ({
+    tryout_id: tryoutId,
+    question_id: qId,
+    question_order: startOrder + idx
+  }))
+
+  const { error: upsertErr } = await auth.adminDb.from('tryout_questions').upsert(rows, {
+    onConflict: 'tryout_id,question_id'
+  })
+
+  if (upsertErr) return { error: upsertErr.message }
+
+  // Update total questions count
+  const { count } = await auth.adminDb
+    .from('tryout_questions')
+    .select('*', { count: 'exact', head: true })
+    .eq('tryout_id', tryoutId)
+
+  await auth.adminDb.from('tryouts').update({ total_questions: count || 0 }).eq('id', tryoutId)
+
+  revalidatePath(`/admin/tryouts/${tryoutId}`)
+  revalidatePath('/admin/tryouts')
+  revalidatePath(`/mentor/tryouts/${tryoutId}`)
+  return { success: true, addedCount: newQuestionIds.length }
 }
 
 // ----------------------------------------------------

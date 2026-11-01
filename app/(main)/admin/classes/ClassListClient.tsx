@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { 
   BookOpen, 
   Settings, 
@@ -166,6 +166,13 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
     })
   }, [initialClasses, searchQuery])
 
+  // Collapsible state per category (default: all open)
+  const [collapsedCats, setCollapsedCats] = useState<Record<string, boolean>>({})
+
+  const toggleCategory = useCallback((cat: string) => {
+    setCollapsedCats(prev => ({ ...prev, [cat]: !prev[cat] }))
+  }, [])
+
   // Kelompokkan kelas berdasarkan kategori
   const groupedClasses = useMemo(() => {
     const groups: Record<string, ClassWithRelations[]> = {
@@ -176,6 +183,8 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
       'PharmaPublish Academy': [],
       'Pharma Impact': [],
       'Pharmacamp': [],
+      'UKAI Series - Masuk Apoteker': [],
+      'UKAI Series - Kelas UKMPPAI': [],
       'Lainnya': []
     }
 
@@ -295,24 +304,31 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
           // Jika menampilkan semua kategori, sembunyikan section yang kosong
           if (selectedCategory === 'all' && classes.length === 0) return null
 
+          const isCollapsed = !!collapsedCats[category]
+
           return (
             <div key={category} className="space-y-4">
               
-              {/* Section Header */}
-              <div className="flex items-center gap-3 border-b border-gray-100 pb-2">
-                <div className={`w-8 h-8 rounded-lg ${meta.badgeBg} ${meta.badgeText} flex items-center justify-center`}>
+              {/* Section Header — clickable to collapse */}
+              <button
+                type="button"
+                onClick={() => toggleCategory(category)}
+                className="w-full flex items-center gap-3 border-b border-gray-100 pb-2 group hover:border-gray-200 transition-colors text-left"
+              >
+                <div className={`w-8 h-8 rounded-lg ${meta.badgeBg} ${meta.badgeText} flex items-center justify-center shrink-0`}>
                   <Icon className="w-4 h-4" />
                 </div>
-                <h2 className="font-heading font-bold text-lg text-brand-dark">
+                <h2 className="font-heading font-bold text-lg text-brand-dark flex-1">
                   {meta.label}
                 </h2>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${meta.badgeBg} ${meta.badgeText}`}>
                   {classes.length} Kelas
                 </span>
-              </div>
+                <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+              </button>
 
               {/* Grid Kelas */}
-              {classes.length > 0 ? (
+              {!isCollapsed && classes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {classes.map((item) => (
                     <div 
@@ -378,11 +394,11 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
                     </div>
                   ))}
                 </div>
-              ) : (
+              ) : !isCollapsed ? (
                 <div className="py-16 text-center bg-white rounded-3xl border-2 border-dashed border-gray-200">
                   <p className="text-brand-gray">Belum ada kelas untuk kategori ini.</p>
                 </div>
-              )}
+              ) : null}
             </div>
           )
         })}

@@ -134,7 +134,7 @@ export default function SessionForm({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-brand-dark uppercase">Pilih Student</label>
                   {availableStudents.length === 0 ? (
-                    <p className="text-xs text-red-500 font-bold">Belum ada student di kelas/peminatan ini.</p>
+                    <p className="text-xs text-red-500 font-bold">Belum ada student di kelas ini.</p>
                   ) : (
                     <select
                       name="studentId"

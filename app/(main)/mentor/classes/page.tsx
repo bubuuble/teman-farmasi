@@ -72,7 +72,7 @@ export default async function MentorClassesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-heading font-bold text-2xl text-brand-dark">Kelas Saya</h1>
-        <p className="text-brand-gray text-sm">Pilih kelas & peminatan untuk mengatur Jadwal & Sesi.</p>
+        <p className="text-brand-gray text-sm">Pilih kelas untuk mengatur Jadwal & Sesi.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -836,23 +836,23 @@ export default function ClassManager({
                 <form onSubmit={handleCreateSubClass} className="bg-gray-50 p-5 rounded-[24px] border border-gray-200 space-y-3 animate-in fade-in duration-200">
                   <h4 className="text-xs font-bold text-brand-dark uppercase">Tambah Sub Kelas</h4>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-brand-dark uppercase">Nama Peminatan</label>
+                    <label className="text-[10px] font-bold text-brand-dark uppercase">Nama Sub Kelas</label>
                     <input
                       type="text"
                       value={newSubClassTitle}
                       onChange={(e) => setNewSubClassTitle(e.target.value)}
-                      placeholder="Contoh: Peminatan Industri"
+                      placeholder="Contoh: Kelas Industri / Kelas Klinis"
                       className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue bg-white text-sm"
                       required
                       disabled={isPending}
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-brand-dark uppercase">Deskripsi Peminatan</label>
+                    <label className="text-[10px] font-bold text-brand-dark uppercase">Deskripsi Sub Kelas</label>
                     <textarea
                       value={newSubClassDescription}
                       onChange={(e) => setNewSubClassDescription(e.target.value)}
-                      placeholder="Tuliskan deskripsi peminatan..."
+                      placeholder="Tuliskan deskripsi kelas..."
                       rows={3}
                       className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue bg-white text-sm"
                       disabled={isPending}
@@ -1153,7 +1153,7 @@ export default function ClassManager({
                                     <button
                                       onClick={() => setConfirmDeleteMentor({ isOpen: true, id: item.id })}
                                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                                      title="Lepas mentor dari peminatan ini"
+                                      title="Lepas mentor dari kelas ini"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>

@@ -53,30 +53,28 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
   const isUkai = categoryFilter === 'ukai';
   const [activeUkaiTab, setActiveUkaiTab] = useState<'masuk_apoteker' | 'ukmppai'>('masuk_apoteker');
   const [programData, setProgramData] = useState<Program | null>(null);
-  const [ukaiBannerData, setUkaiBannerData] = useState<any>(null);
-  const [loading, setLoading] = useState(!!categoryFilter && !isUkai);
+  const [ukaiData, setUkaiData] = useState<any>(null);
+  const [loading, setLoading] = useState(!!categoryFilter);
 
-  const WA_NUMBER = ukaiBannerData?.whatsappNumber || "628895587621"; 
+  const WA_NUMBER = ukaiData?.whatsappNumber || "628895587621"; 
 
   useEffect(() => {
     if (!categoryFilter) return;
     let isMounted = true;
-    if (categoryFilter === 'ukai') {
-      client.fetch(`*[_type == "ukaiBanner"][0]`).then((data) => {
+    client.fetch(`*[_type == "program" && category == $cat][0]`, { cat: categoryFilter })
+      .then((data) => {
         if (isMounted) {
-          if (data) setUkaiBannerData(data);
+          if (categoryFilter === 'ukai') {
+            setUkaiData(data);
+          } else {
+            setProgramData(data);
+          }
           setLoading(false);
         }
+      })
+      .catch(() => {
+        if (isMounted) setLoading(false);
       });
-    } else {
-      client.fetch(`*[_type == "program" && category == $cat][0]`, { cat: categoryFilter })
-        .then((data) => {
-          if (isMounted) {
-            setProgramData(data);
-            setLoading(false);
-          }
-        });
-    }
     return () => { isMounted = false; };
   }, [categoryFilter]);
 
@@ -89,8 +87,8 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
 
   // Case UKAI Series (Custom UI with interactive subprograms & CBT highlight)
   if (isUkai) {
-    const customSubMasuk = ukaiBannerData?.masukApoteker;
-    const customSubUkmppai = ukaiBannerData?.ukmppai;
+    const customSubMasuk = ukaiData?.masukApoteker;
+    const customSubUkmppai = ukaiData?.ukmppai;
 
     const ukaiSubprograms = {
       masuk_apoteker: {
@@ -369,13 +367,13 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
             </div>
             <div>
               <span className="inline-block bg-white/10 text-brand-yellow text-[10px] font-extrabold uppercase tracking-[0.25em] px-4 py-1.5 rounded-full mb-2">
-                {ukaiBannerData?.cbtHighlight?.badge || "CBT Platform Teman Farmasi"}
+                {ukaiData?.cbtHighlight?.badge || "CBT Platform Teman Farmasi"}
               </span>
               <h3 className="font-heading text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-2">
-                {ukaiBannerData?.cbtHighlight?.title || "Didukung Interface CBT Berstandar Nasional"}
+                {ukaiData?.cbtHighlight?.title || "Didukung Interface CBT Berstandar Nasional"}
               </h3>
               <p className="text-white/70 text-xs md:text-sm font-medium leading-relaxed max-w-xl">
-                {ukaiBannerData?.cbtHighlight?.description || "Platform tryout dilengkapi timer akurat, ragu-ragu marker, auto-save state, navigasi nomor dinamis, dan pembahasan detail per soal setelah submit."}
+                {ukaiData?.cbtHighlight?.description || "Platform tryout dilengkapi timer akurat, ragu-ragu marker, auto-save state, navigasi nomor dinamis, dan pembahasan detail per soal setelah submit."}
               </p>
             </div>
           </div>
@@ -383,7 +381,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
             onClick={() => handleWaLink(`Konsultasi Tryout CBT UKAI Series`)}
             className="bg-brand-pink text-white px-8 py-4 rounded-2xl font-extrabold text-xs hover:bg-white hover:text-brand-dark transition-all shadow-md active:scale-95 shrink-0"
           >
-            {ukaiBannerData?.cbtHighlight?.ctaText || "Konsultasi Sekarang"}
+            {ukaiData?.cbtHighlight?.ctaText || "Konsultasi Sekarang"}
           </button>
         </div>
       </div>

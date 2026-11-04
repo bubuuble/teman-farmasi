@@ -360,17 +360,16 @@ export async function getEBooksByCategory(category: string) {
 
 
 // ============================================
-// UKAI BANNER & SETTINGS QUERIES
+// UKAI PROGRAM & HOMEPAGE BANNER QUERIES
 // ============================================
 
-export async function getUkaiBanner() {
-  const query = `*[_type == "ukaiBanner"][0] {
+export async function getUkaiProgram() {
+  const query = `*[_type == "program" && category == "ukai"][0] {
     _id,
-    badge,
     title,
+    badge,
     description,
-    ctaText,
-    ctaLink,
+    price,
     whatsappNumber,
     masukApoteker {
       title,
@@ -407,3 +406,6 @@ export async function getUkaiBanner() {
   }`;
   return await client.fetch(query);
 }
+
+// Kept for backward compatibility
+export const getUkaiBanner = getUkaiProgram;

@@ -54,8 +54,8 @@ async function HomeContent() {
     description:
       ukaiBanner?.description ||
       "Tersedia bimbingan kelas intensif (Private & Reguler) serta Simulasi CBT Tryout dengan ribuan bank soal dan pembahasan lengkap untuk mengantarkanmu lulus dengan predikat terbaik.",
-    ctaText: ukaiBanner?.ctaText || "Lihat Detail UKAI Series",
-    ctaLink: ukaiBanner?.ctaLink || "/programs?cat=ukai",
+    ctaText: "Lihat Detail UKAI Series",
+    ctaLink: "/programs?cat=ukai",
   };
 
   return (

@@ -335,19 +335,25 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
                 </div>
 
                 {/* FOOTER PUTIH KONSISTEN */}
-                <div className={`${s.footer} mt-auto rounded-[2rem] p-6 flex flex-col sm:flex-row justify-between items-center gap-4 transition-transform group-hover:scale-[1.02]`}>
-                  <div>
+                <div className={`${s.footer} mt-auto rounded-[2rem] p-5 flex items-center justify-between gap-3 transition-transform group-hover:scale-[1.02]`}>
+                  <div className="min-w-0">
                     <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5">Biaya Investasi</p>
-                    <div className="flex items-baseline gap-1">
-                      <p className="text-xl font-extrabold text-brand-dark tracking-tighter">{plan.price}</p>
-                      <span className="text-[10px] font-bold text-gray-400">{plan.unit}</span>
+                    <div className="flex flex-wrap items-baseline gap-x-1">
+                      <p className="text-base sm:text-lg font-extrabold text-brand-dark tracking-tight whitespace-nowrap">
+                        {plan.price}
+                      </p>
+                      {plan.unit && (
+                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">
+                          {plan.unit}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <button
                     onClick={() => handleWaLink(`UKAI Series - ${currentSub.title} (${plan.name})`)}
-                    className="bg-green-500 text-white px-6 py-3.5 rounded-2xl font-extrabold text-xs flex items-center gap-2 hover:bg-brand-dark transition-all shadow-md active:scale-95 whitespace-nowrap"
+                    className="bg-green-500 text-white px-5 py-3 rounded-2xl font-extrabold text-xs flex items-center gap-1.5 hover:bg-brand-dark transition-all shadow-md active:scale-95 shrink-0 whitespace-nowrap"
                   >
-                    <FaWhatsapp size={16} /> Daftar via WA
+                    <FaWhatsapp size={15} /> Daftar
                   </button>
                 </div>
               </div>

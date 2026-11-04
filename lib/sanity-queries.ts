@@ -357,3 +357,53 @@ export async function getEBooksByCategory(category: string) {
   }`;
   return await client.fetch(query, { category });
 }
+
+
+// ============================================
+// UKAI BANNER & SETTINGS QUERIES
+// ============================================
+
+export async function getUkaiBanner() {
+  const query = `*[_type == "ukaiBanner"][0] {
+    _id,
+    badge,
+    title,
+    description,
+    ctaText,
+    ctaLink,
+    whatsappNumber,
+    masukApoteker {
+      title,
+      badge,
+      description,
+      plans[] {
+        name,
+        subtitle,
+        price,
+        unit,
+        popular,
+        features
+      }
+    },
+    ukmppai {
+      title,
+      badge,
+      description,
+      plans[] {
+        name,
+        subtitle,
+        price,
+        unit,
+        popular,
+        features
+      }
+    },
+    cbtHighlight {
+      badge,
+      title,
+      description,
+      ctaText
+    }
+  }`;
+  return await client.fetch(query);
+}

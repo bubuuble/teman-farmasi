@@ -53,20 +53,30 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
   const isUkai = categoryFilter === 'ukai';
   const [activeUkaiTab, setActiveUkaiTab] = useState<'masuk_apoteker' | 'ukmppai'>('masuk_apoteker');
   const [programData, setProgramData] = useState<Program | null>(null);
+  const [ukaiBannerData, setUkaiBannerData] = useState<any>(null);
   const [loading, setLoading] = useState(!!categoryFilter && !isUkai);
 
-  const WA_NUMBER = "628895587621"; 
+  const WA_NUMBER = ukaiBannerData?.whatsappNumber || "628895587621"; 
 
   useEffect(() => {
-    if (!categoryFilter || categoryFilter === 'ukai') return;
+    if (!categoryFilter) return;
     let isMounted = true;
-    client.fetch(`*[_type == "program" && category == $cat][0]`, { cat: categoryFilter })
-      .then((data) => {
+    if (categoryFilter === 'ukai') {
+      client.fetch(`*[_type == "ukaiBanner"][0]`).then((data) => {
         if (isMounted) {
-          setProgramData(data);
+          if (data) setUkaiBannerData(data);
           setLoading(false);
         }
       });
+    } else {
+      client.fetch(`*[_type == "program" && category == $cat][0]`, { cat: categoryFilter })
+        .then((data) => {
+          if (isMounted) {
+            setProgramData(data);
+            setLoading(false);
+          }
+        });
+    }
     return () => { isMounted = false; };
   }, [categoryFilter]);
 
@@ -79,13 +89,24 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
 
   // Case UKAI Series (Custom UI with interactive subprograms & CBT highlight)
   if (isUkai) {
+    const customSubMasuk = ukaiBannerData?.masukApoteker;
+    const customSubUkmppai = ukaiBannerData?.ukmppai;
+
     const ukaiSubprograms = {
       masuk_apoteker: {
-        title: 'Masuk Apoteker',
-        badge: 'Bimbel & Tryout Kampus',
-        description: 'Bimbingan intensif persiapan seleksi masuk profesi apoteker untuk berbagai kampus ternama dengan kurikulum teruji dan simulasi CBT.',
+        title: customSubMasuk?.title || 'Masuk Apoteker',
+        badge: customSubMasuk?.badge || 'Bimbel & Tryout Kampus',
+        description: customSubMasuk?.description || 'Bimbingan intensif persiapan seleksi masuk profesi apoteker untuk berbagai kampus ternama dengan kurikulum teruji dan simulasi CBT.',
         icon: FaGraduationCap,
-        plans: [
+        plans: customSubMasuk?.plans && customSubMasuk.plans.length > 0 ? customSubMasuk.plans.map((p: any, idx: number) => ({
+          type: `plan_${idx}`,
+          name: p.name,
+          subtitle: p.subtitle,
+          price: p.price,
+          unit: p.unit || '/ orang',
+          popular: p.popular || false,
+          features: p.features || []
+        })) : [
           {
             type: 'bimbel_private',
             name: 'Kelas Bimbel Private',
@@ -136,11 +157,19 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
         ]
       },
       ukmppai: {
-        title: 'Kelas UKMPPAI',
-        badge: 'Sertifikasi Profesi Apoteker',
-        description: 'Persiapan komprehensif Uji Kompetensi Mahasiswa Program Profesi Apoteker Indonesia (UKMPPAI) dengan bank soal blueprint nasional.',
+        title: customSubUkmppai?.title || 'Kelas UKMPPAI',
+        badge: customSubUkmppai?.badge || 'Sertifikasi Profesi Apoteker',
+        description: customSubUkmppai?.description || 'Persiapan komprehensif Uji Kompetensi Mahasiswa Program Profesi Apoteker Indonesia (UKMPPAI) dengan bank soal blueprint nasional.',
         icon: FaAward,
-        plans: [
+        plans: customSubUkmppai?.plans && customSubUkmppai.plans.length > 0 ? customSubUkmppai.plans.map((p: any, idx: number) => ({
+          type: `plan_${idx}`,
+          name: p.name,
+          subtitle: p.subtitle,
+          price: p.price,
+          unit: p.unit || '/ orang',
+          popular: p.popular || false,
+          features: p.features || []
+        })) : [
           {
             type: 'bimbel_private',
             name: 'Kelas Bimbel Private UKMPPAI',
@@ -196,181 +225,159 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
 
     return (
       <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto font-sans">
-        {/* HEADER UKAI SERIES */}
+        {/* HEADER KONSISTEN DENGAN PROGRAM LAIN */}
         <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="inline-flex items-center gap-2 bg-brand-pink/10 text-brand-pink px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-4">
-            <FaLaptopCode size={14} /> CBT & Mentoring Series
-          </div>
           <h1 className="font-heading text-4xl md:text-6xl font-extrabold text-brand-dark mb-4 tracking-tighter uppercase leading-tight">
             UKAI Series
           </h1>
-          <p className="text-gray-600 font-medium text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
-            Program persiapan ujian komprehensif untuk calon apoteker dan mahasiswa profesi farmasi, dilengkapi bimbingan intensif serta <span className="font-bold text-brand-dark">Simulasi Tryout CBT</span> berstandar nasional.
+          <p className="text-brand-pink font-extrabold text-lg md:text-xl uppercase tracking-[0.3em] opacity-80">
+            Masuk Apoteker & Kelas UKMPPAI
           </p>
 
           {/* SUBPROGRAM TOGGLE / TABS */}
           <div className="flex justify-center mt-8">
-            <div className="bg-white p-1.5 rounded-3xl shadow-md border border-gray-100 inline-flex gap-2">
+            <div className="bg-white p-1.5 rounded-full shadow-sm border border-gray-100 inline-flex gap-2">
               <button
                 onClick={() => setActiveUkaiTab('masuk_apoteker')}
-                className={`px-6 py-3.5 rounded-2xl font-extrabold text-sm transition-all flex items-center gap-2 ${
+                className={`px-7 py-3 rounded-full font-extrabold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
                   activeUkaiTab === 'masuk_apoteker'
                     ? 'bg-brand-dark text-white shadow-md'
                     : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
                 }`}
               >
-                <FaGraduationCap size={16} />
+                <FaGraduationCap size={15} />
                 Masuk Apoteker
               </button>
               <button
                 onClick={() => setActiveUkaiTab('ukmppai')}
-                className={`px-6 py-3.5 rounded-2xl font-extrabold text-sm transition-all flex items-center gap-2 ${
+                className={`px-7 py-3 rounded-full font-extrabold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
                   activeUkaiTab === 'ukmppai'
                     ? 'bg-brand-pink text-white shadow-md'
                     : 'text-gray-500 hover:text-brand-dark hover:bg-gray-50'
                 }`}
               >
-                <FaAward size={16} />
+                <FaAward size={15} />
                 Kelas UKMPPAI
               </button>
             </div>
           </div>
         </div>
 
-        {/* SUBPROGRAM INFO BANNER */}
-        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 mb-12 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${
-              activeUkaiTab === 'masuk_apoteker' ? 'bg-orange-50 text-orange-600' : 'bg-rose-50 text-brand-pink'
-            }`}>
-              <currentSub.icon size={30} />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="font-heading text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tight">
-                  {currentSub.title}
-                </h2>
-                <span className="bg-brand-dark/5 text-brand-dark text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-                  {currentSub.badge}
-                </span>
-              </div>
-              <p className="text-gray-500 text-sm font-medium mt-1 leading-relaxed max-w-2xl">
+        {/* ── BACKGROUND / OVERVIEW BANNER (MIRIP PHARMACAMP) ── */}
+        <div className="bg-white rounded-[3rem] p-8 md:p-10 shadow-sm border border-gray-100 mb-10">
+          <div className="flex flex-col lg:flex-row gap-8 items-center justify-between">
+            <div className="flex-1">
+              <span className="inline-block bg-brand-pink/10 text-brand-pink text-[10px] font-extrabold uppercase tracking-[0.25em] px-4 py-2 rounded-full mb-3">
+                {currentSub.badge}
+              </span>
+              <h2 className="font-heading text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tighter leading-tight mb-3">
+                {currentSub.title}
+              </h2>
+              <p className="text-gray-500 font-bold text-sm leading-relaxed max-w-2xl">
                 {currentSub.description}
               </p>
             </div>
-          </div>
-          <div className="bg-brand-cream/80 px-6 py-4 rounded-2xl text-center shrink-0 border border-brand-dark/5">
-            <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Sistem Ujian</p>
-            <p className="text-base font-extrabold text-brand-dark mt-0.5 flex items-center gap-1.5 justify-center">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              Real CBT Platform
-            </p>
+            <div className="grid grid-cols-2 gap-3 shrink-0">
+              {[
+                { num: 'Real CBT', label: 'Simulasi Sistem' },
+                { num: '100%', label: 'Blueprint Nasional' },
+                { num: 'Private', label: 'Tersedia Kelas' },
+                { num: 'Review', label: 'Pembahasan Soal' },
+              ].map((s, i) => (
+                <div key={i} className="bg-brand-cream rounded-2xl p-4 text-center min-w-[120px]">
+                  <p className="font-heading text-lg font-extrabold text-brand-pink tracking-tight">{s.num}</p>
+                  <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-widest mt-0.5">{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* PRICING & OPTIONS GRID */}
+        {/* ── PROGRAM CARDS (SESUAI STYLE PHARMACAMP & LAINNYA) ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {currentSub.plans.map((plan, i) => {
-            const isHighlighted = plan.popular;
+            const s = getStylesByColor(colorPalette[i % colorPalette.length]);
             return (
               <div
                 key={plan.type}
-                className={`rounded-[3rem] p-8 flex flex-col transition-all duration-500 hover:-translate-y-2 relative overflow-hidden ${
-                  isHighlighted
-                    ? 'bg-gradient-to-b from-brand-dark to-slate-900 text-white shadow-2xl border-2 border-brand-pink'
-                    : 'bg-white text-brand-dark shadow-sm hover:shadow-xl border border-gray-100'
-                }`}
+                className={`${s.card} rounded-[3rem] p-8 shadow-sm flex flex-col hover:shadow-xl transition-all group animate-in zoom-in-95 duration-500`}
               >
-                {isHighlighted && (
-                  <div className="absolute top-5 right-6">
-                    <span className="bg-brand-pink text-white text-[10px] font-extrabold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md">
-                      Paling Populer
-                    </span>
+                <div className="flex-1">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className={`w-14 h-14 ${s.iconBg} rounded-2xl flex items-center justify-center shadow-inner`}>
+                      <currentSub.icon size={24} />
+                    </div>
+                    {plan.popular && (
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest px-3.5 py-1.5 rounded-full bg-brand-dark text-white shadow-sm">
+                        Favorit
+                      </span>
+                    )}
                   </div>
-                )}
 
-                <div className="mb-6">
-                  <span className={`inline-block text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-3 ${
-                    isHighlighted ? 'bg-white/10 text-teal-300' : 'bg-gray-100 text-gray-600'
-                  }`}>
+                  <span className={`inline-block text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full border mb-3 ${s.badge}`}>
                     {plan.subtitle}
                   </span>
-                  <h3 className={`font-heading text-2xl font-extrabold tracking-tight mb-2 ${
-                    isHighlighted ? 'text-white' : 'text-brand-dark'
-                  }`}>
+
+                  <h3 className={`font-heading font-bold text-2xl mb-4 tracking-tighter ${s.title}`}>
                     {plan.name}
                   </h3>
-                  <div className="mt-4 flex items-baseline gap-1.5">
-                    <span className={`font-heading text-3xl md:text-4xl font-extrabold tracking-tight ${
-                      isHighlighted ? 'text-teal-300' : 'text-brand-dark'
-                    }`}>
-                      {plan.price}
-                    </span>
-                    <span className={`text-xs font-bold ${
-                      isHighlighted ? 'text-white/60' : 'text-gray-400'
-                    }`}>
-                      {plan.unit}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="flex-1 my-6">
-                  <p className={`text-[10px] font-extrabold uppercase tracking-widest mb-4 ${
-                    isHighlighted ? 'text-white/60' : 'text-gray-400'
-                  }`}>
-                    Fasilitas yang didapat:
-                  </p>
-                  <ul className="space-y-3">
+                  <ul className="space-y-3 mb-8">
                     {plan.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-xs md:text-sm font-semibold leading-relaxed">
-                        <FaCircleCheck
-                          size={14}
-                          className={`shrink-0 mt-0.5 ${
-                            isHighlighted ? 'text-teal-400' : 'text-brand-pink'
-                          }`}
-                        />
-                        <span className={isHighlighted ? 'text-white/90' : 'text-gray-600'}>
-                          {feat}
-                        </span>
+                      <li key={idx} className={`flex items-start gap-3 text-[13px] font-bold leading-snug ${s.desc}`}>
+                        <div className={`mt-0.5 p-1 rounded-full shrink-0 ${s.badge}`}>
+                          <FaCheck size={8} />
+                        </div>
+                        {feat}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <button
-                  onClick={() => handleWaLink(`UKAI Series - ${currentSub.title} (${plan.name})`)}
-                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${
-                    isHighlighted
-                      ? 'bg-brand-pink hover:bg-white hover:text-brand-dark text-white'
-                      : 'bg-green-500 hover:bg-brand-dark text-white'
-                  }`}
-                >
-                  <FaWhatsapp size={16} />
-                  Daftar via WhatsApp
-                </button>
+                {/* FOOTER PUTIH KONSISTEN */}
+                <div className={`${s.footer} mt-auto rounded-[2rem] p-6 flex flex-col sm:flex-row justify-between items-center gap-4 transition-transform group-hover:scale-[1.02]`}>
+                  <div>
+                    <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5">Biaya Investasi</p>
+                    <div className="flex items-baseline gap-1">
+                      <p className="text-xl font-extrabold text-brand-dark tracking-tighter">{plan.price}</p>
+                      <span className="text-[10px] font-bold text-gray-400">{plan.unit}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleWaLink(`UKAI Series - ${currentSub.title} (${plan.name})`)}
+                    className="bg-green-500 text-white px-6 py-3.5 rounded-2xl font-extrabold text-xs flex items-center gap-2 hover:bg-brand-dark transition-all shadow-md active:scale-95 whitespace-nowrap"
+                  >
+                    <FaWhatsapp size={16} /> Daftar via WA
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
 
-        {/* CBT PLATFORM HIGHLIGHT BANNER */}
-        <div className="mt-16 bg-gradient-to-r from-brand-yellow/30 via-brand-cream to-white rounded-[3rem] p-8 md:p-12 border border-brand-yellow/40 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div>
-            <span className="inline-block bg-brand-yellow text-brand-dark text-[10px] font-extrabold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-3">
-              CBT Simulation
-            </span>
-            <h3 className="font-heading text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tight mb-2">
-              Didukung Interface CBT Teman Farmasi
-            </h3>
-            <p className="text-gray-600 text-sm font-medium leading-relaxed max-w-xl">
-              Platform tryout kami dilengkapi timer akurat, ragu-ragu marker, auto-save state, navigasi nomor dinamis, dan pembahasan detail per soal setelah submit.
-            </p>
+        {/* ── CBT PLATFORM HIGHLIGHT BANNER ── */}
+        <div className="mt-12 bg-brand-dark rounded-[3rem] p-8 md:p-10 text-white flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 text-brand-yellow">
+              <FaLaptopCode size={30} />
+            </div>
+            <div>
+              <span className="inline-block bg-white/10 text-brand-yellow text-[10px] font-extrabold uppercase tracking-[0.25em] px-4 py-1.5 rounded-full mb-2">
+                {ukaiBannerData?.cbtHighlight?.badge || "CBT Platform Teman Farmasi"}
+              </span>
+              <h3 className="font-heading text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-2">
+                {ukaiBannerData?.cbtHighlight?.title || "Didukung Interface CBT Berstandar Nasional"}
+              </h3>
+              <p className="text-white/70 text-xs md:text-sm font-medium leading-relaxed max-w-xl">
+                {ukaiBannerData?.cbtHighlight?.description || "Platform tryout dilengkapi timer akurat, ragu-ragu marker, auto-save state, navigasi nomor dinamis, dan pembahasan detail per soal setelah submit."}
+              </p>
+            </div>
           </div>
           <button
             onClick={() => handleWaLink(`Konsultasi Tryout CBT UKAI Series`)}
-            className="bg-brand-dark text-white px-8 py-4 rounded-2xl font-extrabold text-xs hover:bg-brand-pink transition-all shadow-md active:scale-95 shrink-0"
+            className="bg-brand-pink text-white px-8 py-4 rounded-2xl font-extrabold text-xs hover:bg-white hover:text-brand-dark transition-all shadow-md active:scale-95 shrink-0"
           >
-            Konsultasi Sekarang
+            {ukaiBannerData?.cbtHighlight?.ctaText || "Konsultasi Sekarang"}
           </button>
         </div>
       </div>

@@ -18,6 +18,7 @@ import {
   getFeaturedMentors,
   getFeaturedTestimonials,
   getHeroContent,
+  getUkaiBanner,
 } from "@/lib/sanity-queries";
 
 export const revalidate = 60; // Revalidate setiap 60 detik
@@ -37,12 +38,25 @@ async function HomeContent() {
     featuredMentors,
     featuredTestimonials,
     popularBlogs,
+    ukaiBanner,
   ] = await Promise.all([
     getHeroContent(),
     getFeaturedMentors(),
     getFeaturedTestimonials(),
     getPopularBlogPosts(),
+    getUkaiBanner(),
   ]);
+
+  // Fallback data jika belum diisi di Sanity Studio
+  const ukaiData = {
+    badge: ukaiBanner?.badge || "✨ Program Unggulan Baru — UKAI Series",
+    title: ukaiBanner?.title || "Persiapan Ujian Masuk Apoteker & UKMPPAI Berbasis CBT",
+    description:
+      ukaiBanner?.description ||
+      "Tersedia bimbingan kelas intensif (Private & Reguler) serta Simulasi CBT Tryout dengan ribuan bank soal dan pembahasan lengkap untuk mengantarkanmu lulus dengan predikat terbaik.",
+    ctaText: ukaiBanner?.ctaText || "Lihat Detail UKAI Series",
+    ctaLink: ukaiBanner?.ctaLink || "/programs?cat=ukai",
+  };
 
   return (
     <main className="min-h-screen bg-brand-cream selection:bg-brand-pink selection:text-white">
@@ -135,27 +149,27 @@ async function HomeContent() {
 
         </div>
 
-        {/* UKAI SERIES FEATURED BANNER */}
+        {/* UKAI SERIES FEATURED BANNER (DYNAMIC SANITY) */}
         <div className="mt-12 bg-gradient-to-r from-teal-800 via-teal-900 to-slate-900 rounded-[3rem] p-8 md:p-12 text-white shadow-xl relative overflow-hidden border border-teal-500/20">
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
             <div className="max-w-2xl">
               <span className="inline-block bg-teal-400/20 text-teal-300 text-[11px] font-extrabold uppercase tracking-[0.25em] px-4 py-1.5 rounded-full mb-4 border border-teal-400/30">
-                ✨ Program Unggulan Baru — UKAI Series
+                {ukaiData.badge}
               </span>
               <h3 className="font-heading text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
-                Persiapan Ujian Masuk Apoteker & UKMPPAI Berbasis CBT
+                {ukaiData.title}
               </h3>
               <p className="text-teal-100/80 text-sm md:text-base font-medium leading-relaxed">
-                Tersedia bimbingan kelas intensif (Private & Reguler) serta Simulasi CBT Tryout dengan ribuan bank soal dan pembahasan lengkap untuk mengantarkanmu lulus dengan predikat terbaik.
+                {ukaiData.description}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto shrink-0">
               <Link
-                href="/programs?cat=ukai"
+                href={ukaiData.ctaLink}
                 className="inline-flex items-center justify-center gap-3 bg-teal-400 text-teal-950 font-extrabold px-8 py-4 rounded-2xl hover:bg-teal-300 transition-all shadow-lg active:scale-95 text-sm"
               >
                 <FaLaptopCode size={18} />
-                Lihat Detail UKAI Series
+                {ukaiData.ctaText}
               </Link>
             </div>
           </div>

@@ -17,6 +17,15 @@ interface Program {
   description: string; price: string;
   subjects?: string[]; tiers?: Tier[]; benefits?: string[];
 }
+interface UkaiPlan {
+  type: string;
+  name: string;
+  subtitle: string;
+  price: string;
+  unit: string;
+  popular: boolean;
+  features: string[];
+}
 
 const client = createClient({
   projectId: 'dg157s6c', 
@@ -293,7 +302,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
 
         {/* ── PROGRAM CARDS (SESUAI STYLE PHARMACAMP & LAINNYA) ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {currentSub.plans.map((plan, i) => {
+          {currentSub.plans.map((plan: UkaiPlan, i: number) => {
             const s = getStylesByColor(colorPalette[i % colorPalette.length]);
             return (
               <div

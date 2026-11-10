@@ -45,6 +45,7 @@ export async function createTryout(prevState: ActionState, formData: FormData): 
   const shuffle_options = formData.get('shuffle_options') === 'on' || formData.get('shuffle_options') === 'true'
   const start_date = (formData.get('start_date') as string) || null
   const end_date = (formData.get('end_date') as string) || null
+  const sub_class_id = (formData.get('sub_class_id') as string) || null
 
   if (!title?.trim()) return { error: "Judul tryout wajib diisi" }
   if (!program_type) return { error: "Pilih jenis program (Masuk Apoteker / UKMPPAI)" }
@@ -54,6 +55,7 @@ export async function createTryout(prevState: ActionState, formData: FormData): 
     description: description?.trim() || null,
     program_type,
     class_id: class_id && class_id !== 'none' ? class_id : null,
+    sub_class_id: sub_class_id && sub_class_id !== 'none' ? sub_class_id : null,
     duration_minutes,
     max_attempts,
     is_active,
@@ -88,6 +90,7 @@ export async function updateTryout(prevState: ActionState, formData: FormData): 
   const shuffle_options = formData.get('shuffle_options') === 'on' || formData.get('shuffle_options') === 'true'
   const start_date = (formData.get('start_date') as string) || null
   const end_date = (formData.get('end_date') as string) || null
+  const sub_class_id = (formData.get('sub_class_id') as string) || null
 
   if (!id) return { error: "ID tryout tidak valid" }
   if (!title?.trim()) return { error: "Judul tryout wajib diisi" }
@@ -97,6 +100,7 @@ export async function updateTryout(prevState: ActionState, formData: FormData): 
     description: description?.trim() || null,
     program_type,
     class_id: class_id && class_id !== 'none' ? class_id : null,
+    sub_class_id: sub_class_id && sub_class_id !== 'none' ? sub_class_id : null,
     duration_minutes,
     max_attempts,
     is_active,

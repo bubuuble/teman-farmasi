@@ -4,10 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Clock, 
-  ChevronLeft, 
   ChevronRight, 
   Flag, 
-  Check, 
   AlertTriangle, 
   X,
   Maximize2,
@@ -22,6 +20,7 @@ type Option = {
   id: string
   label: string
   option_text: string
+  isCorrect: boolean
 }
 
 type Question = {
@@ -62,15 +61,24 @@ export default function CBTExamClient({
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  // --- NEW STATE for CBT locking ---
+  // Set of question IDs that have been locked (answered + Next pressed)
+  const [lockedQuestions, setLockedQuestions] = useState<Set<string>>(new Set())
+  // Per-question result: 'correct' | 'wrong' — determined at Next press
+  const [questionResults, setQuestionResults] = useState<Record<string, 'correct' | 'wrong'>>({})
+
   const currentQ = questions[currentIndex]
   const currentAnswer = currentQ ? (answers[currentQ.id] || { selectedOptionId: null, isFlagged: false }) : { selectedOptionId: null, isFlagged: false }
+
+  const isCurrentLocked = currentQ ? lockedQuestions.has(currentQ.id) : false
+  const isLastQuestion = currentIndex === questions.length - 1
 
   // 1. COUNTDOWN TIMER
   useEffect(() => {
     if (timeRemaining === null) return
 
     if (timeRemaining <= 0) {
-      handleFinalSubmit(true) // Auto-submit when time's up
+      handleFinalSubmit(true)
       return
     }
 
@@ -88,9 +96,11 @@ export default function CBTExamClient({
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  // 2. SELECT OPTION & AUTO SAVE
+  // 2. SELECT OPTION (only if not locked)
   const handleSelectOption = (optionId: string) => {
     if (!currentQ) return
+    if (isCurrentLocked) return // Can't change answer after locking
+
     const isDeselect = currentAnswer.selectedOptionId === optionId
     const newSelected = isDeselect ? null : optionId
 
@@ -113,9 +123,11 @@ export default function CBTExamClient({
     })
   }
 
-  // 3. TOGGLE FLAGGED (RAGU-RAGU)
+  // 3. TOGGLE FLAGGED (only if not locked)
   const handleToggleFlag = () => {
     if (!currentQ) return
+    if (isCurrentLocked) return // Can't change flag after locking
+
     const updated = {
       ...currentAnswer,
       isFlagged: !currentAnswer.isFlagged
@@ -134,7 +146,26 @@ export default function CBTExamClient({
     })
   }
 
-  // 4. SUBMIT ATTEMPT
+  // 4. NEXT BUTTON — locks current question, evaluates correctness
+  const handleNext = () => {
+    if (!currentQ) return
+    if (!currentAnswer.selectedOptionId) return // must answer first
+
+    // Find the correct option for this question
+    const correctOption = currentQ.options.find(o => o.isCorrect)
+    const isCorrect = correctOption ? currentAnswer.selectedOptionId === correctOption.id : false
+
+    // Lock this question
+    setLockedQuestions(prev => new Set([...prev, currentQ.id]))
+    setQuestionResults(prev => ({ ...prev, [currentQ.id]: isCorrect ? 'correct' : 'wrong' }))
+
+    // Move to next
+    if (!isLastQuestion) {
+      setCurrentIndex(prev => prev + 1)
+    }
+  }
+
+  // 5. SUBMIT ATTEMPT
   const handleFinalSubmit = async (isTimeout = false) => {
     setIsSubmitting(true)
     try {
@@ -146,11 +177,13 @@ export default function CBTExamClient({
     }
   }
 
-  // 5. STATISTIK PENGERJAAN
+  // 6. STATISTIK
   const totalQuestions = questions.length
   const answeredCount = Object.values(answers).filter(a => a.selectedOptionId !== null).length
   const flaggedCount = Object.values(answers).filter(a => a.isFlagged).length
   const unansweredCount = totalQuestions - answeredCount
+  const correctCount = Object.values(questionResults).filter(r => r === 'correct').length
+  const wrongCount = Object.values(questionResults).filter(r => r === 'wrong').length
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -159,6 +192,23 @@ export default function CBTExamClient({
     } else {
       document.exitFullscreen().catch(() => {})
       setIsFullscreen(false)
+    }
+  }
+
+  // Navigate to a specific question (only allowed if flagged or not yet locked/answered)
+  const handleNavToQuestion = (idx: number) => {
+    const q = questions[idx]
+    if (!q) return
+
+    const ans = answers[q.id]
+    const isLocked = lockedQuestions.has(q.id)
+    const isFlagged = ans?.isFlagged
+    const isCurrent = idx === currentIndex
+
+    // Can navigate to: current, flagged, or unanswered (not locked)
+    if (isCurrent || isFlagged || !isLocked) {
+      setCurrentIndex(idx)
+      setIsNavDrawerOpen(false)
     }
   }
 
@@ -226,19 +276,31 @@ export default function CBTExamClient({
               <span className="text-xs text-gray-400 font-semibold">
                 dari {totalQuestions} Soal
               </span>
+              {isCurrentLocked && (
+                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
+                  questionResults[currentQ?.id] === 'correct'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-rose-100 text-rose-700'
+                }`}>
+                  {questionResults[currentQ?.id] === 'correct' ? '✓ Benar' : '✗ Salah'}
+                </span>
+              )}
             </div>
 
-            <button
-              onClick={handleToggleFlag}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition ${
-                currentAnswer.isFlagged
-                  ? 'bg-amber-400 text-amber-950 shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <Flag className={`w-3.5 h-3.5 ${currentAnswer.isFlagged ? 'fill-current' : ''}`} />
-              {currentAnswer.isFlagged ? 'Ditandai Ragu-ragu' : 'Tandai Ragu'}
-            </button>
+            {/* RAGU BUTTON — moved to center area of header */}
+            {!isCurrentLocked && (
+              <button
+                onClick={handleToggleFlag}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition ${
+                  currentAnswer.isFlagged
+                    ? 'bg-amber-400 text-amber-950 shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Flag className={`w-3.5 h-3.5 ${currentAnswer.isFlagged ? 'fill-current' : ''}`} />
+                {currentAnswer.isFlagged ? 'Ditandai Ragu-ragu' : 'Tandai Ragu'}
+              </button>
+            )}
           </div>
 
           {/* QUESTION CONTENT */}
@@ -264,28 +326,51 @@ export default function CBTExamClient({
               <div className="space-y-3">
                 {currentQ.options.map(opt => {
                   const isSelected = currentAnswer.selectedOptionId === opt.id
+                  const result = questionResults[currentQ.id]
+
+                  let optStyle = ''
+                  let badgeStyle = ''
+
+                  if (isCurrentLocked) {
+                    // After locking: show correct/wrong coloring
+                    if (opt.isCorrect) {
+                      optStyle = 'border-emerald-500 bg-emerald-50 shadow-sm'
+                      badgeStyle = 'bg-emerald-600 text-white'
+                    } else if (isSelected && !opt.isCorrect) {
+                      optStyle = 'border-rose-400 bg-rose-50'
+                      badgeStyle = 'bg-rose-500 text-white'
+                    } else {
+                      optStyle = 'border-gray-100 bg-white opacity-60'
+                      badgeStyle = 'bg-gray-100 text-gray-500'
+                    }
+                  } else {
+                    // Normal selection state
+                    if (isSelected) {
+                      optStyle = 'border-brand-pink bg-brand-pink/5 shadow-md shadow-brand-pink/5'
+                      badgeStyle = 'bg-brand-pink text-white shadow-md'
+                    } else {
+                      optStyle = 'border-white bg-white hover:border-gray-200 shadow-sm'
+                      badgeStyle = 'bg-gray-100 text-gray-600'
+                    }
+                  }
+
                   return (
                     <div
                       key={opt.id}
                       onClick={() => handleSelectOption(opt.id)}
-                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-4 ${
-                        isSelected
-                          ? 'border-brand-pink bg-brand-pink/5 shadow-md shadow-brand-pink/5'
-                          : 'border-white bg-white hover:border-gray-200 shadow-sm'
-                      }`}
+                      className={`p-4 rounded-2xl border-2 transition-all flex items-start gap-4 ${
+                        isCurrentLocked ? 'cursor-not-allowed' : 'cursor-pointer'
+                      } ${optStyle}`}
                     >
-                      <span
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0 transition-all ${
-                          isSelected
-                            ? 'bg-brand-pink text-white shadow-md'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
+                      <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0 transition-all ${badgeStyle}`}>
                         {opt.label}
                       </span>
                       <span className="flex-1 text-xs sm:text-sm text-brand-dark font-medium leading-relaxed mt-1">
                         {opt.option_text}
                       </span>
+                      {isCurrentLocked && opt.isCorrect && (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-1" />
+                      )}
                     </div>
                   )
                 })}
@@ -295,34 +380,71 @@ export default function CBTExamClient({
             <div className="text-center py-20 text-gray-400">Memuat soal...</div>
           )}
 
-          {/* QUESTION BOTTOM CONTROLS */}
-          <div className="pt-8 mt-auto flex items-center justify-between shrink-0">
-            <button
-              onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
-              disabled={currentIndex === 0}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-extrabold text-brand-dark hover:bg-gray-50 transition disabled:opacity-30 disabled:pointer-events-none shadow-sm"
-            >
-              <ChevronLeft className="w-4 h-4" /> Soal Sebelumnya
-            </button>
+          {/* BOTTOM CONTROLS — 3-column layout */}
+          <div className="pt-8 mt-auto shrink-0">
+            <div className="grid grid-cols-3 items-center gap-4">
+              {/* LEFT: empty / progress info */}
+              <div className="flex justify-start">
+                <span className="text-xs text-gray-400 font-semibold">
+                  {answeredCount}/{totalQuestions} terjawab
+                </span>
+              </div>
 
-            <button
-              onClick={() => setIsSubmitModalOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-extrabold hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20 active:scale-95"
-            >
-              <CheckCircle2 className="w-4 h-4" /> Selesai & Submit
-            </button>
+              {/* CENTER: Ragu button (prominent) */}
+              <div className="flex justify-center">
+                {!isCurrentLocked && (
+                  <button
+                    onClick={handleToggleFlag}
+                    className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-extrabold transition shadow-sm active:scale-95 ${
+                      currentAnswer.isFlagged
+                        ? 'bg-amber-400 text-amber-950 shadow-amber-200'
+                        : 'bg-amber-50 text-amber-700 border-2 border-amber-200 hover:bg-amber-100'
+                    }`}
+                  >
+                    <Flag className={`w-4 h-4 ${currentAnswer.isFlagged ? 'fill-current' : ''}`} />
+                    {currentAnswer.isFlagged ? 'Ditandai Ragu' : 'Tandai Ragu'}
+                  </button>
+                )}
+              </div>
 
-            <button
-              onClick={() => setCurrentIndex(prev => Math.min(totalQuestions - 1, prev + 1))}
-              disabled={currentIndex === totalQuestions - 1}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-extrabold text-brand-dark hover:bg-gray-50 transition disabled:opacity-30 disabled:pointer-events-none shadow-sm"
-            >
-              Soal Selanjutnya <ChevronRight className="w-4 h-4" />
-            </button>
+              {/* RIGHT: Next / Finish */}
+              <div className="flex justify-end">
+                {isLastQuestion ? (
+                  // On last question — show submit if answered, else disabled next
+                  isCurrentLocked || currentAnswer.selectedOptionId ? (
+                    <button
+                      onClick={() => setIsSubmitModalOpen(true)}
+                      className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-extrabold hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20 active:scale-95"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Kumpulkan Ujian
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="inline-flex items-center gap-2 px-5 py-3 bg-gray-100 text-gray-400 rounded-2xl text-xs font-extrabold cursor-not-allowed opacity-60"
+                    >
+                      Jawab Dulu <ChevronRight className="w-4 h-4" />
+                    </button>
+                  )
+                ) : (
+                  <button
+                    onClick={handleNext}
+                    disabled={!currentAnswer.selectedOptionId || isCurrentLocked}
+                    className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-extrabold transition shadow-sm active:scale-95 ${
+                      !currentAnswer.selectedOptionId || isCurrentLocked
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                        : 'bg-brand-dark text-white hover:bg-brand-pink shadow-brand-dark/20'
+                    }`}
+                  >
+                    {isCurrentLocked ? 'Sudah Dikunci' : 'Selanjutnya'} <ChevronRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </main>
 
-        {/* RIGHT: QUESTION NUMBER GRID (DESKTOP & DRAWER ON MOBILE) */}
+        {/* RIGHT: QUESTION NUMBER GRID */}
         <aside className={`w-80 bg-white border-l border-gray-200 flex flex-col shrink-0 lg:relative fixed inset-y-0 right-0 z-40 transition-transform duration-300 ${
           isNavDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
         }`}>
@@ -339,10 +461,14 @@ export default function CBTExamClient({
           </div>
 
           {/* LEGEND */}
-          <div className="p-4 bg-gray-50 border-b border-gray-100 grid grid-cols-3 gap-2 text-[10px] font-bold text-gray-500 text-center">
+          <div className="p-4 bg-gray-50 border-b border-gray-100 grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500 text-center">
             <div className="flex items-center gap-1.5 justify-center">
               <span className="w-3 h-3 rounded-md bg-emerald-500" />
-              <span>{answeredCount} Terjawab</span>
+              <span>{correctCount} Benar</span>
+            </div>
+            <div className="flex items-center gap-1.5 justify-center">
+              <span className="w-3 h-3 rounded-md bg-rose-500" />
+              <span>{wrongCount} Salah</span>
             </div>
             <div className="flex items-center gap-1.5 justify-center">
               <span className="w-3 h-3 rounded-md bg-amber-400" />
@@ -350,7 +476,7 @@ export default function CBTExamClient({
             </div>
             <div className="flex items-center gap-1.5 justify-center">
               <span className="w-3 h-3 rounded-md bg-gray-200" />
-              <span>{unansweredCount} Kosong</span>
+              <span>{unansweredCount} Belum</span>
             </div>
           </div>
 
@@ -360,26 +486,32 @@ export default function CBTExamClient({
               {questions.map((q, idx) => {
                 const ans = answers[q.id]
                 const isCurrent = idx === currentIndex
-                const isAnswered = ans && ans.selectedOptionId !== null
-                const isFlagged = ans && ans.isFlagged
+                const isFlagged = ans?.isFlagged
+                const isLocked = lockedQuestions.has(q.id)
+                const result = questionResults[q.id]
+
+                // Clickability: only current, flagged, or not-locked
+                const isClickable = isCurrent || isFlagged || !isLocked
 
                 let badgeStyle = 'bg-white border-gray-200 text-gray-600 hover:border-brand-pink'
                 if (isCurrent) {
                   badgeStyle = 'ring-2 ring-brand-dark font-extrabold bg-brand-dark text-white'
+                } else if (isLocked && result === 'correct') {
+                  badgeStyle = 'bg-emerald-500 text-white font-bold border-emerald-500'
+                } else if (isLocked && result === 'wrong') {
+                  badgeStyle = 'bg-rose-500 text-white font-bold border-rose-500'
                 } else if (isFlagged) {
                   badgeStyle = 'bg-amber-400 text-amber-950 font-bold border-amber-400'
-                } else if (isAnswered) {
-                  badgeStyle = 'bg-emerald-500 text-white font-bold border-emerald-500'
                 }
 
                 return (
                   <button
                     key={q.id}
-                    onClick={() => {
-                      setCurrentIndex(idx)
-                      setIsNavDrawerOpen(false)
-                    }}
-                    className={`h-11 rounded-xl text-xs font-bold border flex items-center justify-center transition-all relative ${badgeStyle}`}
+                    onClick={() => handleNavToQuestion(idx)}
+                    disabled={!isClickable}
+                    className={`h-11 rounded-xl text-xs font-bold border flex items-center justify-center transition-all relative ${badgeStyle} ${
+                      !isClickable ? 'cursor-not-allowed opacity-80' : ''
+                    }`}
                   >
                     {idx + 1}
                     {isFlagged && (

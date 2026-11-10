@@ -12,6 +12,8 @@ import {
 } from "lucide-react"
 import QuestionForm from "../QuestionForm"
 import DeleteQuestionBtn from "../DeleteQuestionBtn"
+import ExcelUploadModal from "../ExcelUploadModal"
+import DownloadTemplateBtn from "../DownloadTemplateBtn"
 
 export const dynamic = 'force-dynamic'
 
@@ -81,7 +83,11 @@ export default async function CategoryQuestionsPage({
             </p>
           </div>
 
-          <QuestionForm categoryId={category.id} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <DownloadTemplateBtn />
+            <ExcelUploadModal categoryId={category.id} />
+            <QuestionForm categoryId={category.id} />
+          </div>
         </div>
       </div>
 

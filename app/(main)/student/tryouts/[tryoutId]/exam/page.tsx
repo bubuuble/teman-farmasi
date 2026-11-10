@@ -53,7 +53,8 @@ export default async function ExamPage({
         question_options(
           id,
           label,
-          option_text
+          option_text,
+          is_correct
         )
       )
     `)
@@ -141,7 +142,8 @@ export default async function ExamPage({
       options: rawOptions.map((opt: any, optIdx: number) => ({
         id: opt.id,
         label: defaultLetters[optIdx] || opt.label,
-        option_text: opt.option_text
+        option_text: opt.option_text,
+        isCorrect: opt.is_correct || false
       }))
     }
   })

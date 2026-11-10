@@ -1,12 +1,19 @@
 'use client'
 
 import { useState, useActionState, useEffect } from 'react'
-import { Plus, Pencil, X, Clock, Calendar, Users, Settings2 } from 'lucide-react'
+import { Plus, Pencil, X, Clock, Calendar } from 'lucide-react'
 import { createTryout, updateTryout, type ActionState } from './actions'
+import { createClient } from '@/lib/supabase/client'
 
 type ClassOption = {
   id: string
   title: string
+}
+
+type SubClassOption = {
+  id: string
+  title: string
+  class_id: string
 }
 
 type TryoutData = {
@@ -15,6 +22,7 @@ type TryoutData = {
   description: string | null
   program_type: string
   class_id: string | null
+  sub_class_id: string | null
   duration_minutes: number | null
   max_attempts: number | null
   is_active: boolean
@@ -41,11 +49,35 @@ export default function TryoutForm({
   const action = isEditing ? updateTryout : createTryout
   const [state, formAction, isPending] = useActionState(action, initialState)
 
+  const [selectedClassId, setSelectedClassId] = useState<string>(tryout?.class_id || 'none')
+  const [subClasses, setSubClasses] = useState<SubClassOption[]>([])
+  const [loadingSubClasses, setLoadingSubClasses] = useState(false)
+
   useEffect(() => {
     if (state.success && !state.error) {
       setIsOpen(false)
     }
   }, [state])
+
+  // Fetch sub_classes when class selection changes
+  useEffect(() => {
+    if (!selectedClassId || selectedClassId === 'none') {
+      setSubClasses([])
+      return
+    }
+
+    setLoadingSubClasses(true)
+    const supabase = createClient()
+    supabase
+      .from('sub_classes')
+      .select('id, title, class_id')
+      .eq('class_id', selectedClassId)
+      .order('title', { ascending: true })
+      .then(({ data }) => {
+        setSubClasses(data || [])
+        setLoadingSubClasses(false)
+      })
+  }, [selectedClassId])
 
   // Format date helper for input type="datetime-local"
   const formatDateForInput = (isoString: string | null | undefined) => {
@@ -90,7 +122,7 @@ export default function TryoutForm({
                   {isEditing ? 'Edit Konfigurasi Tryout' : 'Buat Ujian Tryout Baru'}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Atur durasi pengerjaan, batas kesempatan, dan kelas yang berhak mengakses
+                  Atur durasi pengerjaan, batas kesempatan, dan sub-kelas yang berhak mengakses
                 </p>
               </div>
               <button
@@ -118,7 +150,7 @@ export default function TryoutForm({
                   type="text"
                   name="title"
                   defaultValue={tryout?.title || ''}
-                  placeholder="Misal: Tryout Simulasi Masuk Apoteker UI / ITB / UGM Batch 1"
+                  placeholder="Misal: Tryout Simulasi UKMPPAI Batch 1"
                   required
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
                 />
@@ -142,11 +174,12 @@ export default function TryoutForm({
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Tautkan ke Kelas Tertentu
+                    Tautkan ke Kelas UKAI Series
                   </label>
                   <select
                     name="class_id"
-                    defaultValue={tryout?.class_id || 'none'}
+                    value={selectedClassId}
+                    onChange={e => setSelectedClassId(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink bg-white"
                   >
                     <option value="none">Terbuka / Tanpa Kelas Khusus</option>
@@ -156,6 +189,35 @@ export default function TryoutForm({
                   </select>
                 </div>
               </div>
+
+              {/* Sub-Kelas dropdown — only shows when a class is selected and has sub_classes */}
+              {selectedClassId && selectedClassId !== 'none' && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Assign ke Sub-Kelas (Opsional)
+                  </label>
+                  {loadingSubClasses ? (
+                    <div className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-400 bg-gray-50">
+                      Memuat sub-kelas...
+                    </div>
+                  ) : subClasses.length === 0 ? (
+                    <div className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-400 bg-gray-50">
+                      Kelas ini belum memiliki sub-kelas
+                    </div>
+                  ) : (
+                    <select
+                      name="sub_class_id"
+                      defaultValue={tryout?.sub_class_id || 'none'}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink bg-white"
+                    >
+                      <option value="none">Semua Sub-Kelas di Kelas Ini</option>
+                      {subClasses.map(sc => (
+                        <option key={sc.id} value={sc.id}>{sc.title}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

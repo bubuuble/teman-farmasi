@@ -217,3 +217,83 @@ export async function deleteQuestion(id: string, categoryId: string) {
   revalidatePath(`/mentor/question-bank/${categoryId}`)
   return { success: true }
 }
+
+// ----------------------------------------------------
+// BULK UPLOAD SOAL DARI EXCEL
+// ----------------------------------------------------
+export async function bulkCreateQuestionsFromExcel(
+  categoryId: string,
+  rows: Array<{
+    no: number
+    pertanyaan: string
+    opsiA: string
+    opsiB: string
+    opsiC: string
+    opsiD: string
+    opsiE: string
+    kunciJawaban: string
+    pembahasan: string
+    urlGambar: string
+  }>
+): Promise<ActionState> {
+  const auth = await verifyStaff()
+  if (auth.error || !auth.user || !auth.adminDb) return { error: auth.error || "Gagal autentikasi" }
+
+  if (!categoryId) return { error: "Kategori tidak valid" }
+  if (!rows || rows.length === 0) return { error: "Tidak ada soal yang akan diupload" }
+
+  let successCount = 0
+  const errors: string[] = []
+
+  for (const row of rows) {
+    // Insert question
+    const { data: questionData, error: qErr } = await auth.adminDb.from('questions').insert({
+      category_id: categoryId,
+      question_text: row.pertanyaan,
+      question_image_url: row.urlGambar?.trim() || null,
+      explanation: row.pembahasan?.trim() || null,
+      difficulty: 'medium',
+      created_by: auth.user.id
+    }).select('id').single()
+
+    if (qErr || !questionData) {
+      errors.push(`Soal #${row.no}: ${qErr?.message || 'Gagal insert'}`)
+      continue
+    }
+
+    // Build options
+    const labels = ['A', 'B', 'C', 'D', 'E']
+    const optTexts = [row.opsiA, row.opsiB, row.opsiC, row.opsiD, row.opsiE]
+    const optionsToInsert = labels
+      .map((label, i) => ({
+        question_id: questionData.id,
+        label,
+        option_text: optTexts[i]?.trim() || '',
+        is_correct: label === row.kunciJawaban
+      }))
+      .filter(o => o.option_text)
+
+    const { error: optErr } = await auth.adminDb.from('question_options').insert(optionsToInsert)
+
+    if (optErr) {
+      await auth.adminDb.from('questions').delete().eq('id', questionData.id)
+      errors.push(`Soal #${row.no}: ${optErr.message}`)
+      continue
+    }
+
+    successCount++
+  }
+
+  revalidatePath(`/admin/question-bank/${categoryId}`)
+  revalidatePath('/admin/question-bank')
+  revalidatePath(`/mentor/question-bank/${categoryId}`)
+
+  if (errors.length > 0) {
+    return {
+      success: `${successCount} soal berhasil diupload.`,
+      error: `${errors.length} soal gagal: ${errors.slice(0, 3).join('; ')}`
+    }
+  }
+
+  return { success: `✓ ${successCount} soal berhasil ditambahkan ke bank soal!` }
+}

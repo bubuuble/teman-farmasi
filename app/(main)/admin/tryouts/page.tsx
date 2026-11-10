@@ -25,10 +25,11 @@ export default async function TryoutsManagementPage({
   const adminDb = createAdminClient()
   const { program = 'all', q = '' } = await searchParams
 
-  // 1. Fetch available classes for assignment dropdown
+  // 1. Fetch UKAI Series classes only for assignment dropdown
   const { data: classes = [] } = await adminDb
     .from('classes')
     .select('id, title')
+    .or('title.ilike.%UKAI%,title.ilike.%UKMPPAI%,title.ilike.%Apoteker%,title.ilike.%ukai%')
     .order('title', { ascending: true })
 
   // 2. Fetch all UKAI Series tryouts (masuk_apoteker + ukmppai only)
@@ -37,6 +38,7 @@ export default async function TryoutsManagementPage({
     .select(`
       *,
       classes(title),
+      sub_classes(title),
       tryout_attempts(count)
     `)
     .in('program_type', ['masuk_apoteker', 'ukmppai'])

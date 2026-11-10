@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import { HelpCircle, ArrowLeft } from "lucide-react"
+import { HelpCircle } from "lucide-react"
 import TryoutResultClient from "./TryoutResultClient"
 
 export const dynamic = 'force-dynamic'
@@ -26,18 +26,16 @@ export default async function TryoutResultPage({
 
   if (!tryout) return notFound()
 
-  // 2. Fetch latest completed attempt
-  const { data: attempt } = await supabase
+  // 2. Fetch ALL completed attempts (not just latest) ordered by attempt_number asc
+  const { data: attempts = [] } = await supabase
     .from('tryout_attempts')
     .select('*')
     .eq('tryout_id', tryoutId)
     .eq('student_id', user.id)
     .eq('status', 'completed')
-    .order('finished_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+    .order('attempt_number', { ascending: true })
 
-  if (!attempt) {
+  if (!attempts || attempts.length === 0) {
     return (
       <div className="max-w-xl mx-auto my-12 bg-white rounded-3xl p-8 border border-gray-100 text-center space-y-4 shadow-sm">
         <HelpCircle className="w-12 h-12 text-gray-400 mx-auto" />
@@ -55,38 +53,43 @@ export default async function TryoutResultPage({
     )
   }
 
-  // 3. Fetch questions, options & answers with explanation
-  const { data: answersData = [] } = await supabase
-    .from('tryout_answers')
-    .select(`
-      question_id,
-      selected_option_id,
-      is_correct,
-      is_flagged,
-      questions(
-        id,
-        question_text,
-        question_image_url,
-        explanation,
-        difficulty,
-        question_categories(name),
-        question_options(
-          id,
-          label,
-          option_text,
-          is_correct
-        )
-      )
-    `)
-    .eq('attempt_id', attempt.id)
+  // 3. For each attempt, fetch answers with question details & options
+  const attemptsWithAnswers = await Promise.all(
+    attempts.map(async (attempt: any) => {
+      const { data: answersData = [] } = await supabase
+        .from('tryout_answers')
+        .select(`
+          question_id,
+          selected_option_id,
+          is_correct,
+          is_flagged,
+          questions(
+            id,
+            question_text,
+            question_image_url,
+            explanation,
+            question_categories(name),
+            question_options(
+              id,
+              label,
+              option_text,
+              is_correct
+            )
+          )
+        `)
+        .eq('attempt_id', attempt.id)
 
-  const answersList = (answersData || []) as any[]
+      return {
+        attempt,
+        answers: (answersData || []) as any[]
+      }
+    })
+  )
 
   return (
     <TryoutResultClient
       tryout={tryout}
-      attempt={attempt}
-      answers={answersList}
+      attemptsWithAnswers={attemptsWithAnswers}
     />
   )
 }

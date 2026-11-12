@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Upload, X, FileSpreadsheet, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
-import { bulkCreateQuestionsFromExcel } from '../actions'
+import { bulkCreateQuestionsFromExcel } from './actions'
 
 type ParsedRow = {
   no: number

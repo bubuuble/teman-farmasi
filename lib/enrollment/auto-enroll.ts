@@ -143,3 +143,4 @@ export async function enrollStudentToClass({
     enrollmentId: enrollment?.id
   }
 }
+

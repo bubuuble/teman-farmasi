@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { enrollStudentToClass } from '@/lib/enrollment/auto-enroll'
 
 /**
  * Webhook Notification untuk Pembayaran QRIS GDCPay
@@ -10,10 +11,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     console.log('[GDCPay Webhook QRIS Received]:', JSON.stringify(body))
 
-    // Ekstrak parameter dari SNAP BI notification
     const partnerReferenceNo = body.partnerReferenceNo || body.originalPartnerReferenceNo
     const latestTransactionStatus = body.latestTransactionStatus || body.transactionStatusDesc
-    const amount = body.amount?.value || body.amount
 
     if (!partnerReferenceNo) {
       return NextResponse.json({
@@ -22,38 +21,40 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    // Status sukses biasanya '00' atau 'SUCCESS'
     const isSuccess = latestTransactionStatus === '00' || latestTransactionStatus === 'SUCCESS' || body.responseCode === '2005200'
 
     if (isSuccess) {
       const supabase = createAdminClient()
 
-      // 1. Update status order menjadi 'paid'
+      // 1. Ambil data order
       const { data: order, error: orderErr } = await supabase
         .from('orders')
-        .update({
-          status: 'paid'
-        })
+        .select('*, classes(id, title)')
         .eq('id', partnerReferenceNo)
-        .select('*, profiles:user_id(*)')
         .single()
 
       if (!orderErr && order) {
-        console.log(`[GDCPay Webhook] Order ${partnerReferenceNo} berhasil di-update menjadi PAID`)
+        // 2. Update status order menjadi 'paid'
+        await supabase
+          .from('orders')
+          .update({ status: 'paid' })
+          .eq('id', partnerReferenceNo)
 
-        // 2. Jika order memiliki class_id, daftarkan murid ke kelas (enrollments)
-        if (order.class_id && order.user_id) {
-          await supabase.from('enrollments').upsert({
-            class_id: order.class_id,
-            student_id: order.user_id,
-            status: 'active'
-          }, { onConflict: 'class_id,student_id' })
-          console.log(`[GDCPay Webhook] Student ${order.user_id} otomatis di-enroll ke kelas ${order.class_id}`)
+        console.log(`[GDCPay Webhook] Order ${partnerReferenceNo} berstatus PAID`)
+
+        // 3. AUTO-ENROLL KE KELAS (Buat kelas jika belum ada, atau masuk kelas aktif)
+        if (order.user_id) {
+          const classTitle = order.classes?.title || order.notes || 'Kelas Farmasi Reguler'
+          await enrollStudentToClass({
+            userId: order.user_id,
+            classId: order.class_id || undefined,
+            classTitle: classTitle
+          })
+          console.log(`[GDCPay Webhook] Murid ${order.user_id} berhasil di-enroll otomatis!`)
         }
       }
     }
 
-    // Response wajib SNAP BI acknowledgement
     return NextResponse.json({
       responseCode: '2005200',
       responseMessage: 'Success'

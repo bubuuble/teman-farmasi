@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { enrollStudentToClass } from '@/lib/enrollment/auto-enroll'
 
 /**
  * Webhook Notification untuk Pembayaran Virtual Account GDCPay
@@ -23,26 +24,30 @@ export async function POST(req: NextRequest) {
     if (isPaid) {
       const supabase = createAdminClient()
 
-      // 1. Update status order menjadi 'paid'
       const { data: order, error: orderErr } = await supabase
         .from('orders')
-        .update({
-          status: 'paid'
-        })
+        .select('*, classes(id, title)')
         .eq('id', partnerReferenceNo)
-        .select('*')
         .single()
 
       if (!orderErr && order) {
-        console.log(`[GDCPay Webhook] VA Order ${partnerReferenceNo} berhasil di-update menjadi PAID`)
+        // 1. Update status order menjadi 'paid'
+        await supabase
+          .from('orders')
+          .update({ status: 'paid' })
+          .eq('id', partnerReferenceNo)
 
-        // 2. Daftarkan murid ke kelas jika ada class_id
-        if (order.class_id && order.user_id) {
-          await supabase.from('enrollments').upsert({
-            class_id: order.class_id,
-            student_id: order.user_id,
-            status: 'active'
-          }, { onConflict: 'class_id,student_id' })
+        console.log(`[GDCPay Webhook] VA Order ${partnerReferenceNo} berstatus PAID`)
+
+        // 2. AUTO-ENROLL KE KELAS (Buat kelas jika belum ada, atau masuk kelas aktif)
+        if (order.user_id) {
+          const classTitle = order.classes?.title || order.notes || 'Kelas Farmasi Reguler'
+          await enrollStudentToClass({
+            userId: order.user_id,
+            classId: order.class_id || undefined,
+            classTitle: classTitle
+          })
+          console.log(`[GDCPay Webhook] Murid ${order.user_id} berhasil di-enroll otomatis!`)
         }
       }
     }

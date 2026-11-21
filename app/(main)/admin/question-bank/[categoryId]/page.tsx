@@ -14,6 +14,7 @@ import QuestionForm from "../QuestionForm"
 import DeleteQuestionBtn from "../DeleteQuestionBtn"
 import ExcelUploadModal from "../ExcelUploadModal"
 import DownloadTemplateBtn from "../DownloadTemplateBtn"
+import QuestionImage from "@/app/components/QuestionImage"
 
 export const dynamic = 'force-dynamic'
 
@@ -150,13 +151,7 @@ export default async function CategoryQuestionsPage({
 
                 {/* GAMBAR JIKA ADA */}
                 {q.question_image_url && (
-                  <div className="my-3 max-w-md rounded-2xl overflow-hidden border border-gray-100">
-                    <img
-                      src={q.question_image_url}
-                      alt="Lampiran Soal"
-                      className="w-full h-auto object-cover max-h-72"
-                    />
-                  </div>
+                  <QuestionImage src={q.question_image_url} alt="Lampiran Soal" />
                 )}
 
                 {/* OPSI JAWABAN */}

@@ -11,8 +11,10 @@ import {
   CheckCircle2, 
   Award,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Image as ImageIcon
 } from "lucide-react"
+import QuestionImage from "@/app/components/QuestionImage"
 import AssignQuestionsModal from "../AssignQuestionsModal"
 import CreateDirectQuestionModal from "../CreateDirectQuestionModal"
 import EditQuestionInTryoutModal from "../EditQuestionInTryoutModal"
@@ -239,6 +241,11 @@ export default async function TryoutDetailPage({
                             {q.question_categories.name}
                           </span>
                         )}
+                        {q?.question_image_url && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-brand-blue bg-brand-blue/10 px-2 py-0.5 rounded-md">
+                            <ImageIcon className="w-3 h-3" /> Ada Gambar
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-1">
@@ -257,6 +264,12 @@ export default async function TryoutDetailPage({
                     <p className="text-brand-dark font-medium text-sm leading-relaxed whitespace-pre-line pl-10">
                       {q?.question_text}
                     </p>
+
+                    {q?.question_image_url && (
+                      <div className="pl-10">
+                        <QuestionImage src={q.question_image_url} alt="Lampiran Soal" />
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-10 pt-2">
                       {options.map((opt: any) => (

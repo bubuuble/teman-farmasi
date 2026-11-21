@@ -15,6 +15,7 @@ import {
   Target,
   Trophy
 } from 'lucide-react'
+import QuestionImage from '@/app/components/QuestionImage'
 
 type OptionData = {
   id: string
@@ -394,9 +395,11 @@ export default function TryoutResultClient({
                   </p>
 
                   {q?.question_image_url && (
-                    <div className="max-w-lg rounded-2xl overflow-hidden border border-gray-200 my-3">
-                      <img src={q.question_image_url} alt="Lampiran Soal" className="w-full h-auto object-cover max-h-80" />
-                    </div>
+                    <QuestionImage
+                      src={q.question_image_url}
+                      alt="Lampiran Soal"
+                      className="max-w-xl my-3"
+                    />
                   )}
                 </div>
 

@@ -9,12 +9,15 @@ const nextConfig: NextConfig = {
     },
     proxyClientMaxBodySize: '50mb', // Limit untuk middleware/proxy
   },
-  // Tambahan config untuk middleware dan API routes
+  // Hindari ECONNRESET akibat reuse socket yang sudah ditutup upstream/CDN
   httpAgentOptions: {
-    keepAlive: true,
+    keepAlive: false,
   },
 
   images: {
+    // Sanity & Unsplash sudah memiliki optimasi/resizing CDN bawaan.
+    // unoptimized: true mencegah server Next.js mem-proxy gambar (menghindari error SSRF DNS64 "resolved to private ip").
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

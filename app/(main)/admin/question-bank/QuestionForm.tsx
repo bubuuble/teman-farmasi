@@ -119,6 +119,9 @@ export default function QuestionForm({
                   />
                   <ImageIcon className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
                 </div>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Mendukung link file gambar (.jpg, .png, .webp) atau tautan Google Drive publik.
+                </p>
               </div>
 
               <div>

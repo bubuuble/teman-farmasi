@@ -54,9 +54,14 @@ async function HomeContent() {
     description:
       ukaiBanner?.description ||
       "Tersedia bimbingan kelas intensif (Private & Reguler) serta Simulasi CBT Tryout dengan ribuan bank soal dan pembahasan lengkap untuk mengantarkanmu lulus dengan predikat terbaik.",
+    price: ukaiBanner?.price || "Rp 99.000",
     ctaText: "Lihat Detail UKAI Series",
     ctaLink: "/programs?cat=ukai",
   };
+
+  const displayPrice = ukaiData.price
+    ? ukaiData.price.replace(/^Mulai\s*/i, '').trim()
+    : "Rp 99.000";
 
   return (
     <main className="min-h-screen bg-brand-cream selection:bg-brand-pink selection:text-white">
@@ -77,6 +82,46 @@ async function HomeContent() {
           <p className="text-gray-500 text-lg max-w-2xl mx-auto font-medium">
              Ekosistem riset dan akademik terlengkap yang dirancang khusus untuk mahasiswa farmasi di Indonesia.
           </p>
+        </div>
+
+        {/* UKAI SERIES FEATURED CARD (DI ATAS) */}
+        <div className="mb-10 bg-[#1d5261] rounded-[3rem] p-8 md:p-12 shadow-sm border border-white/10 flex flex-col lg:flex-row lg:items-center justify-between gap-8 hover:shadow-2xl transition-all group hover:-translate-y-2 duration-500 text-white relative overflow-hidden">
+          <div className="relative z-10 flex-1 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+              <div className="w-16 h-16 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner text-brand-yellow group-hover:bg-brand-yellow group-hover:text-brand-dark transition-colors duration-500 shrink-0">
+                <FaLaptopCode size={30} />
+              </div>
+              <span className="inline-block bg-white/15 backdrop-blur-sm text-teal-200 text-[11px] font-extrabold uppercase tracking-widest px-4 py-1.5 rounded-full border border-white/20">
+                {ukaiData.badge}
+              </span>
+            </div>
+            <h3 className="font-heading font-bold text-3xl md:text-4xl text-white mb-4 tracking-tighter uppercase leading-tight">
+              {ukaiData.title}
+            </h3>
+            <p className="text-white/80 font-bold text-sm md:text-base leading-relaxed">
+              {ukaiData.description}
+            </p>
+          </div>
+
+          {/* White Bottom/Right Container - Konsisten seperti Card Lain */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-brand-dark/5 w-full lg:w-80 shrink-0 relative z-10">
+            <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Mulai Dari</p>
+            <div className="flex justify-between items-end">
+              <div>
+                <p className="text-2xl font-extrabold text-brand-dark leading-none">{displayPrice}</p>
+                <span className="text-[11px] text-gray-400 font-bold mt-1 inline-block">Bimbel &amp; Tryout CBT</span>
+              </div>
+              <Link
+                href={ukaiData.ctaLink}
+                className="p-3.5 bg-brand-dark text-white rounded-xl hover:bg-brand-pink transition-all shadow-md active:scale-95 group-hover:bg-brand-pink shrink-0"
+              >
+                <FaArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Decorative soft glow */}
+          <div className="absolute right-[-10%] top-[-20%] w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -108,7 +153,7 @@ async function HomeContent() {
               <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-8 shadow-inner text-white group-hover:bg-white group-hover:text-brand-pink transition-colors duration-500">
                  <FaFlask size={32} />
               </div>
-              <h3 className="font-heading font-bold text-3xl mb-4 tracking-tighter uppercase leading-tight relative z-10">
+              <h3 className="font-heading font-bold text-3xl mb-4 tracking-tighter uppercase leading-tight relative z-10 text-white">
                 Pharma Research <br/> Mentoring
               </h3>
               <p className="text-white/80 font-bold text-sm mb-8 flex-1 leading-relaxed relative z-10">
@@ -147,33 +192,6 @@ async function HomeContent() {
               </div>
            </div>
 
-        </div>
-
-        {/* UKAI SERIES FEATURED BANNER (DYNAMIC SANITY) */}
-        <div className="mt-12 bg-gradient-to-r from-teal-800 via-teal-900 to-slate-900 rounded-[3rem] p-8 md:p-12 text-white shadow-xl relative overflow-hidden border border-teal-500/20">
-          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div className="max-w-2xl">
-              <span className="inline-block bg-teal-400/20 text-teal-300 text-[11px] font-extrabold uppercase tracking-[0.25em] px-4 py-1.5 rounded-full mb-4 border border-teal-400/30">
-                {ukaiData.badge}
-              </span>
-              <h3 className="font-heading text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
-                {ukaiData.title}
-              </h3>
-              <p className="text-teal-100/80 text-sm md:text-base font-medium leading-relaxed">
-                {ukaiData.description}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto shrink-0">
-              <Link
-                href={ukaiData.ctaLink}
-                className="inline-flex items-center justify-center gap-3 bg-teal-400 text-teal-950 font-extrabold px-8 py-4 rounded-2xl hover:bg-teal-300 transition-all shadow-lg active:scale-95 text-sm"
-              >
-                <FaLaptopCode size={18} />
-                {ukaiData.ctaText}
-              </Link>
-            </div>
-          </div>
-          <div className="absolute right-[-10%] top-[-20%] w-72 h-72 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
         </div>
 
         {/* Bandingkan Button */}

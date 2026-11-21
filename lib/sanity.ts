@@ -6,7 +6,9 @@ export const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '',
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
   apiVersion: '2024-01-01',
-  useCdn: true,
+  // Di Next.js App Router dengan caching (revalidate), disarankan useCdn: false
+  // Ini memastikan data selalu fresh dan menghindari masalah socket ECONNRESET pada edge CDN
+  useCdn: false,
 });
 
 // Helper for generating image URLs

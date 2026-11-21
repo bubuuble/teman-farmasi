@@ -6,7 +6,7 @@ import path from 'path'
  * Konfigurasi GDCPay dari Environment
  */
 export const gdcpayConfig = {
-  baseUrl: process.env.GDCPAY_BASE_URL || 'https://sandbox.gdcpay.id',
+  baseUrl: process.env.GDCPAY_BASE_URL || 'https://neo-sandbox-api.gdc.co.id/snap',
   clientId: process.env.GDCPAY_CLIENT_ID || '',
   clientSecret: process.env.GDCPAY_CLIENT_SECRET || '',
   partnerId: process.env.GDCPAY_PARTNER_ID || '',
@@ -104,6 +104,7 @@ export async function getB2BAccessToken(customClientId?: string): Promise<{
     'Content-Type': 'application/json',
     'X-TIMESTAMP': timestamp,
     'X-CLIENT-KEY': clientId,
+    'Client-Key': clientId,
     'X-SIGNATURE': signature
   }
 

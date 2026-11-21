@@ -15,6 +15,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react'
 import { saveStudentAnswer, submitTryoutAttempt } from '@/app/(main)/student/tryouts/actions'
+import QuestionImage from '@/app/components/QuestionImage'
 
 type Option = {
   id: string
@@ -312,13 +313,11 @@ export default function CBTExamClient({
                 </p>
 
                 {currentQ.question_image_url && (
-                  <div className="max-w-lg rounded-2xl overflow-hidden border border-gray-200">
-                    <img
-                      src={currentQ.question_image_url}
-                      alt="Gambar Lampiran"
-                      className="w-full h-auto object-cover max-h-80"
-                    />
-                  </div>
+                  <QuestionImage
+                    src={currentQ.question_image_url}
+                    alt="Gambar Lampiran"
+                    className="max-w-xl"
+                  />
                 )}
               </div>
 

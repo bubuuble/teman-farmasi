@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import FullscreenLink from './FullscreenLink'
 import { createAdminClient } from "@/lib/supabase/admin"
 import Link from "next/link"
 import { 
@@ -263,12 +264,12 @@ export default async function StudentTryoutsPage({
                       Perlu Terdaftar
                     </span>
                   ) : inProgressAttempt ? (
-                    <Link
+                    <FullscreenLink
                       href={`/student/tryouts/${t.id}/exam`}
                       className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold hover:bg-amber-600 transition shadow-sm active:scale-95"
                     >
                       <RotateCcw className="w-3.5 h-3.5" /> Lanjutkan
-                    </Link>
+                    </FullscreenLink>
                   ) : hasResults && isMaxReached ? (
                     <Link
                       href={`/student/tryouts/${t.id}/result`}

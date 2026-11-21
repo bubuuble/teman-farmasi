@@ -1,4 +1,5 @@
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { Download } from 'lucide-react'
 
@@ -14,7 +15,7 @@ type OrderData = {
 export default function ExportButton({ orders }: { orders: OrderData[] }) {
   
   const handleExport = () => {
-    if (!orders || orders.length === 0) return alert("Tidak ada data untuk diexport")
+    if (!orders || orders.length === 0) return notify.error("Tidak ada data untuk diexport")
 
     // 1. Buat Header CSV
     const headers = ["Order ID", "Tanggal", "Nama Student", "Email", "Kelas", "Nominal", "Status"]

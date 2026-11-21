@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { removeQuestionFromTryout } from './actions'
+import { confirmDialog, notify } from '@/app/components/Feedback'
 
 export default function RemoveQuestionBtn({
   tryoutId,
@@ -14,15 +15,20 @@ export default function RemoveQuestionBtn({
   const [isRemoving, setIsRemoving] = useState(false)
 
   const handleRemove = async () => {
-    if (!confirm('Keluarkan soal ini dari paket tryout? (Soal tetap tersimpan di Bank Soal)')) {
-      return
-    }
+    const ok = await confirmDialog({
+      title: 'Keluarkan Soal',
+      message: 'Keluarkan soal ini dari paket tryout? (Soal tetap tersimpan di Bank Soal)',
+      confirmText: 'Ya, Keluarkan',
+      variant: 'danger',
+    })
+    if (!ok) return
 
     setIsRemoving(true)
     try {
       await removeQuestionFromTryout(tryoutId, questionId)
+      notify.success('Soal dikeluarkan dari paket tryout')
     } catch (e: any) {
-      alert(e.message || 'Gagal mengeluarkan soal')
+      notify.error(e.message || 'Gagal mengeluarkan soal')
     } finally {
       setIsRemoving(false)
     }

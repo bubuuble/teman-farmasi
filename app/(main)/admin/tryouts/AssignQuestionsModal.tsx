@@ -1,4 +1,5 @@
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState } from 'react'
 import { Plus, Check, Search, Filter, BookOpen, FolderPlus, Layers } from 'lucide-react'
@@ -77,13 +78,13 @@ export default function AssignQuestionsModal({
     try {
       const res = await assignQuestionsToTryout(tryoutId, selectedIds)
       if (res?.error) {
-        alert(res.error)
+        notify.error(res.error)
       } else {
         setIsOpen(false)
         setSelectedIds([])
       }
     } catch (e: any) {
-      alert(e.message || "Gagal menambahkan soal")
+      notify.error(e.message || "Gagal menambahkan soal")
     } finally {
       setIsSubmitting(false)
     }
@@ -95,14 +96,14 @@ export default function AssignQuestionsModal({
     try {
       const res = await assignCategoryQuestionsToTryout(tryoutId, selectedCategoryId)
       if (res?.error) {
-        alert(res.error)
+        notify.error(res.error)
       } else {
-        alert(`Berhasil menambahkan ${res.addedCount} butir soal dari kategori ini!`)
+        notify.success(`Berhasil menambahkan ${res.addedCount} butir soal dari kategori ini!`)
         setIsOpen(false)
         setSelectedCategoryId('')
       }
     } catch (e: any) {
-      alert(e.message || "Gagal menambahkan soal kategori")
+      notify.error(e.message || "Gagal menambahkan soal kategori")
     } finally {
       setIsSubmitting(false)
     }

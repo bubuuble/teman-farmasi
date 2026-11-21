@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useActionState } from 'react'
+import { useState, useEffect, useActionState } from 'react'
 import { Pencil, X } from 'lucide-react'
+import { notify } from '@/app/components/Feedback'
 import { updateUser, type ActionState } from './actions'
 
 // Definisikan tipe data User yang diterima dari page
@@ -24,12 +25,13 @@ export default function EditUserForm({ user, currentUserRole }: { user: UserProp
   const [selectedRole, setSelectedRole] = useState(user.role)
   const [state, formAction, isPending] = useActionState(updateUser, initialState)
 
-  // Tutup modal jika sukses
-  if (state?.success && isOpen) {
-    setIsOpen(false)
-    alert("Data berhasil diperbarui!")
-    window.location.reload()
-  }
+  // Tutup modal jika sukses (data otomatis refresh lewat revalidatePath di server action)
+  useEffect(() => {
+    if (state?.success) {
+      setIsOpen(false)
+      notify.success("Data berhasil diperbarui!")
+    }
+  }, [state])
 
   return (
     <>

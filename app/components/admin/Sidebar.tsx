@@ -1,9 +1,12 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  LayoutDashboard, 
+import { CLASS_PROGRAM_LINKS, programHref } from '@/lib/class-programs'
+import {
+  ChevronDown,
+  LayoutDashboard,
   BookOpen, 
   Users, 
   FileSpreadsheet, 
@@ -18,10 +21,18 @@ import {
 import SignOutButton from '../SignOutButton'
 import { useAdmin } from './AdminProvider'
 
+type SubMenuItem = {
+  label: string
+  href: string
+  /** Aktif hanya jika path sama persis */
+  exact?: boolean
+}
+
 type MenuItem = {
   label: string
   href: string
   icon: React.ComponentType<{ className?: string }>
+  children?: SubMenuItem[]
 }
 
 type MenuGroup = {
@@ -39,7 +50,15 @@ const menuGroups: MenuGroup[] = [
   {
     category: 'Akademik & CBT',
     items: [
-      { label: 'Manajemen Kelas', href: '/admin/classes', icon: BookOpen },
+      {
+        label: 'Manajemen Kelas',
+        href: '/admin/classes',
+        icon: BookOpen,
+        children: [
+          { label: 'Semua kelas', href: '/admin/classes', exact: true },
+          ...CLASS_PROGRAM_LINKS.map(p => ({ label: p.short, href: programHref(p.slug) })),
+        ],
+      },
       { label: 'Bank Soal', href: '/admin/question-bank', icon: FileQuestion },
       { label: 'Kelola Tryout', href: '/admin/tryouts', icon: ClipboardCheck },
     ]
@@ -65,6 +84,13 @@ const menuGroups: MenuGroup[] = [
 export default function AdminSidebar() {
   const pathname = usePathname()
   const { isSidebarOpen, setSidebarOpen } = useAdmin()
+
+  // Sub-menu kelas: terbuka otomatis saat berada di area /admin/classes, bisa dilipat manual
+  const inClasses = pathname.startsWith('/admin/classes')
+  const [classesOpen, setClassesOpen] = useState(inClasses)
+  useEffect(() => {
+    if (inClasses) setClassesOpen(true)
+  }, [inClasses])
 
   return (
     <>
@@ -105,7 +131,58 @@ export default function AdminSidebar() {
               {group.items.map((item) => {
                 const isActive = pathname.startsWith(item.href)
                 const Icon = item.icon
-                
+
+                if (item.children) {
+                  return (
+                    <div key={item.href}>
+                      <div className="relative">
+                        <Link
+                          href={item.href}
+                          className={`flex items-center gap-3 pl-3.5 pr-10 py-2.5 rounded-xl transition-all duration-200 group text-xs font-semibold ${
+                            isActive
+                              ? 'bg-brand-blue text-white shadow-md font-bold'
+                              : 'text-white/70 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-white/60 group-hover:text-white'}`} />
+                          <span className="truncate">{item.label}</span>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setClassesOpen(v => !v)}
+                          aria-expanded={classesOpen}
+                          aria-label={classesOpen ? `Lipat ${item.label}` : `Buka ${item.label}`}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                        >
+                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${classesOpen ? '' : '-rotate-90'}`} />
+                        </button>
+                      </div>
+
+                      {classesOpen && (
+                        <ul className="mt-1 ml-[22px] pl-3 border-l border-white/10 space-y-0.5">
+                          {item.children.map((child) => {
+                            const childActive = child.exact ? pathname === child.href : pathname.startsWith(child.href)
+                            return (
+                              <li key={child.href}>
+                                <Link
+                                  href={child.href}
+                                  className={`block px-3 py-2 rounded-lg text-[11px] transition-colors truncate ${
+                                    childActive
+                                      ? 'bg-white/15 text-white font-bold'
+                                      : 'text-white/60 font-medium hover:bg-white/10 hover:text-white'
+                                  }`}
+                                >
+                                  {child.label}
+                                </Link>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  )
+                }
+
                 return (
                   <Link
                     key={item.href}

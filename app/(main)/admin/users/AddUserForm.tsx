@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useActionState } from 'react' // Perbaikan import
+import { useState, useEffect, useActionState } from 'react'
 import { Plus, X } from 'lucide-react'
+import { notify } from '@/app/components/Feedback'
 // Import tipe ActionState dari file actions
 import { createUser, type ActionState } from './actions'
 
@@ -17,12 +18,13 @@ export default function AddUserForm({ customTrigger, currentUserRole }: { custom
   const [selectedRole, setSelectedRole] = useState('student')
   const [state, formAction, isPending] = useActionState(createUser, initialState)
 
-  // Tutup modal otomatis jika sukses
-  if (state?.success && isOpen) {
-    setIsOpen(false)
-    alert("User berhasil ditambahkan!") 
-    window.location.reload() 
-  }
+  // Tutup modal otomatis jika sukses (data refresh lewat revalidatePath di server action)
+  useEffect(() => {
+    if (state?.success) {
+      setIsOpen(false)
+      notify.success("User berhasil ditambahkan!")
+    }
+  }, [state])
 
   return (
     <>

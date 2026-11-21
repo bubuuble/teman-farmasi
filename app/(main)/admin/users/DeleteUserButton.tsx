@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react'
 import { deleteUser } from './actions'
 import { useState } from 'react'
 import ConfirmModal from '@/app/components/ConfirmModal'
+import { notify } from '@/app/components/Feedback'
 
 export default function DeleteUserButton({ userId }: { userId: string }) {
   const [isDeleting, setIsDeleting] = useState(false)
@@ -14,12 +15,11 @@ export default function DeleteUserButton({ userId }: { userId: string }) {
     const res = await deleteUser(userId)
     
     if (res?.error) {
-      alert("Gagal hapus: " + res.error)
-      setIsDeleting(false)
+      notify.error("Gagal hapus: " + res.error)
     } else {
-        // Otomatis refresh karena revalidatePath di server action
-        setIsDeleting(false)
+      notify.success("User berhasil dihapus")
     }
+    setIsDeleting(false)
   }
 
   return (

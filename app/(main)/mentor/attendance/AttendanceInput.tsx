@@ -1,5 +1,6 @@
 // app/(main)/mentor/attendance/AttendanceInput.tsx
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState } from 'react'
 import { Save, Lock, Unlock } from 'lucide-react'
@@ -40,13 +41,13 @@ export default function AttendanceInput({
         }))
         const res = await saveManualAttendance(sessionId, dataArray)
         setLoading(false)
-        if (res.error) alert(res.error)
-        else alert(res.success)
+        if (res.error) notify.error(res.error)
+        else notify.success(res.success ?? 'Berhasil disimpan')
     }
 
     const handleToggle = async () => {
         const res = await toggleSessionStatus(sessionId, isOpen)
-        if (res.error) alert(res.error)
+        if (res.error) notify.error(res.error)
     }
 
     return (

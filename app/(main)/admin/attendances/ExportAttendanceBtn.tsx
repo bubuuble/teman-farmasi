@@ -1,4 +1,5 @@
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { Download } from 'lucide-react'
 
@@ -23,7 +24,7 @@ export default function ExportAttendanceBtn({
 }) {
 
   const handleExport = () => {
-    if (sessions.length === 0 || students.length === 0) return alert("Data kosong")
+    if (sessions.length === 0 || students.length === 0) return notify.error("Data kosong")
 
     // Hitung jumlah kolom dinamis untuk private class
     const colsCount = isPrivate 

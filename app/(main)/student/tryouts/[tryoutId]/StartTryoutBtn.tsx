@@ -1,4 +1,5 @@
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -17,16 +18,18 @@ export default function StartTryoutBtn({
 
   const handleStart = async () => {
     setIsLoading(true)
+    // Harus dipanggil langsung dari klik (user gesture); fullscreen tetap aktif saat pindah halaman
+    document.documentElement.requestFullscreen?.().catch(() => {})
     try {
       const res = await startTryoutAttempt(tryoutId)
       if (res.error) {
-        alert(res.error)
+        notify.error(res.error)
         setIsLoading(false)
       } else {
         router.push(`/student/tryouts/${tryoutId}/exam`)
       }
     } catch (e: any) {
-      alert(e.message || "Gagal memulai ujian")
+      notify.error(e.message || "Gagal memulai ujian")
       setIsLoading(false)
     }
   }

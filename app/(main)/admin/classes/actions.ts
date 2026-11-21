@@ -22,7 +22,7 @@ export async function createClass(prevState: ActionState, formData: FormData): P
     title,
     description,
     price: Number(price) || 0,
-    level
+    level: level || null
   })
 
   if (error) return { error: error.message }
@@ -44,7 +44,7 @@ export async function updateClass(prevState: ActionState, formData: FormData): P
     title,
     description,
     price: Number(price) || 0,
-    level
+    level: level || null
   }).eq('id', id)
 
   if (error) return { error: error.message }
@@ -87,6 +87,40 @@ export async function assignMentor(prevState: ActionState, formData: FormData): 
 
   revalidatePath('/admin/classes', 'layout')
   return { success: "Mentor berhasil ditugaskan!" }
+}
+
+// 1b. Assign banyak mentor sekaligus (kelas induk jika subClassId kosong)
+export async function assignMultipleMentors(classId: string, mentorIds: string[], subClassId?: string): Promise<ActionState> {
+  const supabase = await createClient()
+
+  if (!classId || !mentorIds || mentorIds.length === 0) {
+    return { error: "Pilih minimal 1 mentor!" }
+  }
+
+  // Lewati mentor yang sudah ditugaskan di level yang sama
+  let existingQuery = supabase.from('class_mentors').select('mentor_id').eq('class_id', classId).in('mentor_id', mentorIds)
+  existingQuery = subClassId ? existingQuery.eq('sub_class_id', subClassId) : existingQuery.is('sub_class_id', null)
+  const { data: existing } = await existingQuery
+  const already = new Set((existing ?? []).map(e => e.mentor_id))
+  const toInsert = mentorIds.filter(id => !already.has(id))
+
+  if (toInsert.length === 0) return { error: "Semua mentor terpilih sudah ditugaskan." }
+
+  const { error } = await supabase.from('class_mentors').insert(
+    toInsert.map(mentorId => ({
+      class_id: classId,
+      mentor_id: mentorId,
+      sub_class_id: subClassId || null,
+    }))
+  )
+
+  if (error) {
+    if (error.code === '23505') return { error: "Salah satu mentor sudah ditugaskan." }
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/classes', 'layout')
+  return { success: `${toInsert.length} mentor berhasil ditugaskan!` }
 }
 
 // 2. Hapus Mentor dari Kelas

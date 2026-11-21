@@ -1,4 +1,5 @@
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState, useRef, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -26,8 +27,9 @@ import {
   deleteClass, 
   assignStudent, 
   removeStudent, 
-  assignMentor, 
-  removeMentor, 
+  assignMentor,
+  assignMultipleMentors,
+  removeMentor,
   uploadResource, 
   deleteResource,
   assignMultipleStudents,
@@ -170,6 +172,9 @@ export default function ClassManager({
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [mentorSearch, setMentorSearch] = useState('')
   const [selectedMentorId, setSelectedMentorId] = useState('')
+  // UKAI: mentor ditugaskan di kelas induk (sub_class_id = null) dan otomatis mengelola semua sub kelas
+  const [ukaiMentorSearch, setUkaiMentorSearch] = useState('')
+  const [ukaiMentorIds, setUkaiMentorIds] = useState<string[]>([])
 
   // Delete confirmations state
   const [confirmDeleteClass, setConfirmDeleteClass] = useState(false)
@@ -415,6 +420,22 @@ export default function ClassManager({
     })
   }
 
+  const handleAddUkaiMentorSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (ukaiMentorIds.length === 0) return
+    startTransition(async () => {
+      // Sengaja tanpa subClassId: penugasan di level kelas induk
+      const res = await assignMultipleMentors(kelas.id, ukaiMentorIds)
+      if (res.error) {
+        showFeedback('', res.error)
+      } else {
+        showFeedback(res.success || 'Mentor kelas berhasil ditugaskan!', '')
+        setUkaiMentorIds([])
+        setUkaiMentorSearch('')
+      }
+    })
+  }
+
   const handleRemoveMentor = (assignmentId: string) => {
     startTransition(async () => {
       const res = await removeMentor(assignmentId)
@@ -430,7 +451,7 @@ export default function ClassManager({
     e.preventDefault()
     if (!uploadTitle || !selectedFile) return
     if (selectedFile.size > 50 * 1024 * 1024) {
-      alert(`File terlalu besar! Maks 50MB. File kamu: ${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`)
+      notify.error(`File terlalu besar! Maks 50MB. File kamu: ${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`)
       return
     }
 
@@ -598,7 +619,7 @@ export default function ClassManager({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 bg-brand-blue/10 text-brand-blue text-[10px] font-bold rounded-full uppercase tracking-wider">
-                    {kelas.level 
+                    {kelas.level && !isUkai
                       ? (kelas.title?.startsWith('Pharmacamp') 
                           ? `${attendanceSessions.filter(s => s.sub_class_id === null).length} dari ${kelas.level} Hari Terbuat` 
                           : `${kelas.level} Sesi`)
@@ -683,6 +704,7 @@ export default function ClassManager({
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+                {!isUkai && (
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-brand-dark uppercase">Jumlah Pertemuan/Hari</label>
                   <input
@@ -694,6 +716,7 @@ export default function ClassManager({
                     required
                   />
                 </div>
+                )}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-brand-dark uppercase">Harga Kelas (IDR)</label>
                   <input
@@ -739,6 +762,128 @@ export default function ClassManager({
           )}
         </div>
 
+        {/* UKAI: Mentor kelas induk — mengelola semua sub kelas (e-book, assign siswa, tryout, bank soal) */}
+        {isUkai && (() => {
+          const ukaiMentors = kelas.class_mentors.filter(m => !m.sub_class_id)
+          const ukaiAssignedIds = new Set(ukaiMentors.map(m => m.mentor_id))
+          const ukaiSearch = ukaiMentorSearch.toLowerCase()
+          const ukaiAssignable = sortedMentors
+            .filter(m => !ukaiAssignedIds.has(m.id))
+            .filter(m => (m.full_name || '').toLowerCase().includes(ukaiSearch) || (m.email || '').toLowerCase().includes(ukaiSearch))
+          return (
+            <div className="bg-white rounded-[32px] shadow-card border border-gray-100 p-6 md:p-8 space-y-5">
+              <div>
+                <h3 className="font-heading font-bold text-lg text-brand-dark">Mentor Kelas</h3>
+                <p className="text-xs text-brand-gray">
+                  Mentor di sini mengelola semua sub kelas UKAI: upload e-book, assign siswa, tryout, dan bank soal.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <form onSubmit={handleAddUkaiMentorSubmit} className="lg:col-span-5 bg-gray-50 p-5 rounded-2xl border border-gray-100 h-fit space-y-3">
+                  <input
+                    type="text"
+                    value={ukaiMentorSearch}
+                    onChange={(e) => setUkaiMentorSearch(e.target.value)}
+                    placeholder="Cari nama atau email mentor..."
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white"
+                    disabled={isPending}
+                  />
+                  {ukaiAssignable.length > 0 && (
+                    <div className="flex items-center justify-between text-[10px] font-bold">
+                      <span className="text-brand-gray uppercase">Pilih Mentor ({ukaiMentorIds.length} terpilih)</span>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setUkaiMentorIds(Array.from(new Set([...ukaiMentorIds, ...ukaiAssignable.map(m => m.id)])))}
+                          className="text-brand-blue hover:underline"
+                        >
+                          Pilih semua
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUkaiMentorIds([])}
+                          disabled={ukaiMentorIds.length === 0}
+                          className="text-gray-400 hover:underline disabled:opacity-40"
+                        >
+                          Hapus pilihan
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="border border-gray-200 rounded-xl max-h-48 overflow-y-auto bg-white">
+                    {ukaiAssignable.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic py-4 text-center">
+                        {ukaiMentorSearch ? 'Tidak ada mentor yang cocok.' : 'Semua mentor sudah ditugaskan.'}
+                      </p>
+                    ) : (
+                      <div className="p-2 space-y-1">
+                        {ukaiAssignable.map((m) => {
+                          const isSelected = ukaiMentorIds.includes(m.id)
+                          return (
+                            <label
+                              key={m.id}
+                              className={`p-2 rounded-lg cursor-pointer text-sm flex items-center gap-3 transition-colors ${isSelected ? 'bg-brand-blue/10 border border-brand-blue' : 'hover:bg-gray-50 border border-transparent'}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => setUkaiMentorIds(prev => isSelected ? prev.filter(id => id !== m.id) : [...prev, m.id])}
+                                className="w-4 h-4 flex-shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <p className="font-bold text-brand-dark truncate text-xs">{m.full_name || 'Tanpa Nama'}</p>
+                                <p className="text-[10px] text-gray-500 truncate">{m.email}</p>
+                              </div>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isPending || ukaiMentorIds.length === 0}
+                    className="w-full flex items-center justify-center gap-2 bg-brand-darkblue text-white py-2.5 rounded-xl text-xs font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
+                  >
+                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    Tugaskan {ukaiMentorIds.length > 0 ? `${ukaiMentorIds.length} Mentor` : 'Mentor'}
+                  </button>
+                </form>
+
+                <div className="lg:col-span-7 space-y-2">
+                  <p className="text-xs font-bold text-brand-gray uppercase tracking-wider">Mentor Ditugaskan ({ukaiMentors.length})</p>
+                  {ukaiMentors.length === 0 ? (
+                    <p className="text-sm text-gray-400 italic py-8 text-center bg-gray-50 rounded-2xl">Belum ada mentor di kelas ini.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                      {ukaiMentors.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between p-3.5 bg-white rounded-2xl border border-gray-100 hover:border-brand-blue/20 transition-colors">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-9 h-9 bg-blue-50 text-brand-blue rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0">
+                              {item.profiles?.full_name?.[0] || 'M'}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-brand-dark truncate">{item.profiles?.full_name || 'Tanpa Nama'}</p>
+                              <p className="text-xs text-gray-400 truncate">{item.profiles?.email}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setConfirmDeleteMentor({ isOpen: true, id: item.id })}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                            title="Lepas mentor dari kelas ini"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
         {/* BOTTOM SECTION: Two Columns */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* LEFT COLUMN: Sub Classes Cards */}
@@ -773,23 +918,29 @@ export default function ClassManager({
                     <h4 className="font-bold text-brand-dark text-base line-clamp-2">
                       {sub.title}
                     </h4>
-                    {(() => {
+                    {isUkai ? (
+                      <p className="text-xs text-brand-gray line-clamp-2 mt-1">
+                        {sub.description || 'Belum ada deskripsi.'}
+                      </p>
+                    ) : (() => {
                       const subSessions = attendanceSessions.filter(s => s.sub_class_id === sub.id)
                       return (
                         <p className="text-[10px] text-brand-blue font-bold mt-1">
-                          {subSessions.length} dari {kelas.level || '-'} Sesi Terbuat
+                          {!kelas.level ? `${subSessions.length} Sesi Terbuat` : `${subSessions.length} dari ${kelas.level} Sesi Terbuat`}
                         </p>
                       )
                     })()}
-                    <div className="grid grid-cols-3 gap-2 mt-2 pt-3 border-t border-gray-50 text-[10px] font-bold text-brand-gray text-center">
+                    <div className={`grid ${isUkai ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-2 pt-3 border-t border-gray-50 text-[10px] font-bold text-brand-gray text-center`}>
                       <div className="bg-gray-50 p-2 rounded-xl">
                         <span className="block text-brand-dark text-sm">{studCount}</span>
                         Siswa
                       </div>
+                      {!isUkai && (
                       <div className="bg-gray-50 p-2 rounded-xl">
                         <span className="block text-brand-dark text-sm">{mentCount}</span>
                         Mentor
                       </div>
+                      )}
                       <div className="bg-gray-50 p-2 rounded-xl">
                         <span className="block text-brand-dark text-sm">{resCount}</span>
                         E-Book
@@ -957,12 +1108,14 @@ export default function ClassManager({
                             <p className="text-xs text-brand-gray mt-1">Dibuat pada {new Date(selectedSubClass.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             
                             <div className="flex flex-wrap gap-2 mt-3">
+                              {!isUkai && (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-pink/10 border border-brand-pink/20 text-brand-pink text-xs font-bold rounded-full">
                                 📊 {(() => {
                                   const subSessions = attendanceSessions.filter(s => s.sub_class_id === selectedSubClass.id)
-                                  return `${subSessions.length} dari ${kelas.level || '-'} Sesi Terbuat`
+                                  return !kelas.level ? `${subSessions.length} Sesi Terbuat` : `${subSessions.length} dari ${kelas.level} Sesi Terbuat`
                                 })()}
                               </span>
+                              )}
                               {selectedSubClass.session_offset > 0 && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-full">
                                   ⚡ Mulai dari Sesi {selectedSubClass.session_offset + 1} (offset: {selectedSubClass.session_offset} sesi manual)
@@ -1860,6 +2013,7 @@ export default function ClassManager({
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
+                  {!isUkai && (
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-brand-dark uppercase">
                       {kelas.title?.startsWith('Pharmacamp') ? 'Jumlah Hari' : 'Jumlah Pertemuan'}
@@ -1873,6 +2027,7 @@ export default function ClassManager({
                       required
                     />
                   </div>
+                  )}
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-brand-dark uppercase">Harga Kelas (IDR)</label>
                     <input

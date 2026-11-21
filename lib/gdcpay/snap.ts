@@ -289,3 +289,63 @@ export async function checkQRISStatus(partnerReferenceNo: string) {
   return await res.json()
 }
 
+
+/**
+ * Generic SNAP caller yang mengembalikan request + response lengkap (untuk dokumentasi UAT).
+ * - skipAuth      : untuk endpoint access-token (tanpa Bearer / symmetric signature)
+ * - signatureOverride / accessTokenOverride : untuk skenario negatif (signature salah, token expired)
+ */
+export async function callSnap({
+  endpoint,
+  body,
+  accessToken,
+  signatureOverride,
+  clientIdOverride,
+  skipAuth = false,
+  signEndpointPrefix = ''
+}: {
+  endpoint: string
+  body: any
+  accessToken?: string
+  signatureOverride?: string
+  clientIdOverride?: string
+  skipAuth?: boolean
+  signEndpointPrefix?: string
+}) {
+  const url = `${gdcpayConfig.baseUrl.replace(/\/$/, '')}${endpoint}`
+  const timestamp = getSnapTimestamp()
+  const bodyString = JSON.stringify(body)
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', 'X-TIMESTAMP': timestamp }
+
+  if (skipAuth) {
+    const clientId = clientIdOverride || gdcpayConfig.clientId
+    headers['X-CLIENT-KEY'] = clientId
+    headers['X-SIGNATURE'] =
+      signatureOverride ?? generateAsymmetricSignature(clientId, timestamp, gdcpayConfig.getPrivateKey())
+  } else {
+    headers['Authorization'] = `Bearer ${accessToken}`
+    headers['X-PARTNER-ID'] = gdcpayConfig.partnerId
+    headers['X-EXTERNAL-ID'] = Date.now().toString() + Math.floor(Math.random() * 1000)
+    headers['CHANNEL-ID'] = '95221'
+    headers['X-SIGNATURE'] =
+      signatureOverride ??
+      generateSymmetricSignature({
+        httpMethod: 'POST',
+        endpointUrl: signEndpointPrefix + endpoint,
+        accessToken: accessToken || '',
+        requestBody: bodyString,
+        timestamp,
+        clientSecret: gdcpayConfig.clientSecret
+      })
+  }
+
+  const res = await fetch(url, { method: 'POST', headers, body: bodyString })
+  const text = await res.text()
+  let json: any
+  try { json = JSON.parse(text) } catch { json = text }
+
+  return {
+    request: { method: 'POST', url, headers, body },
+    response: { httpStatus: res.status, body: json }
+  }
+}

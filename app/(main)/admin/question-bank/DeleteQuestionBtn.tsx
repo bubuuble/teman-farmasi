@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { deleteQuestion } from './actions'
+import { confirmDialog, notify } from '@/app/components/Feedback'
 
 export default function DeleteQuestionBtn({
   questionId,
@@ -14,15 +15,20 @@ export default function DeleteQuestionBtn({
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
-    if (!confirm('Apakah Anda yakin ingin menghapus butir soal ini?')) {
-      return
-    }
+    const ok = await confirmDialog({
+      title: 'Hapus Soal',
+      message: 'Apakah Anda yakin ingin menghapus butir soal ini?',
+      confirmText: 'Ya, Hapus',
+      variant: 'danger',
+    })
+    if (!ok) return
 
     setIsDeleting(true)
     try {
       await deleteQuestion(questionId, categoryId)
+      notify.success('Soal berhasil dihapus')
     } catch (e: any) {
-      alert(e.message || 'Gagal menghapus soal')
+      notify.error(e.message || 'Gagal menghapus soal')
     } finally {
       setIsDeleting(false)
     }

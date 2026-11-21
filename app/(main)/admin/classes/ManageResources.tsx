@@ -1,4 +1,5 @@
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState, useActionState, useRef } from 'react'
 import { FileText, X, Upload, Trash2, Download, Loader2 } from 'lucide-react'
@@ -70,7 +71,7 @@ export default function ManageResources({
     if (file) {
       if (file.size > MAX_FILE_SIZE) {
         e.preventDefault()
-        alert(`File terlalu besar! Maksimal ukuran adalah 50MB. File Anda: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+        notify.error(`File terlalu besar! Maksimal ukuran adalah 50MB. File Anda: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
         return
       }
       setSelectedFile(file)

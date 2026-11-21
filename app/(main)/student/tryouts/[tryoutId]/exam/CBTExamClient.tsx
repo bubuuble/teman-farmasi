@@ -1,7 +1,9 @@
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { 
   Clock, 
   ChevronRight, 
@@ -96,6 +98,14 @@ export default function CBTExamClient({
     for (let i = 0; i < currentIndex; i++) if (!locked.has(questions[i].id)) return i
     return -1
   }
+
+  // Sinkronkan state fullscreen dengan browser (termasuk saat keluar via tombol Esc)
+  useEffect(() => {
+    const sync = () => setIsFullscreen(!!document.fullscreenElement)
+    sync()
+    document.addEventListener('fullscreenchange', sync)
+    return () => document.removeEventListener('fullscreenchange', sync)
+  }, [])
 
   // 1. COUNTDOWN TIMER
   useEffect(() => {
@@ -201,9 +211,11 @@ export default function CBTExamClient({
     setIsSubmitting(true)
     try {
       await submitTryoutAttempt(attemptId)
+      // Keluar dari layar penuh hanya jika sedang layar penuh
+      if (document.fullscreenElement) await document.exitFullscreen().catch(() => {})
       router.push(`/student/tryouts/${tryout.id}/result`)
     } catch (e: any) {
-      alert(e.message || "Gagal submit tryout")
+      notify.error(e.message || "Gagal submit tryout")
       setIsSubmitting(false)
     }
   }
@@ -219,10 +231,8 @@ export default function CBTExamClient({
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {})
-      setIsFullscreen(true)
     } else {
       document.exitFullscreen().catch(() => {})
-      setIsFullscreen(false)
     }
   }
 
@@ -242,11 +252,17 @@ export default function CBTExamClient({
   return (
     <div className="fixed inset-0 z-50 bg-[#F8FAFC] flex flex-col font-sans select-none overflow-hidden">
       {/* ── TOPBAR CBT ── */}
-      <header className="h-16 bg-white border-b border-gray-200 px-4 sm:px-8 flex items-center justify-between shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-brand-dark flex items-center justify-center font-extrabold text-brand-yellow text-sm">
-            TF
-          </span>
+      <header className="h-16 bg-gradient-to-r from-brand-cream via-white to-white border-b-[3px] border-brand-pink px-4 sm:px-8 flex items-center justify-between shrink-0 shadow-sm">
+        <div className="flex items-center gap-4">
+          <Image
+            src="/images/logos/logo_5.png"
+            alt="Teman Farmasi"
+            width={120}
+            height={40}
+            priority
+            className="h-9 w-auto object-contain"
+          />
+          <span className="hidden sm:block w-px h-8 bg-brand-dark/15" />
           <div>
             <h1 className="font-extrabold text-brand-dark text-sm sm:text-base line-clamp-1 max-w-xs sm:max-w-md">
               {tryout.title}
@@ -272,8 +288,12 @@ export default function CBTExamClient({
 
           <button
             onClick={toggleFullscreen}
-            className="p-2 text-gray-500 hover:text-brand-dark hover:bg-gray-100 rounded-xl transition hidden sm:block"
-            title="Toggle Fullscreen"
+            className={`p-2 rounded-xl transition hidden sm:block ${
+              isFullscreen
+                ? 'text-gray-500 hover:text-brand-dark hover:bg-gray-100'
+                : 'bg-brand-pink text-white shadow-md shadow-brand-pink/30 ring-4 ring-brand-pink/20 animate-pulse hover:bg-brand-dark'
+            }`}
+            title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -290,7 +310,7 @@ export default function CBTExamClient({
       {/* ── MAIN WORKSPACE ── */}
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT / CENTER: QUESTION AREA */}
-        <main className="flex-1 flex flex-col overflow-y-auto p-4 sm:p-8 max-w-5xl mx-auto w-full">
+        <main className="tf-scroll flex-1 flex flex-col overflow-y-auto p-4 sm:p-6 max-w-5xl mx-auto w-full" style={{ zoom: 0.85 }}>
           {/* QUESTION HEADER */}
           <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-6 shrink-0">
             <div className="flex items-center gap-3">
@@ -473,7 +493,7 @@ export default function CBTExamClient({
           </div>
 
           {/* NUMBER BUTTONS GRID */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="tf-scroll flex-1 overflow-y-auto p-4">
             <div className="grid grid-cols-5 gap-2.5">
               {questions.map((q, idx) => {
                 const ans = answers[q.id]

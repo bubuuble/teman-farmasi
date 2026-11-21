@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { deleteTryout } from './actions'
+import { confirmDialog, notify } from '@/app/components/Feedback'
 
 export default function DeleteTryoutBtn({
   tryoutId,
@@ -14,15 +15,20 @@ export default function DeleteTryoutBtn({
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
-    if (!confirm(`Hapus paket ujian "${tryoutTitle}"? Semua data attempt dan jawaban siswa akan ikut terhapus.`)) {
-      return
-    }
+    const ok = await confirmDialog({
+      title: 'Hapus Paket Ujian',
+      message: `Hapus paket ujian "${tryoutTitle}"? Semua data attempt dan jawaban siswa akan ikut terhapus.`,
+      confirmText: 'Ya, Hapus',
+      variant: 'danger',
+    })
+    if (!ok) return
 
     setIsDeleting(true)
     try {
       await deleteTryout(tryoutId)
+      notify.success('Paket ujian berhasil dihapus')
     } catch (e: any) {
-      alert(e.message || 'Gagal menghapus tryout')
+      notify.error(e.message || 'Gagal menghapus tryout')
     } finally {
       setIsDeleting(false)
     }

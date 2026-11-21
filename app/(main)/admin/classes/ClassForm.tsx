@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useActionState, useEffect } from 'react'
+import { notify } from '@/app/components/Feedback'
 import { Plus, X, Pencil } from 'lucide-react'
 import { createClass, updateClass, type ActionState } from './actions'
 
@@ -110,10 +111,16 @@ export default function ClassForm({
     setIsOpen(true)
   }
 
-  if (state?.success && isOpen) {
-    setIsOpen(false)
-    window.location.reload()
-  }
+  // Data refresh otomatis lewat revalidatePath di server action
+  useEffect(() => {
+    if (state?.success) {
+      setIsOpen(false)
+      notify.success(state.success)
+    }
+  }, [state])
+
+  // UKAI Series: harga per paket diatur di Sanity & kelas dibagi lewat sub kelas
+  const isUkaiProgram = selectedProgram.startsWith('UKAI Series')
 
   // Gabungkan nama program + nomor kelas sebagai title
   const composedTitle = classNumber
@@ -181,6 +188,7 @@ export default function ClassForm({
               </div>
 
               {/* NOMOR KELAS (misal: 1, 2, 3 → jadi "Pharma Research 1") */}
+              {!isUkaiProgram && (
               <div className="space-y-1">
                 <label className="text-xs font-bold text-brand-dark uppercase">
                   Nomor Kelas <span className="text-brand-gray font-normal normal-case">(opsional, misal: 1 → &quot;{selectedProgram || 'Program'} 1&quot;)</span>
@@ -198,9 +206,18 @@ export default function ClassForm({
                   </p>
                 )}
               </div>
+              )}
+
+              {isUkaiProgram && (
+                <div className="p-3 rounded-xl bg-brand-blue/10 border border-brand-blue/20 text-xs text-brand-dark leading-relaxed">
+                  Harga paket (Private, Reguler, Tryout CBT) diatur di <strong>Sanity</strong>.
+                  Kelas ini hanya sebagai kelas utama (info kelas). Penambahan siswa, modul, dan tryout dilakukan di <strong>Sub Kelas</strong>.
+                </div>
+              )}
 
               {/* JUMLAH PERTEMUAN + HARGA */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className={isUkaiProgram ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-2 gap-4'}>
+                {!isUkaiProgram && (
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-brand-dark uppercase">
                     {composedTitle?.startsWith('Pharmacamp') ? 'Jumlah Hari' : 'Jumlah Pertemuan'}
@@ -215,6 +232,10 @@ export default function ClassForm({
                     required
                   />
                 </div>
+                )}
+                {isUkaiProgram ? (
+                  <input type="hidden" name="price" value={existingData?.price || 0} />
+                ) : (
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-brand-dark uppercase">Harga (Rp)</label>
                   <input
@@ -224,6 +245,7 @@ export default function ClassForm({
                     className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-brand-blue"
                   />
                 </div>
+                )}
               </div>
 
               {/* DESKRIPSI (auto-fill, bisa diedit) */}

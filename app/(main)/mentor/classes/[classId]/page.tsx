@@ -5,6 +5,10 @@ import SessionForm from "./SessionForm"
 import MentorManageResources from "./MentorManageResources"
 import DeleteSessionButton from "./DeleteSessionButton"
 import AbsenButton from "./AbsenButton"
+import MentorAssignStudents from "./MentorAssignStudents"
+import { notFound } from "next/navigation"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { hasMentorAccess, isUkaiTitle } from "@/lib/mentor-access"
 
 // --- DEFINISI TIPE DATA ---
 type Session = {
@@ -33,6 +37,11 @@ export default async function MentorClassDetailPage({
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) return null
+
+  // Guard: mentor kelas utama boleh ke semua sub kelas, mentor sub kelas hanya sub kelasnya
+  if (!(await hasMentorAccess(supabase, user.id, classId, subClassId))) {
+    notFound()
+  }
 
   // 1. Detail kelas
   const { data: kelas } = await supabase
@@ -125,6 +134,30 @@ export default async function MentorClassDetailPage({
         .eq('sub_class_id', subClassId)
       students = (rawAssignments as unknown as AssignedStudent[]) || []
     }
+  }
+
+  // 5. Assign siswa per sub kelas (khusus UKAI).
+  // Daftar kandidat memakai service role karena RLS profiles hanya menampilkan siswa
+  // yang sudah terdaftar di kelas mentor; akses sudah dijaga hasMentorAccess di atas.
+  let assignCandidates: { id: string; full_name: string | null; email: string | null }[] = []
+  let subClassEnrolled: { enrollmentId: string; student: { id: string; full_name: string | null; email: string | null } }[] = []
+
+  const isUkai = isUkaiTitle(kelas?.title)
+
+  if (subClassId && isUkai && subClassData) {
+    const admin = createAdminClient()
+    const [{ data: studentProfiles }, { data: subEnrollments }] = await Promise.all([
+      admin.from('profiles').select('id, full_name, email').eq('role', 'student').order('full_name', { ascending: true }),
+      admin
+        .from('enrollments')
+        .select('id, student_id, profiles:student_id ( id, full_name, email )')
+        .eq('class_id', classId)
+        .eq('sub_class_id', subClassId),
+    ])
+    assignCandidates = studentProfiles ?? []
+    subClassEnrolled = ((subEnrollments ?? []) as unknown as { id: string; profiles: { id: string; full_name: string | null; email: string | null } | null }[])
+      .filter(e => e.profiles)
+      .map(e => ({ enrollmentId: e.id, student: e.profiles! }))
   }
 
   const availableStudents = students.map(s => ({
@@ -336,6 +369,16 @@ export default async function MentorClassDetailPage({
         <div className="space-y-8">
 
           <MentorManageResources classId={classId} subClassId={subClassId} resources={resources} />
+
+          {subClassId && isUkai && subClassData && (
+            <MentorAssignStudents
+              classId={classId}
+              subClassId={subClassId}
+              subClassTitle={subClassData.title}
+              candidates={assignCandidates}
+              enrolled={subClassEnrolled}
+            />
+          )}
 
           <section className="space-y-4">
             <div className="flex items-center justify-between px-2">

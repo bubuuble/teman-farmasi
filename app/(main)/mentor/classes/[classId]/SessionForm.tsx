@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useActionState } from 'react'
+import { useState, useEffect, useActionState } from 'react'
+import { notify } from '@/app/components/Feedback'
 import { Plus, X, Pencil } from 'lucide-react'
 import { createSession, updateSession, type ActionState } from '../actions'
 
@@ -33,10 +34,12 @@ export default function SessionForm({
   const actionToUse = existingData ? updateSession : createSession
   const [state, formAction, isPending] = useActionState(actionToUse, initialState)
 
-  if (state?.success && isOpen) {
-    setIsOpen(false)
-    window.location.reload()
-  }
+  useEffect(() => {
+    if (state?.success) {
+      setIsOpen(false)
+      notify.success(state.success)
+    }
+  }, [state])
 
   // Helper untuk parsing ISO string ke format input date dengan timezone lokal
   const getDefaultDate = () => {

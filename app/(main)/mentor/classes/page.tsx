@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { BookOpen, ArrowRight, Users } from "lucide-react"
 import Link from "next/link"
+import { isUkaiTitle } from "@/lib/mentor-access"
 
 type AssignedClass = {
   class_id: string
@@ -40,7 +41,45 @@ export default async function MentorClassesPage() {
     `)
     .eq('mentor_id', user.id)
 
-  const assignments = (rawAssignments as unknown as AssignedClass[]) || []
+  const rawList = (rawAssignments as unknown as AssignedClass[]) || []
+
+  // Khusus UKAI: mentor yang ditugaskan di kelas induk otomatis mengampu semua sub kelasnya,
+  // jadi tampilkan satu kartu per sub kelas. Program lain tetap satu kartu per penugasan.
+  const classLevelIds = rawList
+    .filter(a => !a.sub_class_id && isUkaiTitle(a.classes?.title))
+    .map(a => a.class_id)
+
+  const { data: allSubClasses } = classLevelIds.length > 0
+    ? await supabase.from('sub_classes').select('id, class_id, title').in('class_id', classLevelIds).order('created_at', { ascending: true })
+    : { data: [] as { id: string; class_id: string; title: string }[] }
+
+  type CardItem = AssignedClass & { derived?: boolean }
+  const cards: CardItem[] = []
+  const seen = new Set<string>()
+  const pushCard = (item: CardItem) => {
+    const key = `${item.class_id}-${item.sub_class_id ?? 'main'}`
+    if (seen.has(key)) return
+    seen.add(key)
+    cards.push(item)
+  }
+
+  // Penugasan spesifik sub kelas dulu supaya tidak tertimpa kartu turunan
+  rawList.filter(a => a.sub_class_id).forEach(a => pushCard(a))
+  rawList.filter(a => !a.sub_class_id).forEach(a => {
+    const subs = (allSubClasses ?? []).filter(s => s.class_id === a.class_id)
+    if (subs.length === 0) {
+      pushCard(a)
+    } else {
+      subs.forEach(s => pushCard({
+        ...a,
+        sub_class_id: s.id,
+        sub_classes: { id: s.id, title: s.title },
+        derived: true,
+      }))
+    }
+  })
+
+  const assignments = cards
 
   // Ambil jumlah student yang di-assign ke mentor ini per sub_class
   const { data: myStudentAssignments } = await supabase
@@ -68,6 +107,10 @@ export default async function MentorClassesPage() {
     return enrollments?.filter(e => e.class_id === classId && e.sub_class_id === null).length || 0
   }
 
+  const getSubClassEnrollmentCount = (classId: string, subClassId: string | null) => {
+    return enrollments?.filter(e => e.class_id === classId && e.sub_class_id === subClassId).length || 0
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -87,7 +130,9 @@ export default async function MentorClassesPage() {
           // Student count logic
           const studentCount = isPharmacamp
             ? getPharmaStudentCount(item.class_id)
-            : getMyStudentCount(item.class_id, item.sub_class_id)
+            : item.derived
+              ? getSubClassEnrollmentCount(item.class_id, item.sub_class_id)
+              : getMyStudentCount(item.class_id, item.sub_class_id)
 
           const displayTitle = kelas.title
           const displaySubtitle = isSubClass ? `Peminatan: ${subKelas?.title}` : "Program Utama"
@@ -118,7 +163,7 @@ export default async function MentorClassesPage() {
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                  <div className="flex items-center gap-1.5 text-xs font-semibold text-brand-dark bg-green-50 px-2.5 py-1.5 rounded-lg">
                    <Users className="w-3.5 h-3.5 text-green-600" />
-                   {studentCount} Student {isPharmacamp ? '' : 'Saya'}
+                   {studentCount} Student {isPharmacamp || item.derived ? '' : 'Saya'}
                  </div>
                  
                  <Link 

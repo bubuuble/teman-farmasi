@@ -1,23 +1,24 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { 
-  BookOpen, 
-  Settings, 
-  Filter,
+import {
+  BookOpen,
   Layers,
   Search,
   BookOpenCheck,
   Trophy,
   Sparkles,
   ChevronDown,
+  ChevronRight,
   X,
   GraduationCap,
-  Award
+  Award,
+  UserX,
 } from "lucide-react"
 import Link from "next/link"
-import ClassForm, { PROGRAMS } from "./ClassForm"
+import ClassForm from "./ClassForm"
 import { formatRupiah } from "@/lib/currency"
+import { getCategoryOfClass } from "@/lib/class-programs"
 
 type ClassWithRelations = {
   id: string
@@ -30,141 +31,115 @@ type ClassWithRelations = {
   class_resources: any[]
 }
 
-// Helper untuk menentukan kategori berdasarkan title
-function getCategoryOfClass(title: string): string {
-  const programs = PROGRAMS.map(p => p.value).sort((a, b) => b.length - a.length)
-  for (const p of programs) {
-    if (title.startsWith(p)) {
-      if (p === 'PharmaCore Class') {
-        if (title.toLowerCase().includes('private')) {
-          return 'PharmaCore Class (Private)'
-        }
-        if (title.toLowerCase().includes('group') || title.toLowerCase().includes('grup')) {
-          return 'PharmaCore Class (Group)'
-        }
-      }
-      return p
-    }
-  }
-  return 'Lainnya'
-}
-
-// Meta visual untuk masing-masing kategori
-const CATEGORY_META: Record<string, { 
-  label: string; 
-  icon: React.ComponentType<{ className?: string }>; 
-  borderColor: string; 
-  badgeBg: string;
-  badgeText: string;
-  textColor: string;
+// Meta visual per program: ikon + warna aksen supaya tiap program mudah dikenali
+const CATEGORY_META: Record<string, {
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  badgeBg: string
+  badgeText: string
+  accent: string
 }> = {
-  'PharmaCore Class (Private)': {
-    label: 'PharmaCore Class (Private)',
-    icon: BookOpen,
-    borderColor: 'hover:border-brand-blue/30',
-    badgeBg: 'bg-brand-blue/10',
-    badgeText: 'text-brand-blue',
-    textColor: 'text-brand-blue'
-  },
-  'PharmaCore Class (Group)': {
-    label: 'PharmaCore Class (Group)',
-    icon: BookOpen,
-    borderColor: 'hover:border-indigo-500/30',
-    badgeBg: 'bg-indigo-50',
-    badgeText: 'text-indigo-700',
-    textColor: 'text-indigo-700'
-  },
-  'PharmaCore Class': {
-    label: 'PharmaCore Class',
-    icon: BookOpen,
-    borderColor: 'hover:border-brand-blue/30',
-    badgeBg: 'bg-brand-blue/10',
-    badgeText: 'text-brand-blue',
-    textColor: 'text-brand-blue'
-  },
-  'Pharma Research Mentoring': {
-    label: 'Pharma Research Mentoring',
-    icon: Search,
-    borderColor: 'hover:border-brand-pink/30',
-    badgeBg: 'bg-brand-pink/10',
-    badgeText: 'text-brand-pink',
-    textColor: 'text-brand-pink'
-  },
-  'PharmaPublish Academy': {
-    label: 'PharmaPublish Academy',
-    icon: BookOpenCheck,
-    borderColor: 'hover:border-emerald-500/30',
-    badgeBg: 'bg-emerald-50',
-    badgeText: 'text-emerald-700',
-    textColor: 'text-emerald-700'
-  },
-  'Pharma Impact': {
-    label: 'Pharma Impact',
-    icon: Trophy,
-    borderColor: 'hover:border-amber-500/30',
-    badgeBg: 'bg-amber-50',
-    badgeText: 'text-amber-700',
-    textColor: 'text-amber-700'
-  },
-  'Pharmacamp': {
-    label: 'Pharmacamp',
-    icon: Sparkles,
-    borderColor: 'hover:border-brand-purple/30',
-    badgeBg: 'bg-brand-purple/10',
-    badgeText: 'text-brand-purple',
-    textColor: 'text-brand-purple'
-  },
-  'UKAI Series - Masuk Apoteker': {
-    label: 'UKAI Series - Masuk Apoteker',
-    icon: GraduationCap,
-    borderColor: 'hover:border-orange-500/30',
-    badgeBg: 'bg-orange-50',
-    badgeText: 'text-orange-700',
-    textColor: 'text-orange-700'
-  },
-  'UKAI Series - Kelas UKMPPAI': {
-    label: 'UKAI Series - Kelas UKMPPAI',
-    icon: Award,
-    borderColor: 'hover:border-rose-500/30',
-    badgeBg: 'bg-rose-50',
-    badgeText: 'text-rose-700',
-    textColor: 'text-rose-700'
-  },
-  'Lainnya': {
-    label: 'Program Lainnya',
-    icon: Layers,
-    borderColor: 'hover:border-gray-300',
-    badgeBg: 'bg-gray-100',
-    badgeText: 'text-gray-700',
-    textColor: 'text-brand-dark'
-  }
+  'PharmaCore Class (Private)': { label: 'PharmaCore Class (Private)', icon: BookOpen, badgeBg: 'bg-brand-blue/10', badgeText: 'text-brand-blue', accent: 'border-brand-blue' },
+  'PharmaCore Class (Group)': { label: 'PharmaCore Class (Group)', icon: BookOpen, badgeBg: 'bg-indigo-50', badgeText: 'text-indigo-700', accent: 'border-indigo-400' },
+  'PharmaCore Class': { label: 'PharmaCore Class', icon: BookOpen, badgeBg: 'bg-brand-blue/10', badgeText: 'text-brand-blue', accent: 'border-brand-blue' },
+  'Pharma Research Mentoring': { label: 'Pharma Research Mentoring', icon: Search, badgeBg: 'bg-brand-pink/10', badgeText: 'text-brand-pink', accent: 'border-brand-pink' },
+  'PharmaPublish Academy': { label: 'PharmaPublish Academy', icon: BookOpenCheck, badgeBg: 'bg-emerald-50', badgeText: 'text-emerald-700', accent: 'border-emerald-400' },
+  'Pharma Impact': { label: 'Pharma Impact', icon: Trophy, badgeBg: 'bg-amber-50', badgeText: 'text-amber-700', accent: 'border-amber-400' },
+  'Pharmacamp': { label: 'Pharmacamp', icon: Sparkles, badgeBg: 'bg-brand-purple/10', badgeText: 'text-brand-purple', accent: 'border-brand-purple' },
+  'UKAI Series - Masuk Apoteker': { label: 'UKAI Series - Masuk Apoteker', icon: GraduationCap, badgeBg: 'bg-orange-50', badgeText: 'text-orange-700', accent: 'border-orange-400' },
+  'UKAI Series - Kelas UKMPPAI': { label: 'UKAI Series - Kelas UKMPPAI', icon: Award, badgeBg: 'bg-rose-50', badgeText: 'text-rose-700', accent: 'border-rose-400' },
+  'Lainnya': { label: 'Program Lainnya', icon: Layers, badgeBg: 'bg-gray-100', badgeText: 'text-gray-700', accent: 'border-gray-300' },
 }
 
-export default function ClassListClient({ initialClasses }: { initialClasses: ClassWithRelations[] }) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [searchQuery, setSearchQuery] = useState<string>('')
+// Kelas yang sudah punya siswa tapi belum ada mentor
+const needsMentor = (c: ClassWithRelations) =>
+  (c.enrollments?.length || 0) > 0 && (c.class_mentors?.length || 0) === 0
 
-  // Restore category filter from sessionStorage on mount
+function meetingLabel(category: string, level: string | null) {
+  if (!level) return null
+  return category === 'Pharmacamp' ? `${level} hari` : `${level}x pertemuan`
+}
+
+// Ringkasan angka sebagai pill: yang berisi berwarna, yang kosong abu-abu
+const STAT_TONE = {
+  mentor: 'bg-brand-cream text-brand-dark',
+  siswa: 'bg-green-50 text-green-700',
+  materi: 'bg-purple-50 text-purple-700',
+} as const
+
+function StatPill({
+  label,
+  value,
+  tone,
+  warn = false,
+}: {
+  label: string
+  value: number
+  tone: keyof typeof STAT_TONE
+  warn?: boolean
+}) {
+  const base = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold'
+  if (warn) {
+    return (
+      <span className={`${base} bg-amber-100 text-amber-800`} title="Sudah ada siswa, belum ada mentor">
+        <UserX className="w-3 h-3" aria-hidden />
+        Belum ada mentor
+      </span>
+    )
+  }
+  return (
+    <span className={`${base} ${value === 0 ? 'bg-gray-50 text-gray-400' : STAT_TONE[tone]}`}>
+      <span className="font-bold">{value}</span> {label}
+    </span>
+  )
+}
+
+/**
+ * fixedCategory: jika diisi, komponen menampilkan satu program saja (halaman per program di sidebar):
+ * tanpa chip filter, judul memakai nama program, dan kelas tampil sebagai grid kartu.
+ */
+export default function ClassListClient({
+  initialClasses,
+  fixedCategory,
+}: {
+  initialClasses: ClassWithRelations[]
+  fixedCategory?: string
+}) {
+  const [selectedCategory, setSelectedCategory] = useState<string>(fixedCategory ?? 'all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [onlyNeedMentor, setOnlyNeedMentor] = useState(false)
+
+  // Restore category filter from sessionStorage on mount (hanya untuk halaman semua kelas)
   useEffect(() => {
+    if (fixedCategory) return
     const storedCategory = sessionStorage.getItem('admin-classes-category')
     if (storedCategory) {
       setSelectedCategory(storedCategory)
     }
-  }, [])
+  }, [fixedCategory])
 
-  // Filter kelas berdasarkan kata kunci pencarian
-  const filteredClasses = useMemo(() => {
+  const chooseCategory = (value: string) => {
+    setSelectedCategory(value)
+    sessionStorage.setItem('admin-classes-category', value)
+  }
+
+  // Pencarian
+  const searchedClasses = useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
     if (!q) return initialClasses
-
-    return initialClasses.filter((item) => {
-      return (
-        item.title.toLowerCase().includes(q) ||
-        (item.description ?? '').toLowerCase().includes(q) ||
-        (item.level ?? '').toLowerCase().includes(q)
-      )
-    })
+    return initialClasses.filter((item) =>
+      item.title.toLowerCase().includes(q) ||
+      (item.description ?? '').toLowerCase().includes(q) ||
+      (item.level ?? '').toLowerCase().includes(q)
+    )
   }, [initialClasses, searchQuery])
+
+  const needMentorCount = useMemo(() => searchedClasses.filter(needsMentor).length, [searchedClasses])
+
+  const filteredClasses = useMemo(
+    () => (onlyNeedMentor ? searchedClasses.filter(needsMentor) : searchedClasses),
+    [searchedClasses, onlyNeedMentor]
+  )
 
   // Collapsible state per category (default: all open)
   const [collapsedCats, setCollapsedCats] = useState<Record<string, boolean>>({})
@@ -185,51 +160,86 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
       'Pharmacamp': [],
       'UKAI Series - Masuk Apoteker': [],
       'UKAI Series - Kelas UKMPPAI': [],
-      'Lainnya': []
+      'Lainnya': [],
     }
 
-    // Urutkan kelas berdasarkan jumlah pertemuan (level) terkecil - terbesar
-    const sortedClasses = [...filteredClasses].sort((a, b) => {
-      const levelA = Number(a.level) || 0
-      const levelB = Number(b.level) || 0
-      return levelA - levelB
-    })
+    // Urutkan berdasarkan jumlah pertemuan (level) terkecil - terbesar
+    const sortedClasses = [...filteredClasses].sort((a, b) => (Number(a.level) || 0) - (Number(b.level) || 0))
 
     sortedClasses.forEach((item) => {
       const category = getCategoryOfClass(item.title)
-      if (groups[category]) {
-        groups[category].push(item)
-      } else {
-        groups['Lainnya'].push(item)
-      }
+      if (groups[category]) groups[category].push(item)
+      else groups['Lainnya'].push(item)
     })
 
     return groups
   }, [filteredClasses])
 
-  // Menentukan kategori mana saja yang perlu dirender berdasarkan filter
-  const categoriesToRender = useMemo(() => {
-    if (selectedCategory === 'all') {
-      // Hanya tampilkan kategori yang memiliki minimal 1 kelas agar rapi
-      return Object.keys(groupedClasses).filter(cat => groupedClasses[cat].length > 0)
-    }
-    return [selectedCategory]
-  }, [selectedCategory, groupedClasses])
+  // Program yang memang punya kelas (untuk chip), terlepas dari pencarian
+  const existingCategories = useMemo(
+    () => Object.keys(groupedClasses).filter(cat => initialClasses.some(k => getCategoryOfClass(k.title) === cat)),
+    [groupedClasses, initialClasses]
+  )
 
-  const totalClassesCount = initialClasses.length
+  const nonEmptyCategories = useMemo(
+    () => Object.keys(groupedClasses).filter(cat => groupedClasses[cat].length > 0),
+    [groupedClasses]
+  )
+
+  const categoriesToRender = fixedCategory
+    ? [fixedCategory]
+    : selectedCategory === 'all' ? nonEmptyCategories : [selectedCategory]
+
+  const fixedMeta = fixedCategory ? (CATEGORY_META[fixedCategory] || CATEGORY_META['Lainnya']) : null
+  const fixedClasses = fixedCategory ? (groupedClasses[fixedCategory] || []) : []
+  const fixedDescription = fixedCategory
+    ? initialClasses.find(c => getCategoryOfClass(c.title) === fixedCategory && c.description)?.description
+    : null
+  const allCollapsed = categoriesToRender.length > 0 && categoriesToRender.every(c => collapsedCats[c])
+
+  const toggleAll = () => {
+    const next: Record<string, boolean> = { ...collapsedCats }
+    categoriesToRender.forEach(c => { next[c] = !allCollapsed })
+    setCollapsedCats(next)
+  }
+
+  const chipBase =
+    'px-3.5 py-2 rounded-full text-xs font-bold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue'
+  const chipOff = 'bg-white border-gray-200 text-brand-dark hover:border-brand-blue/40'
+  const chipOn = 'bg-brand-darkblue border-brand-darkblue text-white'
+
+  const twoColumns = categoriesToRender.length > 1
 
   return (
-    <div className="space-y-6">
-      
-      {/* Header & Filter Kategori */}
+    <div className="space-y-5">
+
+      {/* Header: judul, pencarian, buat kelas */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[32px] shadow-card border border-gray-50">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-brand-dark">Manajemen Kelas</h1>
-          <p className="text-brand-gray text-sm mt-0.5">Buat materi, tugaskan mentor, dan kelola student.</p>
-        </div>
-        
+        {fixedMeta ? (
+          <div className="flex items-start gap-4 min-w-0">
+            <div className={`w-12 h-12 rounded-2xl ${fixedMeta.badgeBg} ${fixedMeta.badgeText} flex items-center justify-center shrink-0`}>
+              <fixedMeta.icon className="w-6 h-6" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-heading font-bold text-2xl text-brand-dark">{fixedMeta.label}</h1>
+              <p className="text-brand-gray text-sm mt-0.5">
+                {initialClasses.length} kelas, {initialClasses.reduce((n, c) => n + (c.enrollments?.length || 0), 0)} siswa
+              </p>
+              {fixedDescription && (
+                <p className="text-xs text-brand-gray/80 mt-1.5 max-w-2xl line-clamp-2">{fixedDescription}</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <h1 className="font-heading font-bold text-2xl text-brand-dark">Manajemen Kelas</h1>
+            <p className="text-brand-gray text-sm mt-0.5">
+              {initialClasses.length} kelas di {existingCategories.length} program.
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Search Input */}
           <div className="relative min-w-[240px] flex-1">
             <input
               type="text"
@@ -238,11 +248,9 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white font-medium text-sm text-brand-dark outline-none focus:border-brand-blue transition-all shadow-sm"
             />
-            {/* Search Icon left */}
             <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
               <Search className="w-4 h-4" />
             </div>
-            {/* Clear Button right */}
             {searchQuery && (
               <button
                 type="button"
@@ -254,165 +262,204 @@ export default function ClassListClient({ initialClasses }: { initialClasses: Cl
               </button>
             )}
           </div>
-
-          {/* Dropdown Filter Kategori */}
-          <div className="relative min-w-[220px]">
-            <select
-              value={selectedCategory}
-              onChange={(e) => {
-                const value = e.target.value
-                setSelectedCategory(value)
-                sessionStorage.setItem('admin-classes-category', value)
-              }}
-              className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white font-bold text-sm text-brand-dark outline-none focus:border-brand-blue appearance-none transition-all shadow-sm cursor-pointer"
-            >
-              <option value="all">Semua Kategori ({totalClassesCount})</option>
-              {Object.keys(groupedClasses).map((cat) => {
-                const count = groupedClasses[cat].length
-                const label = CATEGORY_META[cat]?.label || cat
-                return (
-                  <option key={cat} value={cat}>
-                    {label} ({count})
-                  </option>
-                )
-              })}
-            </select>
-            
-            {/* Filter Icon left */}
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-brand-blue">
-              <Filter className="w-4 h-4" />
-            </div>
-
-            {/* Chevron down right */}
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-gray-400">
-              <ChevronDown className="w-4 h-4" />
-            </div>
-          </div>
-
-          {/* Tombol Buat Kelas */}
           <ClassForm />
         </div>
       </div>
 
-      {/* Section List */}
-      <div className="space-y-10">
+      {/* Filter program (hanya di halaman semua kelas) */}
+      <div className={`flex flex-wrap items-center gap-2 ${fixedCategory ? 'hidden' : ''}`}>
+        <button
+          type="button"
+          onClick={() => chooseCategory('all')}
+          aria-pressed={selectedCategory === 'all'}
+          className={`${chipBase} ${selectedCategory === 'all' ? chipOn : chipOff}`}
+        >
+          Semua ({searchedClasses.length})
+        </button>
+        {existingCategories.map(cat => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => chooseCategory(cat)}
+            aria-pressed={selectedCategory === cat}
+            className={`${chipBase} ${selectedCategory === cat ? chipOn : chipOff}`}
+          >
+            {CATEGORY_META[cat]?.label || cat} ({groupedClasses[cat].length})
+          </button>
+        ))}
+      </div>
+
+      {/* Penanda kelas yang butuh tindakan + buka/ciutkan semua */}
+      {(needMentorCount > 0 || onlyNeedMentor || categoriesToRender.length > 1) && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {needMentorCount > 0 || onlyNeedMentor ? (
+            <button
+              type="button"
+              onClick={() => setOnlyNeedMentor(v => !v)}
+              aria-pressed={onlyNeedMentor}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
+                onlyNeedMentor
+                  ? 'bg-amber-500 border-amber-500 text-white'
+                  : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
+              }`}
+            >
+              <UserX className="w-3.5 h-3.5" aria-hidden />
+              {needMentorCount} kelas sudah ada siswa tapi belum ada mentor
+              {onlyNeedMentor && <X className="w-3.5 h-3.5" aria-hidden />}
+            </button>
+          ) : <span />}
+
+          {categoriesToRender.length > 1 && (
+            <button
+              type="button"
+              onClick={toggleAll}
+              className="text-xs font-bold text-brand-gray hover:text-brand-dark transition-colors"
+            >
+              {allCollapsed ? 'Buka semua program' : 'Ciutkan semua program'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Halaman satu program: grid kartu kelas */}
+      {fixedCategory && fixedMeta && fixedClasses.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {fixedClasses.map((item) => {
+            const meeting = meetingLabel(fixedCategory, item.level)
+            return (
+              <Link
+                key={item.id}
+                href={`/admin/classes/${item.id}`}
+                className={`group flex flex-col gap-4 bg-white rounded-3xl p-6 shadow-card border-t-4 ${fixedMeta.accent} hover:shadow-soft transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="font-heading font-bold text-lg text-brand-dark leading-snug group-hover:text-brand-darkblue">
+                    {item.title}
+                  </h2>
+                  <ChevronRight className="w-5 h-5 text-gray-300 shrink-0 mt-0.5 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-darkblue" aria-hidden />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {meeting && (
+                    <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${fixedMeta.badgeBg} ${fixedMeta.badgeText}`}>
+                      {meeting}
+                    </span>
+                  )}
+                  <StatPill label="Mentor" value={item.class_mentors?.length || 0} tone="mentor" warn={needsMentor(item)} />
+                  <StatPill label="Siswa" value={item.enrollments?.length || 0} tone="siswa" />
+                  <StatPill label="Materi" value={item.class_resources?.length || 0} tone="materi" />
+                </div>
+
+                <p className="text-sm font-bold text-brand-dark mt-auto">{formatRupiah(item.price)}</p>
+              </Link>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Kartu per program: dua kolom di layar lebar */}
+      <div className={fixedCategory ? 'hidden' : twoColumns ? 'columns-1 xl:columns-2 gap-5' : ''}>
         {categoriesToRender.map((category) => {
           const classes = groupedClasses[category] || []
+          if (classes.length === 0 && selectedCategory === 'all') return null
+
           const meta = CATEGORY_META[category] || CATEGORY_META['Lainnya']
           const Icon = meta.icon
-
-          // Jika menampilkan semua kategori, sembunyikan section yang kosong
-          if (selectedCategory === 'all' && classes.length === 0) return null
-
           const isCollapsed = !!collapsedCats[category]
+          const totalStudents = classes.reduce((n, c) => n + (c.enrollments?.length || 0), 0)
+          // Deskripsi program umumnya sama antar kelas: tampilkan sekali di header
+          const programDescription = classes.find(c => c.description)?.description
 
           return (
-            <div key={category} className="space-y-4">
-              
-              {/* Section Header — clickable to collapse */}
+            <section
+              key={category}
+              className={`break-inside-avoid mb-5 bg-white rounded-3xl shadow-card border-t-4 ${meta.accent} overflow-hidden`}
+            >
               <button
                 type="button"
                 onClick={() => toggleCategory(category)}
-                className="w-full flex items-center gap-3 border-b border-gray-100 pb-2 group hover:border-gray-200 transition-colors text-left"
+                aria-expanded={!isCollapsed}
+                className="w-full flex items-start gap-3.5 px-5 py-4 text-left hover:bg-gray-50/60 transition-colors focus-visible:outline-none focus-visible:bg-gray-50"
               >
-                <div className={`w-8 h-8 rounded-lg ${meta.badgeBg} ${meta.badgeText} flex items-center justify-center shrink-0`}>
-                  <Icon className="w-4 h-4" />
+                <div className={`w-11 h-11 rounded-2xl ${meta.badgeBg} ${meta.badgeText} flex items-center justify-center shrink-0`}>
+                  <Icon className="w-5 h-5" />
                 </div>
-                <h2 className="font-heading font-bold text-lg text-brand-dark flex-1">
-                  {meta.label}
-                </h2>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${meta.badgeBg} ${meta.badgeText}`}>
-                  {classes.length} Kelas
-                </span>
-                <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-heading font-bold text-lg text-brand-dark leading-tight">{meta.label}</h2>
+                  <p className="text-xs text-brand-gray mt-1">
+                    {classes.length} kelas, {totalStudents} siswa
+                  </p>
+                  {programDescription && (
+                    <p className="text-xs text-brand-gray/80 mt-1.5 line-clamp-2">{programDescription}</p>
+                  )}
+                </div>
+                <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 mt-1 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
               </button>
 
-              {/* Grid Kelas */}
-              {!isCollapsed && classes.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {classes.map((item) => (
-                    <div 
-                      key={item.id} 
-                      className={`bg-white rounded-3xl p-6 shadow-card hover:shadow-soft transition-all group flex flex-col h-full border border-transparent ${meta.borderColor} hover:border-brand-blue/20`}
-                    >
-                      {/* Header Card */}
-                      <div className="flex justify-between items-start mb-4">
-                        <div className={`w-12 h-12 ${meta.badgeBg} ${meta.badgeText} rounded-2xl flex items-center justify-center transition-colors group-hover:bg-brand-blue group-hover:text-white`}>
-                          <BookOpen className="w-6 h-6" />
-                        </div>
-                        <span className="px-3 py-1 bg-gray-100 text-xs font-bold text-gray-500 rounded-full uppercase tracking-wider">
-                          {item.level
-                            ? (category === 'Pharmacamp' ? `${item.level} Hari` : `${item.level}x Pertemuan`)
-                            : '-'
-                          }
-                        </span>
-                      </div>
+              {!isCollapsed && (
+                classes.length === 0 ? (
+                  <p className="px-5 pb-5 text-sm text-brand-gray">Belum ada kelas di program ini. Klik &quot;Buat Kelas&quot; untuk menambahkan.</p>
+                ) : (
+                  <ul className="border-t border-gray-100 divide-y divide-gray-100">
+                    {classes.map((item) => {
+                      const mentors = item.class_mentors?.length || 0
+                      const students = item.enrollments?.length || 0
+                      const resources = item.class_resources?.length || 0
+                      const meeting = meetingLabel(category, item.level)
 
-                      {/* Content */}
-                      <div className="flex-1 mb-4">
-                        <h3 className="font-heading font-bold text-xl text-brand-dark mb-2 line-clamp-2">
-                          {item.title}
-                        </h3>
-                        
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {/* Badge Mentor */}
-                          <div className="flex items-center gap-2 text-xs text-brand-gray bg-brand-cream px-2 py-1 rounded-md">
-                            <span className="font-bold text-brand-dark">{item.class_mentors?.length || 0}</span>
-                            <span>Mentor</span>
-                          </div>
-                          {/* Badge Student */}
-                          <div className="flex items-center gap-2 text-xs text-brand-gray bg-green-50 px-2 py-1 rounded-md">
-                            <span className="font-bold text-green-700">{item.enrollments?.length || 0}</span>
-                            <span>Student</span>
-                          </div>
-                          {/* Badge Resources */}
-                          <div className="flex items-center gap-2 text-xs text-brand-gray bg-purple-50 px-2 py-1 rounded-md">
-                            <span className="font-bold text-purple-700">{item.class_resources?.length || 0}</span>
-                            <span>Materi</span>
-                          </div>
-                        </div>
+                      return (
+                        <li key={item.id}>
+                          <Link
+                            href={`/admin/classes/${item.id}`}
+                            className="group block px-5 py-3.5 hover:bg-brand-cream/40 transition-colors focus-visible:outline-none focus-visible:bg-brand-cream/60"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="font-semibold text-[15px] leading-snug text-brand-dark group-hover:text-brand-darkblue">
+                                {item.title}
+                              </p>
+                              <span className="text-sm font-bold text-brand-dark whitespace-nowrap">
+                                {formatRupiah(item.price)}
+                              </span>
+                            </div>
 
-                        <p className="text-brand-gray text-sm line-clamp-3">
-                          {item.description || "Tidak ada deskripsi."}
-                        </p>
-                      </div>
-
-                      {/* Footer Actions */}
-                      <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto gap-4">
-                        <div className="text-sm font-bold text-brand-dark">
-                          {formatRupiah(item.price)}
-                        </div>
-                        
-                        <Link 
-                          href={`/admin/classes/${item.id}`}
-                          className="px-4 py-2 bg-brand-darkblue text-white rounded-xl text-xs font-bold hover:bg-brand-dark transition-all flex items-center gap-1.5 shadow-md shadow-brand-darkblue/10"
-                        >
-                          <Settings className="w-3.5 h-3.5" />
-                          Kelola Kelas
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : !isCollapsed ? (
-                <div className="py-16 text-center bg-white rounded-3xl border-2 border-dashed border-gray-200">
-                  <p className="text-brand-gray">Belum ada kelas untuk kategori ini.</p>
-                </div>
-              ) : null}
-            </div>
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              {meeting && (
+                                <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${meta.badgeBg} ${meta.badgeText}`}>
+                                  {meeting}
+                                </span>
+                              )}
+                              <StatPill label="Mentor" value={mentors} tone="mentor" warn={needsMentor(item)} />
+                              <StatPill label="Siswa" value={students} tone="siswa" />
+                              <StatPill label="Materi" value={resources} tone="materi" />
+                              <ChevronRight className="ml-auto w-4 h-4 text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-darkblue" aria-hidden />
+                            </div>
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )
+              )}
+            </section>
           )
         })}
-
-        {initialClasses.length === 0 ? (
-          <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-200">
-            <p className="text-brand-gray">Belum ada kelas yang dibuat.</p>
-          </div>
-        ) : filteredClasses.length === 0 ? (
-          <div className="py-20 text-center bg-white rounded-[32px] border border-dashed border-gray-200 bg-gray-50/30">
-            <p className="text-brand-gray font-medium">Tidak ada kelas yang cocok dengan pencarian &quot;{searchQuery}&quot;.</p>
-          </div>
-        ) : null}
       </div>
+
+      {initialClasses.length === 0 ? (
+        <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-200">
+          <p className="text-brand-dark font-semibold">Belum ada kelas.</p>
+          <p className="text-brand-gray text-sm mt-1">Klik &quot;Buat Kelas&quot; untuk membuat kelas pertama.</p>
+        </div>
+      ) : filteredClasses.length === 0 ? (
+        <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+          <p className="text-brand-dark font-semibold">
+            {onlyNeedMentor ? 'Semua kelas yang ada siswanya sudah punya mentor.' : `Tidak ada kelas yang cocok dengan "${searchQuery}".`}
+          </p>
+          <p className="text-brand-gray text-sm mt-1">
+            {onlyNeedMentor ? 'Matikan filter untuk melihat semua kelas.' : 'Coba kata kunci lain atau hapus pencarian.'}
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }

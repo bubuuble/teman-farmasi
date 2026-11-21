@@ -1,4 +1,5 @@
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState, useActionState, useRef } from 'react'
 import { FileText, Upload, Trash2, Download, Loader2, BookOpen, X } from 'lucide-react'
@@ -47,7 +48,7 @@ export default function MentorManageResources({
     const file = (e.currentTarget.querySelector('input[name="file"]') as HTMLInputElement)?.files?.[0]
     if (file && file.size > 50 * 1024 * 1024) {
       e.preventDefault()
-      alert(`File terlalu besar! Maks 50MB. File kamu: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+      notify.error(`File terlalu besar! Maks 50MB. File kamu: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
       return
     }
     if (file) setSelectedFile(file)

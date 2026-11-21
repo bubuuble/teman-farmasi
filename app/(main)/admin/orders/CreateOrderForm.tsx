@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useActionState } from 'react'
+import { useState, useEffect, useActionState } from 'react'
+import { notify } from '@/app/components/Feedback'
 import { Plus, X } from 'lucide-react'
 import { createOrder, type ActionState } from './actions'
 
@@ -31,10 +32,12 @@ export default function CreateOrderForm({ students, classes }: Props) {
     return fullName.includes(searchLower) || email.includes(searchLower)
   })
 
-  if (state?.success && isOpen) {
-    setIsOpen(false)
-    window.location.reload()
-  }
+  useEffect(() => {
+    if (state?.success) {
+      setIsOpen(false)
+      notify.success(state.success)
+    }
+  }, [state])
 
   // Handle saat kelas dipilih, harga otomatis terisi
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

@@ -351,7 +351,7 @@ export default async function TryoutDetailPage({
                         Ke-{att.attempt_number || 1}
                       </td>
                       <td className="py-4 text-xs font-bold text-brand-dark">
-                        {att.total_correct} / {att.total_answered || questionsList.length} Soal
+                        {att.total_correct} / {questionsList.length} Soal
                       </td>
                       <td className="py-4 font-extrabold text-base text-brand-pink">
                         {att.score != null ? `${Number(att.score).toFixed(1)}%` : '-'}

@@ -1,6 +1,7 @@
 // app/(main)/mentor/schedule/SessionCard.tsx
 
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState } from 'react'
 import { Calendar, CheckCircle } from 'lucide-react'
@@ -28,7 +29,7 @@ export default function SessionCard({ session }: { session: Session }) {
     const res = await submitMentorAttendance(session.id, "schedule") 
     setLoading(false)
 
-    if (res.error) alert(res.error)
+    if (res.error) notify.error(res.error)
   }
 
   const dateObj = new Date(session.date_time)

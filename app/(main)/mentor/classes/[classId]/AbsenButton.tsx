@@ -1,4 +1,5 @@
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState } from 'react'
 import { submitMentorAttendance } from '../actions'
@@ -24,7 +25,7 @@ export default function AbsenButton({ sessionId, classId }: { sessionId: string;
           setIsOpen(false)
           setLoading(true)
           const res = await submitMentorAttendance(sessionId, classId)
-          if (res.error) alert(res.error)
+          if (res.error) notify.error(res.error)
           setLoading(false)
         }}
         title="Konfirmasi Absen"

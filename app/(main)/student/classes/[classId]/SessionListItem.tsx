@@ -2,6 +2,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { notify } from '@/app/components/Feedback'
 import { Calendar, Clock, Video, ExternalLink, X, CheckCircle, Lock, MapPin } from 'lucide-react'
 import { studentCheckIn } from '../../schedule/actions'
 import ConfirmModal from '@/app/components/ConfirmModal'
@@ -24,13 +26,17 @@ export default function SessionListItem({
   const [showModal, setShowModal] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   const handleCheckIn = async () => {
     setLoading(true)
     const res = await studentCheckIn(session.id)
     setLoading(false)
-    if (res.error) alert(res.error)
-    else window.location.reload()
+    if (res.error) notify.error(res.error)
+    else {
+      notify.success('Absen berhasil dicatat!')
+      router.refresh()
+    }
   }
 
   const dateObj = new Date(session.date_time)

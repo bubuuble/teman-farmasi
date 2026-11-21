@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { deleteCategory } from './actions'
+import { confirmDialog, notify } from '@/app/components/Feedback'
 
 export default function DeleteCategoryBtn({
   categoryId,
@@ -14,15 +15,20 @@ export default function DeleteCategoryBtn({
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
-    if (!confirm(`Hapus kategori "${categoryName}" beserta semua soal di dalamnya?`)) {
-      return
-    }
+    const ok = await confirmDialog({
+      title: 'Hapus Kategori',
+      message: `Hapus kategori "${categoryName}" beserta semua soal di dalamnya?`,
+      confirmText: 'Ya, Hapus',
+      variant: 'danger',
+    })
+    if (!ok) return
 
     setIsDeleting(true)
     try {
       await deleteCategory(categoryId)
+      notify.success('Kategori berhasil dihapus')
     } catch (e: any) {
-      alert(e.message || 'Gagal menghapus kategori')
+      notify.error(e.message || 'Gagal menghapus kategori')
     } finally {
       setIsDeleting(false)
     }

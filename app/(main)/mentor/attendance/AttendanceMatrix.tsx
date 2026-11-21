@@ -1,5 +1,6 @@
 // app/(main)/mentor/attendance/AttendanceMatrix.tsx
 'use client'
+import { notify } from '@/app/components/Feedback'
 
 import { useState } from 'react'
 import { updateSingleAttendance } from './actions'
@@ -32,7 +33,7 @@ export default function AttendanceMatrix({
         if (!res.error) {
             setAttendance(prev => ({ ...prev, [key]: newStatus }))
         } else {
-            alert("Gagal update data")
+            notify.error("Gagal update data")
         }
         setUpdating(null)
     }

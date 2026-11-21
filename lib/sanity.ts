@@ -12,7 +12,17 @@ export const client = createClient({
 });
 
 // Helper for generating image URLs
-const builder = createImageUrlBuilder(client);
+// Dataset "development" hasil copy dari "production": dokumen ikut tercopy, tapi file
+// gambarnya tetap tersimpan di path production/ di cdn.sanity.io (URL development/ -> 404).
+// Set NEXT_PUBLIC_SANITY_IMAGE_DATASET=production di .env.local untuk membangun URL gambar
+// ke dataset tempat file aslinya berada. Kosongkan jika dataset-nya sama.
+const builder = createImageUrlBuilder({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '',
+  dataset:
+    process.env.NEXT_PUBLIC_SANITY_IMAGE_DATASET ||
+    process.env.NEXT_PUBLIC_SANITY_DATASET ||
+    'production',
+});
 
 export function urlFor(source: any) {
   return builder.image(source);

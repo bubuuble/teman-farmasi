@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import ClassManager from "./ClassManager"
 import { notFound } from "next/navigation"
+import { findProgramByTitle, programHref } from "@/lib/class-programs"
 
 type ClassDetail = {
   id: string
@@ -73,6 +74,7 @@ export default async function AdminClassDetailPage({
   }
 
   const kelas = rawClass as unknown as ClassDetail
+  const backProgram = findProgramByTitle(kelas.title)
 
   // 2. Fetch Sub Classes
   const { data: subClasses } = await supabase
@@ -109,14 +111,17 @@ export default async function AdminClassDetailPage({
     <div className="space-y-8">
       {/* Navigation Header */}
       <div className="flex items-center gap-4">
-        <Link 
-          href="/admin/classes" 
+        <Link
+          href={backProgram ? programHref(backProgram.slug) : "/admin/classes"}
           className="p-2 rounded-xl bg-white shadow-sm hover:bg-gray-50 transition-colors text-brand-dark border border-gray-100 flex items-center justify-center"
+          aria-label={backProgram ? `Kembali ke ${backProgram.short}` : "Kembali ke Manajemen Kelas"}
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <p className="text-xs text-brand-gray font-medium">Kembali ke Manajemen Kelas</p>
+          <p className="text-xs text-brand-gray font-medium">
+            {backProgram ? `Kembali ke ${backProgram.short}` : "Kembali ke Manajemen Kelas"}
+          </p>
           <h1 className="font-heading font-bold text-2xl text-brand-dark">Kelola Kelas</h1>
         </div>
       </div>

@@ -179,7 +179,6 @@ export default async function TryoutsManagementPage({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tryouts.map((t: any) => {
             const attemptCount = t.tryout_attempts?.[0]?.count || 0
-            const isUkmppai = t.program_type === 'ukmppai'
 
             return (
               <div
@@ -188,14 +187,6 @@ export default async function TryoutsManagementPage({
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full ${
-                      isUkmppai 
-                        ? 'bg-rose-50 text-rose-700 border border-rose-100'
-                        : 'bg-orange-50 text-orange-700 border border-orange-100'
-                    }`}>
-                      {isUkmppai ? 'UKMPPAI' : 'Masuk Apoteker'}
-                    </span>
-
                     {t.is_active ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Aktif
@@ -238,11 +229,6 @@ export default async function TryoutsManagementPage({
                     </div>
                   </div>
 
-                  {t.classes?.title && (
-                    <div className="mt-3 text-[11px] font-bold text-brand-dark/70 bg-brand-cream/60 px-3 py-1.5 rounded-xl border border-brand-dark/5 line-clamp-1">
-                      Kelas: {t.classes.title}
-                    </div>
-                  )}
                 </Link>
 
                 <div className="pt-4 border-t border-gray-50 mt-5 flex items-center justify-between">

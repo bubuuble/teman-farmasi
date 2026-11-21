@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { sendNewSessionNotification } from "@/lib/email"
+import { hasMentorAccess, isClassLevelMentor, isUkaiClass } from "@/lib/mentor-access"
 
 export type ActionState = {
   error?: string
@@ -380,20 +381,14 @@ export async function uploadMentorResource(prevState: ActionState, formData: For
 
   if (!classId || !title || !file || file.size === 0) return { error: "Lengkapi data file!" }
 
-  // Guard: pastikan mentor ini memang bertugas di kelas/subkelas tersebut
-  const checkQuery = supabase
-    .from('class_mentors')
-    .select('id')
-    .eq('class_id', classId)
-    .eq('mentor_id', user.id)
-  
-  if (subClassId) {
-    checkQuery.eq('sub_class_id', subClassId)
+  // Guard: mentor kelas utama punya akses ke semua sub kelas, mentor sub kelas hanya ke sub kelasnya
+  if (!(await hasMentorAccess(supabase, user.id, classId, subClassId))) {
+    return { error: "Kamu tidak memiliki akses ke kelas ini." }
   }
 
-  const { data: assignment } = await checkQuery.maybeSingle()
-
-  if (!assignment) return { error: "Kamu tidak memiliki akses ke kelas ini." }
+  // Storage & class_resources hanya bisa ditulis admin lewat RLS, jadi setelah guard
+  // di atas lolos, penulisan dilakukan dengan service role.
+  const admin = createAdminClient()
 
   // Validasi ukuran file (50MB)
   const maxSize = 50 * 1024 * 1024
@@ -409,17 +404,17 @@ export async function uploadMentorResource(prevState: ActionState, formData: For
   const fileName = `${Date.now()}_${sanitizedFileName}`
   const filePath = subClassId ? `${classId}/${subClassId}/${fileName}` : `${classId}/${fileName}`
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await admin.storage
     .from('ebooks')
     .upload(filePath, file)
 
   if (uploadError) return { error: "Gagal upload: " + uploadError.message }
 
-  const { data: { publicUrl } } = supabase.storage
+  const { data: { publicUrl } } = admin.storage
     .from('ebooks')
     .getPublicUrl(filePath)
 
-  const { error: dbError } = await supabase.from('class_resources').insert({
+  const { error: dbError } = await admin.from('class_resources').insert({
     class_id: classId,
     sub_class_id: subClassId,
     title,
@@ -438,15 +433,29 @@ export async function deleteMentorResource(resourceId: string, filePath: string,
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Unauthorized" }
 
+  // Guard: ambil resource dari DB (jangan percaya classId/filePath dari client)
+  const admin = createAdminClient()
+  const { data: resource } = await admin
+    .from('class_resources')
+    .select('id, class_id, sub_class_id, file_path')
+    .eq('id', resourceId)
+    .maybeSingle()
+
+  if (!resource) return { error: "File tidak ditemukan." }
+
+  if (!(await hasMentorAccess(supabase, user.id, resource.class_id, resource.sub_class_id))) {
+    return { error: "Kamu tidak memiliki akses ke file ini." }
+  }
+
   // Hapus dari storage
-  const { error: storageError } = await supabase.storage
+  const { error: storageError } = await admin.storage
     .from('ebooks')
-    .remove([filePath])
+    .remove([resource.file_path])
 
   if (storageError) return { error: "Gagal hapus file: " + storageError.message }
 
   // Hapus dari database
-  const { error: dbError } = await supabase
+  const { error: dbError } = await admin
     .from('class_resources')
     .delete()
     .eq('id', resourceId)
@@ -455,4 +464,138 @@ export async function deleteMentorResource(resourceId: string, filePath: string,
 
   revalidatePath(`/mentor/classes/${classId}`)
   return { success: "File dihapus" }
+}
+
+// --- ASSIGN STUDENT KE SUB KELAS (MENTOR) ---
+
+export async function mentorAssignStudents(
+  classId: string,
+  subClassId: string,
+  studentIds: string[]
+): Promise<ActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Unauthorized" }
+
+  if (!classId || !subClassId || !studentIds?.length) {
+    return { error: "Pilih minimal 1 student!" }
+  }
+
+  if (!(await hasMentorAccess(supabase, user.id, classId, subClassId))) {
+    return { error: "Kamu tidak memiliki akses ke sub kelas ini." }
+  }
+
+  // Assign siswa oleh mentor hanya untuk UKAI
+  if (!(await isUkaiClass(supabase, classId))) {
+    return { error: "Assign siswa oleh mentor hanya tersedia untuk kelas UKAI." }
+  }
+
+  const admin = createAdminClient()
+
+  // Sub kelas harus benar-benar milik kelas ini
+  const { data: sub } = await admin
+    .from('sub_classes')
+    .select('id')
+    .eq('id', subClassId)
+    .eq('class_id', classId)
+    .maybeSingle()
+  if (!sub) return { error: "Sub kelas tidak valid." }
+
+  // Hanya akun ber-role student yang boleh di-assign
+  const { data: validStudents } = await admin
+    .from('profiles')
+    .select('id')
+    .in('id', studentIds)
+    .eq('role', 'student')
+  const validIds = (validStudents ?? []).map(s => s.id)
+  if (validIds.length === 0) return { error: "Student tidak valid." }
+
+  // Mentor sub kelas tidak boleh memindahkan student dari sub kelas lain.
+  // Mentor kelas utama boleh (sama seperti admin: student dipindahkan).
+  const classLevel = await isClassLevelMentor(supabase, user.id, classId)
+  if (!classLevel) {
+    const { data: elsewhere } = await admin
+      .from('enrollments')
+      .select('student_id, sub_class_id')
+      .eq('class_id', classId)
+      .in('student_id', validIds)
+      .not('sub_class_id', 'is', null)
+      .neq('sub_class_id', subClassId)
+    if (elsewhere && elsewhere.length > 0) {
+      return { error: "Ada student yang sudah terdaftar di sub kelas lain. Hubungi admin untuk memindahkan." }
+    }
+  }
+
+  const { error } = await admin
+    .from('enrollments')
+    .upsert(
+      validIds.map(studentId => ({
+        class_id: classId,
+        student_id: studentId,
+        sub_class_id: subClassId,
+        status: 'active',
+      })),
+      { onConflict: 'class_id,student_id' }
+    )
+  if (error) return { error: error.message }
+
+  // Student yang di-assign mentor otomatis jadi "Student Saya" mentor ini di sub kelas tsb
+  const { error: msaError } = await admin
+    .from('mentor_student_assignments')
+    .upsert(
+      validIds.map(studentId => ({
+        mentor_id: user.id,
+        student_id: studentId,
+        class_id: classId,
+        sub_class_id: subClassId,
+      })),
+      { onConflict: 'mentor_id,student_id,sub_class_id' }
+    )
+  if (msaError) return { error: msaError.message }
+
+  revalidatePath(`/mentor/classes/${classId}`)
+  revalidatePath('/mentor/classes')
+  revalidatePath('/admin/classes', 'layout')
+  return { success: `${validIds.length} student berhasil didaftarkan!` }
+}
+
+export async function mentorRemoveStudent(
+  enrollmentId: string,
+  classId: string
+): Promise<ActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Unauthorized" }
+
+  const admin = createAdminClient()
+  const { data: enrollment } = await admin
+    .from('enrollments')
+    .select('id, class_id, sub_class_id, student_id')
+    .eq('id', enrollmentId)
+    .maybeSingle()
+  if (!enrollment || !enrollment.sub_class_id) return { error: "Pendaftaran tidak ditemukan." }
+
+  if (!(await hasMentorAccess(supabase, user.id, enrollment.class_id, enrollment.sub_class_id))) {
+    return { error: "Kamu tidak memiliki akses ke sub kelas ini." }
+  }
+
+  if (!(await isUkaiClass(supabase, enrollment.class_id))) {
+    return { error: "Hanya tersedia untuk kelas UKAI." }
+  }
+
+  const { error } = await admin.from('enrollments').delete().eq('id', enrollmentId)
+  if (error) return { error: error.message }
+
+  // Bersihkan relasi mentor-student untuk sub kelas ini
+  await admin
+    .from('mentor_student_assignments')
+    .delete()
+    .eq('student_id', enrollment.student_id)
+    .eq('class_id', enrollment.class_id)
+    .eq('sub_class_id', enrollment.sub_class_id)
+
+  revalidatePath(`/mentor/classes/${classId}`)
+  revalidatePath('/mentor/classes')
+  revalidatePath('/admin/classes', 'layout')
+  return { success: "Student dikeluarkan dari sub kelas" }
 }

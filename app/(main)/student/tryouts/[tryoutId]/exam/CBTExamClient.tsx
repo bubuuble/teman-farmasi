@@ -54,7 +54,6 @@ export default function CBTExamClient({
   initialTimeRemaining: number | null // in seconds
 }) {
   const router = useRouter()
-  const [currentIndex, setCurrentIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, AnswerState>>(initialAnswers)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(initialTimeRemaining)
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false)
@@ -64,15 +63,39 @@ export default function CBTExamClient({
 
   // --- NEW STATE for CBT locking ---
   // Set of question IDs that have been locked (answered + Next pressed)
-  const [lockedQuestions, setLockedQuestions] = useState<Set<string>>(new Set())
+  // Restored from saved answers: answered & not flagged = already locked (e.g. after reload)
+  const [lockedQuestions, setLockedQuestions] = useState<Set<string>>(() => new Set(
+    questions.filter(q => initialAnswers[q.id]?.selectedOptionId && !initialAnswers[q.id]?.isFlagged).map(q => q.id)
+  ))
   // Per-question result: 'correct' | 'wrong' — determined at Next press
-  const [questionResults, setQuestionResults] = useState<Record<string, 'correct' | 'wrong'>>({})
+  const [questionResults, setQuestionResults] = useState<Record<string, 'correct' | 'wrong'>>(() => {
+    const res: Record<string, 'correct' | 'wrong'> = {}
+    for (const q of questions) {
+      const a = initialAnswers[q.id]
+      if (a?.selectedOptionId && !a.isFlagged) {
+        res[q.id] = q.options.find(o => o.isCorrect)?.id === a.selectedOptionId ? 'correct' : 'wrong'
+      }
+    }
+    return res
+  })
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    const idx = questions.findIndex(q => !(initialAnswers[q.id]?.selectedOptionId && !initialAnswers[q.id]?.isFlagged))
+    return idx === -1 ? 0 : idx
+  })
+  // Furthest question reached — the only non-ragu question reachable from the grid
+  const [maxReached, setMaxReached] = useState(currentIndex)
 
   const currentQ = questions[currentIndex]
   const currentAnswer = currentQ ? (answers[currentQ.id] || { selectedOptionId: null, isFlagged: false }) : { selectedOptionId: null, isFlagged: false }
 
   const isCurrentLocked = currentQ ? lockedQuestions.has(currentQ.id) : false
-  const isLastQuestion = currentIndex === questions.length - 1
+
+  // Next target: first unlocked question after current, else wrap to an earlier unlocked (ragu) one
+  const findNextIndex = (locked: Set<string>) => {
+    for (let i = currentIndex + 1; i < questions.length; i++) if (!locked.has(questions[i].id)) return i
+    for (let i = 0; i < currentIndex; i++) if (!locked.has(questions[i].id)) return i
+    return -1
+  }
 
   // 1. COUNTDOWN TIMER
   useEffect(() => {
@@ -147,22 +170,29 @@ export default function CBTExamClient({
     })
   }
 
-  // 4. NEXT BUTTON — locks current question, evaluates correctness
+  // 4. NEXT BUTTON — locks & grades current question, unless it's flagged ragu
+  const canNext = !!currentQ && !isCurrentLocked && (currentAnswer.isFlagged || !!currentAnswer.selectedOptionId)
   const handleNext = () => {
-    if (!currentQ) return
-    if (!currentAnswer.selectedOptionId) return // must answer first
+    if (!currentQ || !canNext) return
 
-    // Find the correct option for this question
-    const correctOption = currentQ.options.find(o => o.isCorrect)
-    const isCorrect = correctOption ? currentAnswer.selectedOptionId === correctOption.id : false
+    let locked = lockedQuestions
+    if (!currentAnswer.isFlagged) {
+      // Find the correct option for this question
+      const correctOption = currentQ.options.find(o => o.isCorrect)
+      const isCorrect = correctOption ? currentAnswer.selectedOptionId === correctOption.id : false
 
-    // Lock this question
-    setLockedQuestions(prev => new Set([...prev, currentQ.id]))
-    setQuestionResults(prev => ({ ...prev, [currentQ.id]: isCorrect ? 'correct' : 'wrong' }))
+      // Lock this question
+      locked = new Set([...lockedQuestions, currentQ.id])
+      setLockedQuestions(locked)
+      setQuestionResults(prev => ({ ...prev, [currentQ.id]: isCorrect ? 'correct' : 'wrong' }))
+    }
 
-    // Move to next
-    if (!isLastQuestion) {
-      setCurrentIndex(prev => prev + 1)
+    const next = findNextIndex(locked)
+    if (next === -1) {
+      setIsSubmitModalOpen(true)
+    } else {
+      setCurrentIndex(next)
+      setMaxReached(prev => Math.max(prev, next))
     }
   }
 
@@ -196,18 +226,14 @@ export default function CBTExamClient({
     }
   }
 
-  // Navigate to a specific question (only allowed if flagged or not yet locked/answered)
-  const handleNavToQuestion = (idx: number) => {
+  // Grid navigation only to ragu-flagged questions, or back to the furthest question reached
+  const isNavigable = (idx: number) => {
     const q = questions[idx]
-    if (!q) return
-
-    const ans = answers[q.id]
-    const isLocked = lockedQuestions.has(q.id)
-    const isFlagged = ans?.isFlagged
-    const isCurrent = idx === currentIndex
-
-    // Can navigate to: current, flagged, or unanswered (not locked)
-    if (isCurrent || isFlagged || !isLocked) {
+    if (!q || lockedQuestions.has(q.id)) return false
+    return !!answers[q.id]?.isFlagged || idx === maxReached
+  }
+  const handleNavToQuestion = (idx: number) => {
+    if (idx === currentIndex || isNavigable(idx)) {
       setCurrentIndex(idx)
       setIsNavDrawerOpen(false)
     }
@@ -288,20 +314,6 @@ export default function CBTExamClient({
               )}
             </div>
 
-            {/* RAGU BUTTON — moved to center area of header */}
-            {!isCurrentLocked && (
-              <button
-                onClick={handleToggleFlag}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition ${
-                  currentAnswer.isFlagged
-                    ? 'bg-amber-400 text-amber-950 shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <Flag className={`w-3.5 h-3.5 ${currentAnswer.isFlagged ? 'fill-current' : ''}`} />
-                {currentAnswer.isFlagged ? 'Ditandai Ragu-ragu' : 'Tandai Ragu'}
-              </button>
-            )}
           </div>
 
           {/* QUESTION CONTENT */}
@@ -389,33 +401,36 @@ export default function CBTExamClient({
                 </span>
               </div>
 
-              {/* CENTER: Selesai & Submit */}
+              {/* CENTER: Ragu-ragu */}
               <div className="flex justify-center">
-                <button
-                  onClick={() => setIsSubmitModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-extrabold hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20 active:scale-95"
-                >
-                  <CheckCircle2 className="w-4 h-4" /> Selesai &amp; Submit
-                </button>
-              </div>
-
-              {/* RIGHT: Next / Finish */}
-              <div className="flex justify-end">
-                {isLastQuestion ? (
-                  <span className="text-xs text-gray-400 font-semibold">Soal terakhir</span>
-                ) : (
+                {!isCurrentLocked && (
                   <button
-                    onClick={handleNext}
-                    disabled={!currentAnswer.selectedOptionId || isCurrentLocked}
-                    className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-extrabold transition shadow-sm active:scale-95 ${
-                      !currentAnswer.selectedOptionId || isCurrentLocked
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
-                        : 'bg-brand-dark text-white hover:bg-brand-pink shadow-brand-dark/20'
+                    onClick={handleToggleFlag}
+                    className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-extrabold transition active:scale-95 ${
+                      currentAnswer.isFlagged
+                        ? 'bg-amber-400 text-amber-950 shadow-md shadow-amber-400/20'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    {isCurrentLocked ? 'Sudah Dikunci' : 'Selanjutnya'} <ChevronRight className="w-4 h-4" />
+                    <Flag className={`w-4 h-4 ${currentAnswer.isFlagged ? 'fill-current' : ''}`} />
+                    {currentAnswer.isFlagged ? 'Ditandai Ragu-ragu' : 'Tandai Ragu'}
                   </button>
                 )}
+              </div>
+
+              {/* RIGHT: Next */}
+              <div className="flex justify-end">
+                <button
+                  onClick={handleNext}
+                  disabled={!canNext}
+                  className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-extrabold transition shadow-sm active:scale-95 ${
+                    !canNext
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                      : 'bg-brand-dark text-white hover:bg-brand-pink shadow-brand-dark/20'
+                  }`}
+                >
+                  {isCurrentLocked ? 'Sudah Dikunci' : 'Selanjutnya'} <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -467,8 +482,8 @@ export default function CBTExamClient({
                 const isLocked = lockedQuestions.has(q.id)
                 const result = questionResults[q.id]
 
-                // Clickability: only current, flagged, or not-locked
-                const isClickable = isCurrent || isFlagged || !isLocked
+                // Clickability: only current, ragu-flagged, or furthest reached
+                const isClickable = isCurrent || isNavigable(idx)
 
                 let badgeStyle = 'bg-white border-gray-200 text-gray-600 hover:border-brand-pink'
                 if (isCurrent) {

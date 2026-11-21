@@ -889,6 +889,24 @@ export default function ClassManager({
                     Detail Sub Kelas
                   </button>
 
+                  {isUkai && (
+                  <button
+                    onClick={() => setSubClassActiveTab('students')}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all
+                      ${subClassActiveTab === 'students'
+                        ? 'bg-brand-darkblue text-white shadow-sm'
+                        : 'text-brand-gray hover:text-brand-dark hover:bg-gray-100'
+                      }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    Siswa
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1
+                      ${subClassActiveTab === 'students' ? 'bg-white/20 text-white' : 'bg-gray-200 text-brand-dark'}`}>
+                      {currentEnrollments.length}
+                    </span>
+                  </button>
+                  )}
+
                   {!isUkai && (
                   <button
                     onClick={() => setSubClassActiveTab('mentors')}
@@ -1042,6 +1060,93 @@ export default function ClassManager({
                           </div>
                         </form>
                       )}
+                    </div>
+                  )}
+
+                  {/* TAB: Siswa (UKAI Series — student langsung di-assign ke sub kelas) */}
+                  {isUkai && subClassActiveTab === 'students' && (
+                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 animate-in fade-in duration-200">
+                      <div className="xl:col-span-5 bg-gray-50 p-6 rounded-3xl border border-gray-100 h-fit space-y-4">
+                        <div>
+                          <h4 className="font-heading font-bold text-base text-brand-dark">Assign Siswa</h4>
+                          <p className="text-xs text-brand-gray">Siswa dari sub kelas lain akan dipindahkan ke sub kelas ini.</p>
+                        </div>
+                        <form onSubmit={handleAddStudentSubmit} className="space-y-3">
+                          <label className="text-xs font-bold text-brand-dark uppercase">Pilih Siswa ({selectedStudentIds.length} Terpilih)</label>
+                          <input
+                            type="text"
+                            value={studentSearch}
+                            onChange={(e) => setStudentSearch(e.target.value)}
+                            placeholder="Cari nama, email, atau institusi..."
+                            className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white"
+                            disabled={isPending}
+                          />
+                          <div className="border border-gray-200 rounded-xl max-h-56 overflow-y-auto p-3 space-y-2 bg-white">
+                            {filteredStudents.length === 0 ? (
+                              <p className="text-xs text-gray-400 italic py-2 text-center">
+                                {studentSearch ? 'Tidak ada siswa yang cocok.' : 'Semua siswa sudah terdaftar.'}
+                              </p>
+                            ) : (
+                              filteredStudents.map((s) => {
+                                const otherSub = subClasses.find(sc => sc.id === kelas.enrollments.find(e => e.student_id === s.id)?.sub_class_id)
+                                return (
+                                  <label key={s.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedStudentIds.includes(s.id)}
+                                      onChange={(e) => setSelectedStudentIds(e.target.checked
+                                        ? [...selectedStudentIds, s.id]
+                                        : selectedStudentIds.filter(id => id !== s.id))}
+                                      className="rounded text-brand-blue focus:ring-brand-blue"
+                                      disabled={isPending}
+                                    />
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-brand-dark truncate">
+                                        {s.full_name || 'Tanpa Nama'}
+                                        {otherSub && <span className="text-[10px] text-amber-600 font-semibold ml-1.5">(di {otherSub.title})</span>}
+                                      </p>
+                                      <p className="text-xs text-gray-500 truncate">{s.email}</p>
+                                    </div>
+                                  </label>
+                                )
+                              })
+                            )}
+                          </div>
+                          <button
+                            type="submit"
+                            disabled={isPending || selectedStudentIds.length === 0}
+                            className="w-full flex items-center justify-center gap-2 bg-brand-darkblue text-white py-3 rounded-xl text-xs font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
+                          >
+                            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                            Assign ke {selectedSubClass.title}
+                          </button>
+                        </form>
+                      </div>
+
+                      <div className="xl:col-span-7 space-y-3">
+                        <h4 className="font-heading font-bold text-base text-brand-dark">Siswa di Sub Kelas Ini</h4>
+                        <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                          {currentEnrollments.length === 0 ? (
+                            <p className="text-sm text-gray-400 italic py-8 text-center bg-gray-50 rounded-2xl">Belum ada siswa di sub kelas ini.</p>
+                          ) : (
+                            currentEnrollments.map((item) => (
+                              <div key={item.id} className="flex items-center justify-between p-3.5 bg-white rounded-2xl border border-gray-100">
+                                <div className="min-w-0">
+                                  <p className="font-bold text-sm text-brand-dark truncate">{item.profiles?.full_name || 'Tanpa Nama'}</p>
+                                  <p className="text-xs text-gray-400 truncate">{item.profiles?.email}</p>
+                                </div>
+                                <button
+                                  onClick={() => setConfirmDeleteStudent({ isOpen: true, id: item.id })}
+                                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                  title="Keluarkan dari Sub Kelas"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
 

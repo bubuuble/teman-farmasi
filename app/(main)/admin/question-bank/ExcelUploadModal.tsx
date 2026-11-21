@@ -198,22 +198,9 @@ export default function ExcelUploadModal({ categoryId }: { categoryId: string })
               {/* PREVIEW */}
               {parsedRows.length > 0 && (
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
-                  <p className="text-sm font-bold text-emerald-800 mb-3">
+                  <p className="text-sm font-bold text-emerald-800">
                     ✓ {parsedRows.length} soal siap diupload
                   </p>
-                  <div className="max-h-48 overflow-y-auto space-y-2">
-                    {parsedRows.slice(0, 5).map(row => (
-                      <div key={row.no} className="text-xs text-emerald-900 bg-white rounded-xl p-2.5 border border-emerald-100">
-                        <span className="font-bold">#{row.no}</span> {row.pertanyaan.substring(0, 80)}{row.pertanyaan.length > 80 ? '...' : ''}
-                        <span className="ml-2 text-emerald-600 font-bold">Jawaban: {row.kunciJawaban}</span>
-                      </div>
-                    ))}
-                    {parsedRows.length > 5 && (
-                      <p className="text-xs text-emerald-600 font-semibold text-center">
-                        ...dan {parsedRows.length - 5} soal lainnya
-                      </p>
-                    )}
-                  </div>
                 </div>
               )}
 

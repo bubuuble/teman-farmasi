@@ -316,7 +316,7 @@ export default function CBTExamClient({
                   <QuestionImage
                     src={currentQ.question_image_url}
                     alt="Gambar Lampiran"
-                    className="max-w-xl"
+                    className="max-w-2xl"
                   />
                 )}
               </div>

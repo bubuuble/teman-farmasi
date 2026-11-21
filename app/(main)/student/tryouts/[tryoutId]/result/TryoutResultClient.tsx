@@ -398,7 +398,7 @@ export default function TryoutResultClient({
                     <QuestionImage
                       src={q.question_image_url}
                       alt="Lampiran Soal"
-                      className="max-w-xl my-3"
+                      className="max-w-2xl my-3"
                     />
                   )}
                 </div>

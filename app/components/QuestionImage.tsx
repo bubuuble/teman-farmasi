@@ -29,7 +29,7 @@ interface QuestionImageProps {
   className?: string
 }
 
-export default function QuestionImage({ src, alt = 'Lampiran Soal', className = 'max-w-md' }: QuestionImageProps) {
+export default function QuestionImage({ src, alt = 'Lampiran Soal', className = 'max-w-2xl' }: QuestionImageProps) {
   const [hasError, setHasError] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const normalizedSrc = normalizeImageUrl(src)
@@ -61,32 +61,37 @@ export default function QuestionImage({ src, alt = 'Lampiran Soal', className = 
 
   return (
     <>
-      <div className={`my-3 group relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-50/50 shadow-xs cursor-pointer ${className}`} onClick={() => setIsOpen(true)}>
+      <div
+        className={`my-3 group relative inline-block max-w-full rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-xs cursor-pointer ${className}`}
+        onClick={() => setIsOpen(true)}
+      >
         <img
           src={normalizedSrc}
           alt={alt}
           onError={() => setHasError(true)}
-          className="w-full h-auto object-contain max-h-80 transition duration-200 group-hover:scale-[1.01]"
+          className="w-auto max-w-full h-auto max-h-[520px] object-contain block mx-auto transition duration-200 group-hover:scale-[1.01]"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-semibold pointer-events-none">
-          <Maximize2 className="w-4 h-4" />
-          <span>Klik untuk memperbesar</span>
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-3 pointer-events-none">
+          <div className="bg-black/70 backdrop-blur-xs text-white text-xs font-semibold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-md">
+            <Maximize2 className="w-3.5 h-3.5" />
+            <span>Klik untuk memperbesar</span>
+          </div>
         </div>
       </div>
 
       {/* MODAL FULL PREVIEW */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
           onClick={() => setIsOpen(false)}
         >
           <div
-            className="relative max-w-4xl max-h-[90vh] bg-white rounded-3xl p-3 sm:p-4 shadow-2xl flex flex-col items-center"
+            className="relative max-w-5xl max-h-[92vh] w-full bg-white rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-full flex items-center justify-between pb-2 px-2 border-b border-gray-100 mb-2">
-              <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+            <div className="w-full flex items-center justify-between pb-3 px-2 border-b border-gray-100 mb-2">
+              <span className="text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-brand-pink" />
                 {alt}
               </span>
@@ -95,25 +100,26 @@ export default function QuestionImage({ src, alt = 'Lampiran Soal', className = 
                   href={normalizedSrc}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
                   title="Buka gambar penuh di tab baru"
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <span>Buka Tab Baru</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
-            <div className="overflow-auto max-h-[75vh] w-full flex items-center justify-center p-2">
+            <div className="overflow-auto max-h-[80vh] w-full flex items-center justify-center p-2">
               <img
                 src={normalizedSrc}
                 alt={alt}
-                className="max-w-full max-h-[75vh] object-contain rounded-xl"
+                className="max-w-full max-h-[78vh] w-auto h-auto object-contain rounded-xl"
               />
             </div>
           </div>

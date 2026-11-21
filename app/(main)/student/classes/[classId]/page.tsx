@@ -131,6 +131,7 @@ export default async function StudentClassDetailPage({
   myRecords?.forEach(r => { attendanceMap[r.session_id] = r.status })
 
   const isPharmacamp = kelas?.title?.startsWith('Pharmacamp')
+  const isUkai = !!kelas?.title?.toUpperCase().startsWith('UKAI')
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
@@ -247,12 +248,12 @@ export default async function StudentClassDetailPage({
                             </div>
                         </div>
 
-                        <a 
-                            href={res.file_url} 
-                            target="_blank" 
+                        <a
+                            href={isUkai ? `/student/classes/${classId}/ebook/${res.id}` : res.file_url}
+                            target={isUkai ? undefined : '_blank'} 
                             className="w-full bg-brand-yellow text-brand-dark py-4 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-brand-dark hover:text-white transition-all shadow-sm relative z-10"
                         >
-                            <Download className="w-4 h-4" /> Download PDF / Lihat Modul
+                            <Download className="w-4 h-4" /> {isUkai ? 'Buka E-Book' : 'Download PDF / Lihat Modul'}
                         </a>
                         
                         {/* Decorative background */}

@@ -123,6 +123,8 @@ export default function ClassManager({
   const [successMsg, setSuccessMsg] = useState('')
 
   const isPharmacamp = kelas.title?.startsWith('Pharmacamp')
+  // UKAI Series: tanpa mentor, student langsung di-assign
+  const isUkai = !!kelas.title?.toUpperCase().startsWith('UKAI')
 
   // Subclass States
   const [selectedSubClassId, setSelectedSubClassId] = useState<string | null>(subClasses[0]?.id || null)
@@ -887,6 +889,7 @@ export default function ClassManager({
                     Detail Sub Kelas
                   </button>
 
+                  {!isUkai && (
                   <button
                     onClick={() => setSubClassActiveTab('mentors')}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all
@@ -902,6 +905,7 @@ export default function ClassManager({
                       {currentMentors.length}
                     </span>
                   </button>
+                  )}
 
                   <button
                     onClick={() => setSubClassActiveTab('resources')}
@@ -1042,7 +1046,7 @@ export default function ClassManager({
                   )}
 
                   {/* TAB: Mentor & Peminatan (Step 1: assign mentor, Step 2: assign student to mentor) */}
-                  {subClassActiveTab === 'mentors' && (
+                  {!isUkai && subClassActiveTab === 'mentors' && (
                     <div className="space-y-8 animate-in fade-in duration-200">
 
                       {/* STEP 1: Assign Mentor ke Sub Kelas */}
@@ -1416,7 +1420,7 @@ export default function ClassManager({
                             <input
                               ref={fileInputRef}
                               type="file"
-                              accept=".pdf,.doc,.docx,.ppt,.pptx"
+                              accept={isUkai ? '.pdf' : '.pdf,.doc,.docx,.ppt,.pptx'}
                               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                               className="w-full p-2.5 rounded-xl border border-gray-200 bg-white text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
                               required
@@ -1839,7 +1843,7 @@ export default function ClassManager({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    accept={isUkai ? '.pdf' : '.pdf,.doc,.docx,.ppt,.pptx'}
                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                     className="w-full p-2.5 rounded-xl border border-gray-200 bg-white text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
                     required

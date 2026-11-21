@@ -25,14 +25,14 @@ export async function startTryoutAttempt(tryoutId: string) {
   if (tryout.class_id) {
     const { data: enrollment } = await supabase
       .from('enrollments')
-      .select('id')
+      .select('id, sub_class_id')
       .eq('class_id', tryout.class_id)
       .eq('student_id', user.id)
       .eq('status', 'active')
       .maybeSingle()
 
-    if (!enrollment) {
-      return { error: "Anda harus terdaftar di kelas ini untuk mengakses tryout" }
+    if (!enrollment || (tryout.sub_class_id && enrollment.sub_class_id !== tryout.sub_class_id)) {
+      return { error: "Anda harus terdaftar di kelas/sub-kelas ini untuk mengakses tryout" }
     }
   }
 

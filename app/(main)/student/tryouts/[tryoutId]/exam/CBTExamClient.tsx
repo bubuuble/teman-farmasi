@@ -389,42 +389,20 @@ export default function CBTExamClient({
                 </span>
               </div>
 
-              {/* CENTER: Ragu button (prominent) */}
+              {/* CENTER: Selesai & Submit */}
               <div className="flex justify-center">
-                {!isCurrentLocked && (
-                  <button
-                    onClick={handleToggleFlag}
-                    className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-extrabold transition shadow-sm active:scale-95 ${
-                      currentAnswer.isFlagged
-                        ? 'bg-amber-400 text-amber-950 shadow-amber-200'
-                        : 'bg-amber-50 text-amber-700 border-2 border-amber-200 hover:bg-amber-100'
-                    }`}
-                  >
-                    <Flag className={`w-4 h-4 ${currentAnswer.isFlagged ? 'fill-current' : ''}`} />
-                    {currentAnswer.isFlagged ? 'Ditandai Ragu' : 'Tandai Ragu'}
-                  </button>
-                )}
+                <button
+                  onClick={() => setIsSubmitModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-extrabold hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20 active:scale-95"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Selesai &amp; Submit
+                </button>
               </div>
 
               {/* RIGHT: Next / Finish */}
               <div className="flex justify-end">
                 {isLastQuestion ? (
-                  // On last question — show submit if answered, else disabled next
-                  isCurrentLocked || currentAnswer.selectedOptionId ? (
-                    <button
-                      onClick={() => setIsSubmitModalOpen(true)}
-                      className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-extrabold hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20 active:scale-95"
-                    >
-                      <CheckCircle2 className="w-4 h-4" /> Kumpulkan Ujian
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="inline-flex items-center gap-2 px-5 py-3 bg-gray-100 text-gray-400 rounded-2xl text-xs font-extrabold cursor-not-allowed opacity-60"
-                    >
-                      Jawab Dulu <ChevronRight className="w-4 h-4" />
-                    </button>
-                  )
+                  <span className="text-xs text-gray-400 font-semibold">Soal terakhir</span>
                 ) : (
                   <button
                     onClick={handleNext}

@@ -24,6 +24,20 @@ export default async function ExamPage({
 
   if (!tryout || !tryout.is_active) return notFound()
 
+  // 1b. Validasi akses kelas / sub-kelas
+  if (tryout.class_id) {
+    const { data: enr } = await supabase
+      .from('enrollments')
+      .select('id, sub_class_id')
+      .eq('class_id', tryout.class_id)
+      .eq('student_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle()
+    if (!enr || (tryout.sub_class_id && enr.sub_class_id !== tryout.sub_class_id)) {
+      redirect(`/student/tryouts/${tryoutId}`)
+    }
+  }
+
   // 2. Fetch active attempt for this student
   const { data: attempt } = await supabase
     .from('tryout_attempts')

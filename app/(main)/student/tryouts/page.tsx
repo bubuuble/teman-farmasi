@@ -28,7 +28,7 @@ export default async function StudentTryoutsPage({
   // 1. Ambil kelas di mana student terdaftar
   const { data: enrollments = [] } = await supabase
     .from('enrollments')
-    .select('class_id')
+    .select('class_id, sub_class_id')
     .eq('student_id', user?.id || '')
     .eq('status', 'active')
 
@@ -191,7 +191,7 @@ export default async function StudentTryoutsPage({
           {tryoutsList.map((t: any) => {
             const isUkmppai = t.program_type === 'ukmppai'
             const hasClassConstraint = !!t.class_id
-            const isEnrolled = !hasClassConstraint || enrolledClassIds.includes(t.class_id)
+            const isEnrolled = !hasClassConstraint || (enrollments || []).some((e: any) => e.class_id === t.class_id && (!t.sub_class_id || e.sub_class_id === t.sub_class_id))
 
             // Ambil attempt siswa untuk tryout ini
             const myAttempts = attemptsList.filter((a: any) => a.tryout_id === t.id)

@@ -42,13 +42,13 @@ export default async function TryoutIntroPage({
   if (tryout.class_id) {
     const { data: enrollment } = await supabase
       .from('enrollments')
-      .select('id')
+      .select('id, sub_class_id')
       .eq('class_id', tryout.class_id)
       .eq('student_id', user.id)
       .eq('status', 'active')
       .maybeSingle()
 
-    if (!enrollment) {
+    if (!enrollment || (tryout.sub_class_id && enrollment.sub_class_id !== tryout.sub_class_id)) {
       return (
         <div className="max-w-xl mx-auto my-12 bg-white rounded-3xl p-8 border border-red-100 text-center space-y-4 shadow-sm">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />

@@ -53,7 +53,7 @@ export default function SessionCard({
     <>
       <div 
         onClick={() => setShowModal(true)}
-        className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm hover:shadow-xl hover:border-brand-pink/30 transition-all cursor-pointer group flex flex-col h-full relative overflow-hidden"
+        className="bg-white p-5 sm:p-8 rounded-3xl sm:rounded-[40px] border border-gray-100 shadow-sm hover:shadow-xl hover:border-brand-pink/30 transition-all cursor-pointer group flex flex-col h-full relative overflow-hidden"
       >
         <div className="flex justify-between items-start mb-6">
             <span className={`px-4 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-2 shadow-sm border ${
@@ -88,20 +88,20 @@ export default function SessionCard({
 
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-[40px] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-3xl sm:rounded-[40px] w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
                 
-                <div className="bg-brand-pink p-10 text-white relative">
+                <div className="bg-brand-pink p-6 sm:p-8 lg:p-10 text-white relative">
                     <button onClick={() => setShowModal(false)} className="absolute right-8 top-8 p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 mb-2 block">
                         {session.classes?.title || 'Kelas'}
                     </span>
-                    <h2 className="text-3xl font-bold font-heading leading-tight">{session.title}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold font-heading leading-tight">{session.title}</h2>
                     {session.sub_classes?.title && <p className="mt-2 opacity-90">Peminatan: {session.sub_classes.title}</p>}
                 </div>
 
-                <div className="p-10 space-y-8">
+                <div className="p-6 sm:p-10 space-y-6 sm:space-y-8">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100">
                              <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">

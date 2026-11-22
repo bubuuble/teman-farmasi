@@ -144,7 +144,7 @@ export default async function StudentClassDetailPage({
             Kembali ke Kelas Saya
          </Link>
          
-         <div className="bg-brand-darkblue p-10 rounded-[40px] shadow-xl relative overflow-hidden text-white">
+         <div className="bg-brand-darkblue p-6 sm:p-8 lg:p-10 rounded-3xl sm:rounded-[40px] shadow-xl relative overflow-hidden text-white">
             <div className="relative z-10">
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <span className="bg-brand-pink text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-lg">
@@ -157,7 +157,7 @@ export default async function StudentClassDetailPage({
                   )}
                 </div>
                 
-                <h1 className="font-heading font-bold text-4xl mb-4 leading-tight text-brand-cream">{kelas?.title}</h1>
+                <h1 className="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl mb-4 leading-tight text-brand-cream">{kelas?.title}</h1>
                 
                 {!isPharmacamp && (
                   <div className="flex items-center gap-3 mb-6 bg-white/10 w-fit px-4 py-2 rounded-2xl border border-white/10 backdrop-blur-sm">
@@ -181,7 +181,7 @@ export default async function StudentClassDetailPage({
          </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
         {/* KOLOM KIRI: JADWAL */}
         <div className="lg:col-span-2 space-y-8">
             <div className="flex items-center justify-between px-2">
@@ -191,7 +191,7 @@ export default async function StudentClassDetailPage({
             </div>
 
             {batches.length === 0 ? (
-                <div className="p-20 text-center bg-white rounded-[40px] border-2 border-dashed border-gray-100">
+                <div className="p-5 sm:p-8 sm:p-14 lg:p-20 text-center bg-white rounded-3xl sm:rounded-[40px] border-2 border-dashed border-gray-100">
                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Calendar className="w-8 h-8 text-gray-300" />
                     </div>
@@ -199,8 +199,8 @@ export default async function StudentClassDetailPage({
                 </div>
             ) : (
                 batches.map((batch) => (
-                    <div key={batch.id} className="bg-white rounded-[40px] border border-gray-100 overflow-hidden shadow-sm mb-8">
-                        <div className="bg-brand-cream/30 p-8 border-b border-gray-100 flex justify-between items-center">
+                    <div key={batch.id} className="bg-white rounded-3xl sm:rounded-[40px] border border-gray-100 overflow-hidden shadow-sm mb-8">
+                        <div className="bg-brand-cream/30 p-5 sm:p-8 border-b border-gray-100 flex justify-between items-center">
                             <div>
                                 <h4 className="font-bold text-xl text-brand-dark">{batch.name}</h4>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.15em] mt-2 flex items-center gap-2">
@@ -237,7 +237,7 @@ export default async function StudentClassDetailPage({
 
             <div className="grid grid-cols-1 gap-6">
                 {resources.map((res) => (
-                    <div key={res.id} className="bg-white p-6 rounded-[40px] border border-gray-100 hover:border-brand-pink/20 hover:shadow-xl transition-all group relative overflow-hidden">
+                    <div key={res.id} className="bg-white p-6 rounded-3xl sm:rounded-[40px] border border-gray-100 hover:border-brand-pink/20 hover:shadow-xl transition-all group relative overflow-hidden">
                         <div className="flex items-center gap-5 mb-6 relative z-10">
                             <div className="w-14 h-14 bg-brand-cream text-brand-pink rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <FileText className="w-7 h-7" />
@@ -262,7 +262,7 @@ export default async function StudentClassDetailPage({
                 ))}
 
                 {resources.length === 0 && (
-                    <div className="p-16 text-center bg-white rounded-[40px] border-2 border-dashed border-gray-100">
+                    <div className="p-5 sm:p-8 sm:p-12 lg:p-16 text-center bg-white rounded-3xl sm:rounded-[40px] border-2 border-dashed border-gray-100">
                         <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                             <FileText className="w-6 h-6 text-gray-300" />
                         </div>

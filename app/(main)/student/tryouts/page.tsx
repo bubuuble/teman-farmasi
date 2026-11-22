@@ -174,7 +174,7 @@ export default async function StudentTryoutsPage({
 
       {/* LIST TRYOUT */}
       {(!tryoutsList || tryoutsList.length === 0) ? (
-        <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-gray-200">
+        <div className="bg-white rounded-3xl p-6 sm:p-10 lg:p-12 text-center border-2 border-dashed border-gray-200">
           {q ? (
             <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           ) : (

@@ -67,7 +67,7 @@ export default async function StudentClassesPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="font-heading font-bold text-4xl text-brand-dark">Kelas & Materi</h1>
+        <h1 className="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-brand-dark">Kelas & Materi</h1>
         <p className="text-gray-500 font-medium mt-2">Akses modul pembelajaran dan e-book eksklusif kamu di sini.</p>
       </div>
 
@@ -81,7 +81,7 @@ export default async function StudentClassesPage() {
           const mentorName = getMentorName(item.class_id, item.sub_class_id)
 
           return (
-            <div key={item.id} className="bg-white rounded-[40px] p-8 shadow-sm hover:shadow-xl transition-all border border-gray-100 group flex flex-col h-full hover:-translate-y-1">
+            <div key={item.id} className="bg-white rounded-3xl sm:rounded-[40px] p-5 sm:p-8 shadow-sm hover:shadow-xl transition-all border border-gray-100 group flex flex-col h-full hover:-translate-y-1">
               
               <div className="flex justify-between items-start mb-6">
                  <div className="w-14 h-14 bg-brand-cream text-brand-pink rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -132,7 +132,7 @@ export default async function StudentClassesPage() {
         })}
 
         {(!enrollments || enrollments.length === 0) && (
-            <div className="col-span-full py-24 text-center bg-white rounded-[40px] border-2 border-dashed border-gray-100">
+            <div className="col-span-full py-14 sm:py-24 text-center bg-white rounded-3xl sm:rounded-[40px] border-2 border-dashed border-gray-100">
                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <BookOpen className="w-10 h-10 text-gray-300" />
                 </div>

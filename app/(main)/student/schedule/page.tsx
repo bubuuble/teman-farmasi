@@ -104,7 +104,7 @@ export default async function StudentSchedulePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-            <h1 className="font-heading font-bold text-4xl text-brand-dark">Jadwal & Absensi</h1>
+            <h1 className="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-brand-dark">Jadwal & Absensi</h1>
             <p className="text-gray-500 font-medium mt-2">Kelola kehadiranmu di setiap sesi pertemuan dengan mudah.</p>
         </div>
         <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100">
@@ -144,7 +144,7 @@ export default async function StudentSchedulePage() {
                 ))}
             </div>
         ) : (
-            <div className="p-16 text-center bg-white rounded-[40px] border-2 border-dashed border-gray-100">
+            <div className="p-5 sm:p-8 sm:p-12 lg:p-16 text-center bg-white rounded-3xl sm:rounded-[40px] border-2 border-dashed border-gray-100">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <History className="w-8 h-8 text-gray-300" />
                 </div>
@@ -161,7 +161,7 @@ export default async function StudentSchedulePage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {myClasses.map((cls: ClassInfo) => (
-                <div key={cls.id} className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm flex flex-col group hover:shadow-xl transition-all hover:-translate-y-1">
+                <div key={cls.id} className="bg-white p-5 sm:p-8 rounded-3xl sm:rounded-[40px] border border-gray-100 shadow-sm flex flex-col group hover:shadow-xl transition-all hover:-translate-y-1">
                     <div className="flex justify-between items-start mb-6">
                         <div className="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center text-brand-pink group-hover:scale-110 transition-transform">
                             <BookOpen className="w-6 h-6" />

@@ -71,26 +71,32 @@ export async function startTryoutAttempt(tryoutId: string) {
 
   if (attErr || !newAttempt) return { error: attErr?.message || "Gagal memulai tryout" }
 
-  // Ambil daftar soal tryout
-  const { data: questions } = await supabase
-    .from('tryout_questions')
-    .select('question_id')
-    .eq('tryout_id', tryoutId)
-
-  // Inisialisasi baris jawaban kosong untuk attempt ini
-  if (questions && questions.length > 0) {
-    const blankAnswers = questions.map(q => ({
-      attempt_id: newAttempt.id,
-      question_id: q.question_id,
-      selected_option_id: null,
-      is_flagged: false
-    }))
-
-    await supabase.from('tryout_answers').insert(blankAnswers)
-  }
+  // Baris jawaban tidak dibuat di awal: dibuat (upsert) saat siswa menjawab / menandai ragu.
+  // Total soal dihitung dari tryout_questions, bukan dari jumlah baris jawaban.
 
   revalidatePath('/student/tryouts')
   return { success: true, attemptId: newAttempt.id }
+}
+
+// Cache kebenaran opsi per instance server (kunci jawaban tidak berubah selama ujian).
+// Menghindari 1 query DB per klik jawaban saat ratusan siswa ujian bersamaan.
+const OPTION_CACHE_TTL_MS = 10 * 60 * 1000
+const optionCorrectCache = new Map<string, { value: boolean; expires: number }>()
+
+async function isOptionCorrect(supabase: Awaited<ReturnType<typeof createClient>>, optionId: string) {
+  const hit = optionCorrectCache.get(optionId)
+  if (hit && hit.expires > Date.now()) return hit.value
+
+  const { data: opt } = await supabase
+    .from('question_options')
+    .select('is_correct')
+    .eq('id', optionId)
+    .maybeSingle()
+
+  const value = opt?.is_correct ?? false
+  if (optionCorrectCache.size > 20000) optionCorrectCache.clear()
+  optionCorrectCache.set(optionId, { value, expires: Date.now() + OPTION_CACHE_TTL_MS })
+  return value
 }
 
 // ----------------------------------------------------
@@ -112,13 +118,7 @@ export async function saveStudentAnswer({
   // Cek apakah opsi yang dipilih benar (untuk scoring otomatis)
   let isCorrect: boolean | null = null
   if (selectedOptionId) {
-    const { data: opt } = await supabase
-      .from('question_options')
-      .select('is_correct')
-      .eq('id', selectedOptionId)
-      .maybeSingle()
-
-    isCorrect = opt?.is_correct ?? false
+    isCorrect = await isOptionCorrect(supabase, selectedOptionId)
   }
 
   const { error } = await supabase
@@ -146,6 +146,20 @@ export async function submitTryoutAttempt(attemptId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Sesi telah berakhir" }
 
+  // Total soal berasal dari daftar soal tryout (baris jawaban hanya ada untuk soal yang disentuh siswa)
+  const { data: attemptRow } = await supabase
+    .from('tryout_attempts')
+    .select('tryout_id')
+    .eq('id', attemptId)
+    .eq('student_id', user.id)
+    .maybeSingle()
+  if (!attemptRow) return { error: "Attempt tidak ditemukan" }
+
+  const { count: questionCount } = await supabase
+    .from('tryout_questions')
+    .select('question_id', { count: 'exact', head: true })
+    .eq('tryout_id', attemptRow.tryout_id)
+
   // Hitung jumlah jawaban benar
   const { data: answers } = await supabase
     .from('tryout_answers')
@@ -154,7 +168,7 @@ export async function submitTryoutAttempt(attemptId: string) {
 
   const totalAnswered = (answers || []).filter(a => a.selected_option_id != null).length
   const totalCorrect = (answers || []).filter(a => a.is_correct === true).length
-  const totalQuestions = answers?.length || 1
+  const totalQuestions = questionCount || answers?.length || 1
 
   const finalScore = (totalCorrect / totalQuestions) * 100
 

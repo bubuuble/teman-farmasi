@@ -44,7 +44,7 @@ export default async function StudentOrdersPage() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="font-heading font-bold text-4xl text-brand-dark">Riwayat Pembayaran</h1>
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-brand-dark">Riwayat Pembayaran</h1>
           <p className="text-gray-500 font-medium mt-2">Pantau status tagihan dan pendaftaran kelas Anda di sini.</p>
         </div>
 
@@ -65,7 +65,7 @@ export default async function StudentOrdersPage() {
 
       {/* Info Box: Instruksi Pembayaran (Statis) */}
       {pendingOrders.length > 0 && (
-         <div className="bg-brand-darkblue rounded-[40px] p-10 text-white flex flex-col lg:flex-row items-center gap-8 shadow-2xl shadow-brand-darkblue/20 relative overflow-hidden">
+         <div className="bg-brand-darkblue rounded-3xl sm:rounded-[40px] p-6 sm:p-8 lg:p-10 text-white flex flex-col lg:flex-row items-center gap-8 shadow-2xl shadow-brand-darkblue/20 relative overflow-hidden">
             <div className="w-20 h-20 bg-white/10 rounded-[28px] flex items-center justify-center shrink-0 relative z-10">
                <CreditCard className="w-10 h-10 text-brand-yellow" />
             </div>
@@ -79,7 +79,7 @@ export default async function StudentOrdersPage() {
             <Link 
                href="https://wa.me/628895587621" 
                target="_blank"
-               className="bg-brand-yellow text-brand-dark px-10 py-4 rounded-2xl font-bold text-base hover:bg-white transition-all shadow-lg relative z-10 whitespace-nowrap"
+               className="bg-brand-yellow text-brand-dark px-6 sm:px-10 py-3.5 sm:py-4 rounded-2xl font-bold text-sm sm:text-base hover:bg-white transition-all shadow-lg relative z-10 whitespace-nowrap"
             >
                Konfirmasi via WA
             </Link>
@@ -92,22 +92,22 @@ export default async function StudentOrdersPage() {
       {/* List Orders */}
       <div className="grid grid-cols-1 gap-6">
         {orders.map((order) => (
-          <div key={order.id} className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm hover:shadow-xl transition-all group flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div key={order.id} className="bg-white p-5 sm:p-8 rounded-3xl sm:rounded-[40px] border border-gray-100 shadow-sm hover:shadow-xl transition-all group flex flex-col md:flex-row md:items-center justify-between gap-8">
             
-            <div className="flex items-center gap-6">
-               <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110
+            <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+               <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110
                   ${order.status === 'paid' ? 'bg-green-50 text-green-600' : 
                     order.status === 'cancelled' ? 'bg-red-50 text-red-600' : 'bg-brand-cream text-brand-pink'}`}
                >
-                  <Receipt className="w-8 h-8" />
+                  <Receipt className="w-6 h-6 sm:w-8 sm:h-8" />
                </div>
                
                <div>
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">#{order.id.slice(0, 8)}</span>
                      <StatusBadge status={order.status} />
                   </div>
-                  <h3 className="font-bold text-brand-dark text-xl group-hover:text-brand-pink transition-colors">
+                  <h3 className="font-bold text-brand-dark text-base sm:text-xl group-hover:text-brand-pink transition-colors break-words">
                      {order.classes?.title || "Kelas Tidak Ditemukan"}
                   </h3>
                   <div className="flex items-center gap-2 text-sm text-gray-400 mt-2 font-medium">
@@ -119,7 +119,7 @@ export default async function StudentOrdersPage() {
 
             <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-2 border-t md:border-t-0 pt-6 md:pt-0 border-gray-50">
                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nominal Tagihan</p>
-               <p className="text-2xl font-heading font-bold text-brand-dark">
+               <p className="text-xl sm:text-2xl font-heading font-bold text-brand-dark">
                   {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.amount)}
                </p>
                {order.notes && (
@@ -133,7 +133,7 @@ export default async function StudentOrdersPage() {
         ))}
 
         {orders.length === 0 && (
-           <div className="py-24 text-center bg-white rounded-[40px] border-2 border-dashed border-gray-100">
+           <div className="py-14 sm:py-24 text-center bg-white rounded-3xl sm:rounded-[40px] border-2 border-dashed border-gray-100">
               <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
                  <Receipt className="w-10 h-10 text-gray-200" />
               </div>

@@ -29,8 +29,13 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // 1. Cek User
-  const { data: { user } } = await supabase.auth.getUser();
+  // 1. Cek User — getClaims() memverifikasi JWT secara lokal (JWKS di-cache) sehingga tidak ada
+  // round-trip ke Supabase Auth di setiap request; session tetap di-refresh bila kedaluwarsa.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
+  const user = claims?.sub
+    ? { id: claims.sub as string, user_metadata: (claims.user_metadata ?? {}) as Record<string, any> }
+    : null;
   const path = request.nextUrl.pathname;
 
   // Helper untuk cek area (Gunakan pengecekan yang lebih spesifik agar tidak bentrok dengan /mentors)

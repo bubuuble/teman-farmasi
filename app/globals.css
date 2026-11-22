@@ -52,3 +52,10 @@
 .tf-scroll::-webkit-scrollbar-thumb:hover {
   background: #FF8FAB;
 }
+
+/* CBT: area soal sedikit diperkecil di layar lebar agar muat tanpa banyak scroll (HP tetap 100%) */
+@media (min-width: 640px) {
+  .cbt-zoom {
+    zoom: 0.85;
+  }
+}

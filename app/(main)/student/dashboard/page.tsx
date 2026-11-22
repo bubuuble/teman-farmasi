@@ -67,19 +67,19 @@ export default async function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-10">
       
       {/* Welcome Section */}
-      <div className="bg-brand-darkblue rounded-[40px] p-12 text-white relative overflow-hidden shadow-2xl shadow-brand-darkblue/20">
+      <div className="bg-brand-darkblue rounded-3xl sm:rounded-[40px] p-6 sm:p-10 lg:p-12 text-white relative overflow-hidden shadow-2xl shadow-brand-darkblue/20">
          <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest mb-6 border border-white/10">
                 <span className="w-2 h-2 bg-brand-pink rounded-full animate-pulse"></span>
                 Student Dashboard
             </div>
-            <h1 className="font-heading font-bold text-5xl mb-4 leading-tight text-brand-cream">
+            <h1 className="font-heading font-bold text-3xl sm:text-4xl lg:text-5xl mb-4 leading-tight text-brand-cream">
                 Waktunya <span className="text-brand-yellow">Belajar</span> & <br/> Jadi <span className="text-brand-pink">Hebat!</span> 🚀
             </h1>
-            <p className="text-white/70 text-lg leading-relaxed max-w-lg">
+            <p className="text-white/70 text-base sm:text-lg leading-relaxed max-w-lg">
                 Akses semua materi, cek jadwal, dan pantau progres belajarmu dalam satu tempat yang nyaman.
             </p>
          </div>
@@ -87,11 +87,11 @@ export default async function StudentDashboard() {
          <div className="absolute right-[10%] bottom-[-20%] w-64 h-64 bg-brand-yellow/10 rounded-full"></div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
         
-        <div className="lg:col-span-2 space-y-10">
+        <div className="lg:col-span-2 space-y-6 sm:space-y-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="bg-white p-8 rounded-[32px] shadow-sm border border-brand-yellow/20 flex items-center gap-6 hover:shadow-md transition-all hover:-translate-y-1">
+                <div className="bg-white p-5 sm:p-8 rounded-[32px] shadow-sm border border-brand-yellow/20 flex items-center gap-6 hover:shadow-md transition-all hover:-translate-y-1">
                     <div className="w-16 h-16 bg-brand-yellow text-brand-dark rounded-2xl flex items-center justify-center shadow-inner">
                         <BookOpen className="w-8 h-8" />
                     </div>
@@ -100,7 +100,7 @@ export default async function StudentDashboard() {
                         <h3 className="text-3xl font-bold text-brand-dark">{classCount || 0}</h3>
                     </div>
                 </div>
-                <div className="bg-white p-8 rounded-[32px] shadow-sm border border-brand-pink/20 flex items-center gap-6 hover:shadow-md transition-all hover:-translate-y-1">
+                <div className="bg-white p-5 sm:p-8 rounded-[32px] shadow-sm border border-brand-pink/20 flex items-center gap-6 hover:shadow-md transition-all hover:-translate-y-1">
                     <div className="w-16 h-16 bg-brand-pink text-white rounded-2xl flex items-center justify-center shadow-lg shadow-brand-pink/20">
                         <CheckCircle className="w-8 h-8" />
                     </div>
@@ -114,8 +114,8 @@ export default async function StudentDashboard() {
                 </div>
             </div>
 
-            <div className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-100 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-8 relative z-10">
+            <div className="bg-white p-6 sm:p-8 lg:p-10 rounded-3xl sm:rounded-[40px] shadow-sm border border-gray-100 relative overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-6 sm:mb-8 relative z-10">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-brand-cream rounded-xl flex items-center justify-center">
                             <Calendar className="w-5 h-5 text-brand-pink" />
@@ -128,14 +128,14 @@ export default async function StudentDashboard() {
                 </div>
 
                 {nextSession ? (
-                    <div className="bg-brand-yellow/50 rounded-[32px] p-8 border border-brand-yellow/70 relative overflow-hidden group">
+                    <div className="bg-brand-yellow/50 rounded-[32px] p-5 sm:p-8 border border-brand-yellow/70 relative overflow-hidden group">
                         <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-6">
+                            <div className="flex flex-wrap justify-between items-start gap-3 mb-6">
                                 <div>
                                     <span className="bg-white px-3 py-1 rounded-full text-[10px] font-bold text-brand-pink uppercase tracking-widest mb-3 inline-block shadow-sm border border-brand-pink/10">
                                         {nextSession.classes?.title || "Kelas"}
                                     </span>
-                                    <h4 className="font-bold text-3xl text-brand-dark group-hover:text-brand-pink transition-colors leading-tight">
+                                    <h4 className="font-bold text-xl sm:text-2xl lg:text-3xl text-brand-dark group-hover:text-brand-pink transition-colors leading-tight">
                                         {nextSession.title}
                                     </h4>
                                     {nextSession.sub_classes?.title && (
@@ -154,7 +154,7 @@ export default async function StudentDashboard() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-6 mb-10">
+                            <div className="flex flex-wrap items-center gap-3 sm:gap-6 mb-6 sm:mb-10">
                                 <div className="flex items-center gap-3 text-brand-dark bg-white px-5 py-3 rounded-2xl text-sm font-bold shadow-sm border border-gray-50">
                                     <Clock className="w-5 h-5 text-brand-pink" />
                                     {new Date(nextSession.date_time).toLocaleDateString('id-ID', {
@@ -169,19 +169,19 @@ export default async function StudentDashboard() {
                                         href={nextSession.zoom_link}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="flex-1 bg-brand-darkblue text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-brand-dark transition-all shadow-xl shadow-brand-darkblue/20"
+                                        className="flex-1 bg-brand-darkblue text-white py-4 sm:py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-brand-dark transition-all shadow-xl shadow-brand-darkblue/20"
                                     >
                                         <Video className="w-6 h-6" /> Gabung Kelas (Zoom)
                                     </a>
                                 ) : (
-                                    <div className="flex-1 bg-gray-100 text-gray-400 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 border border-dashed border-gray-200">
+                                    <div className="flex-1 bg-gray-100 text-gray-400 py-4 sm:py-5 rounded-2xl font-bold flex items-center justify-center gap-3 border border-dashed border-gray-200">
                                         <Video className="w-6 h-6" /> Link Belum Tersedia
                                     </div>
                                 )}
                                 
                                 <Link 
                                     href="/student/schedule"
-                                    className={`flex-1 py-5 rounded-2xl font-bold text-center transition-all flex items-center justify-center gap-2 ${
+                                    className={`flex-1 py-4 sm:py-5 rounded-2xl font-bold text-center transition-all flex items-center justify-center gap-2 ${
                                         nextSession.is_open 
                                         ? "bg-brand-pink text-white shadow-xl shadow-brand-pink/20 hover:bg-brand-dark" 
                                         : "bg-brand-yellow text-brand-dark hover:bg-brand-dark hover:text-white"
@@ -193,18 +193,18 @@ export default async function StudentDashboard() {
                         </div>
                     </div>
                 ) : (
-                    <div className="py-20 text-center bg-brand-cream/20 rounded-[32px] border-2 border-dashed border-brand-yellow/30">
+                    <div className="py-12 sm:py-20 text-center bg-brand-cream/20 rounded-[32px] border-2 border-dashed border-brand-yellow/30">
                         <p className="text-gray-500 font-medium">Tidak ada jadwal kelas dalam waktu dekat.</p>
                     </div>
                 )}
             </div>
         </div>
 
-        <div className="space-y-10">
-            <div className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-100">
+        <div className="space-y-6 sm:space-y-10">
+            <div className="bg-white p-6 sm:p-8 lg:p-10 rounded-3xl sm:rounded-[40px] shadow-sm border border-gray-100">
                 <h3 className="font-heading font-bold text-xl text-brand-dark mb-8">Menu Cepat</h3>
                 <div className="space-y-4">
-                    <Link href="/student/classes" className="flex items-center justify-between p-6 rounded-3xl bg-brand-cream/30 hover:bg-brand-yellow transition-all group border border-brand-yellow/10">
+                    <Link href="/student/classes" className="flex items-center justify-between p-4 sm:p-6 rounded-3xl bg-brand-cream/30 hover:bg-brand-yellow transition-all group border border-brand-yellow/10">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-pink shadow-sm">
                                 <BookOpen className="w-6 h-6" />
@@ -212,7 +212,7 @@ export default async function StudentDashboard() {
                             <span className="font-bold text-brand-dark">Materi & E-Book</span>
                         </div>
                     </Link>
-                    <Link href="/student/schedule" className="flex items-center justify-between p-6 rounded-3xl bg-brand-cream/30 hover:bg-brand-pink hover:text-white transition-all group border border-brand-pink/10">
+                    <Link href="/student/schedule" className="flex items-center justify-between p-4 sm:p-6 rounded-3xl bg-brand-cream/30 hover:bg-brand-pink hover:text-white transition-all group border border-brand-pink/10">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-blue shadow-sm">
                                 <CheckCircle className="w-6 h-6" />

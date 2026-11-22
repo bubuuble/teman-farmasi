@@ -75,10 +75,10 @@ export default function SessionListItem({
       {/* MODAL DETAIL */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-dark/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white rounded-[40px] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20">
+            <div className="bg-white rounded-3xl sm:rounded-[40px] w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200 border border-white/20">
                 
                 {/* Modal Header */}
-                <div className="bg-brand-darkblue p-10 text-white relative overflow-hidden">
+                <div className="bg-brand-darkblue p-6 sm:p-8 lg:p-10 text-white relative overflow-hidden">
                     <button 
                         onClick={() => setShowModal(false)} 
                         className="absolute right-8 top-8 p-2 bg-white/10 rounded-full hover:bg-brand-pink transition-all shadow-lg z-20"
@@ -87,7 +87,7 @@ export default function SessionListItem({
                     </button>
                     <div className="relative z-10">
                         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-pink mb-3 block">{classTitle}</span>
-                        <h2 className="text-3xl font-bold font-heading leading-tight text-brand-cream">{session.title}</h2>
+                        <h2 className="text-2xl sm:text-3xl font-bold font-heading leading-tight text-brand-cream">{session.title}</h2>
                         <div className="text-xs text-blue-200 mt-3 font-bold uppercase tracking-widest flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-brand-yellow rounded-full"></div>
                             {batchName}
@@ -98,7 +98,7 @@ export default function SessionListItem({
                 </div>
 
                 {/* Modal Body */}
-                        <div className="p-10 space-y-8">
+                        <div className="p-6 sm:p-10 space-y-6 sm:space-y-8">
                     {/* Grid Waktu */}
                     <div className="grid grid-cols-2 gap-6">
                         <div className="bg-brand-cream/30 p-6 rounded-[32px] border border-brand-cream shadow-sm">

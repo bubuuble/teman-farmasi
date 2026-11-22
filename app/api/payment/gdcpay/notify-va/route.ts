@@ -11,8 +11,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     console.log('[GDCPay Webhook VA Received]:', JSON.stringify(body))
 
-    const partnerReferenceNo = body.partnerReferenceNo || body.trxId
-    const isPaid = body.paymentStatus === 'PAID' || body.paymentStatus === '00' || body.responseCode === '2002500'
+    // Format callback VA GDC: trxId = ID transaksi partner; status ada di additionalInfo.latestTransactionStatus
+    // (00 = SUCCESS, 06 = FAILED). Lihat https://neo-docs.gdc.co.id/documentation#snap-callback-va
+    const partnerReferenceNo = body.trxId || body.partnerReferenceNo
+    const isPaid = body.additionalInfo?.latestTransactionStatus === '00'
 
     if (!partnerReferenceNo) {
       return NextResponse.json({
@@ -53,8 +55,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      responseCode: '2002500',
-      responseMessage: 'Success'
+      responseCode: '2000000',
+      responseMessage: 'Successful'
     }, { status: 200 })
 
   } catch (error: any) {

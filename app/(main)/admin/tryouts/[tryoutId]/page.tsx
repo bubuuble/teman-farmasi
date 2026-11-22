@@ -15,6 +15,7 @@ import {
   Image as ImageIcon
 } from "lucide-react"
 import QuestionImage from "@/app/components/QuestionImage"
+import StudentResultRow, { type StudentResult } from "./StudentResultRow"
 import AssignQuestionsModal from "../AssignQuestionsModal"
 import CreateDirectQuestionModal from "../CreateDirectQuestionModal"
 import EditQuestionInTryoutModal from "../EditQuestionInTryoutModal"
@@ -27,10 +28,10 @@ export default async function TryoutDetailPage({
   searchParams
 }: {
   params: Promise<{ tryoutId: string }>
-  searchParams: Promise<{ tab?: string }>
+  searchParams: Promise<{ tab?: string; page?: string; q?: string }>
 }) {
   const { tryoutId } = await params
-  const { tab = 'questions' } = await searchParams
+  const { tab = 'questions', page: pageParam, q: qParam } = await searchParams
   const supabase = await createClient()
   const adminDb = createAdminClient()
 
@@ -95,6 +96,58 @@ export default async function TryoutDetailPage({
   const questionsList = assignedRows || []
   const attemptsList = attempts || []
   const existingQuestionIds = questionsList.map((r: any) => r.question_id)
+
+  // Hasil peserta: satu baris per siswa (skor tertinggi, attempt terakhir), peringkat dari skor tertinggi
+  const RESULTS_PER_PAGE = 20
+  const resultsQuery = (qParam || '').trim()
+  const byStudent = new Map<string, any[]>()
+  for (const att of attemptsList as any[]) {
+    const list = byStudent.get(att.student_id) || []
+    list.push(att)
+    byStudent.set(att.student_id, list)
+  }
+  const studentResults: StudentResult[] = Array.from(byStudent.entries())
+    .map(([studentId, atts]) => {
+      const sorted = [...atts].sort((x, y) => (y.attempt_number || 0) - (x.attempt_number || 0)) // terbaru dulu
+      const scores = atts.map(a => a.score).filter((v: any) => v != null).map(Number)
+      const latest = sorted[0]
+      // Percobaan dengan skor tertinggi (benar / total di tabel mengikuti percobaan ini)
+      const best = atts.reduce((acc: any, a: any) => (acc == null || Number(a.score ?? -1) > Number(acc.score ?? -1) ? a : acc), null)
+      return {
+        studentId,
+        rank: 0,
+        name: latest.profiles?.full_name || 'Siswa',
+        email: latest.profiles?.email || '',
+        attemptsDone: atts.length,
+        maxAttempts: (tryout as any)?.max_attempts ?? null,
+        bestScore: scores.length ? Math.max(...scores) : null,
+        bestCorrect: best?.total_correct ?? 0,
+        latestStatus: latest.status,
+        latestFinishedAt: latest.finished_at || null,
+        attempts: sorted.map(a => ({
+          id: a.id,
+          attemptNumber: a.attempt_number || 1,
+          totalCorrect: a.total_correct ?? 0,
+          score: a.score ?? null,
+          status: a.status,
+          finishedAt: a.finished_at || null
+        }))
+      }
+    })
+    .sort((x, y) => (y.bestScore ?? -1) - (x.bestScore ?? -1))
+    .map((r, i) => ({ ...r, rank: i }))
+
+  const filteredAttempts = resultsQuery
+    ? studentResults.filter(r => {
+        const needle = resultsQuery.toLowerCase()
+        return r.name.toLowerCase().includes(needle) || r.email.toLowerCase().includes(needle)
+      })
+    : studentResults
+  const totalPages = Math.max(1, Math.ceil(filteredAttempts.length / RESULTS_PER_PAGE))
+  const currentPage = Math.min(Math.max(parseInt(pageParam || '1', 10) || 1, 1), totalPages)
+  const pagedAttempts = filteredAttempts.slice((currentPage - 1) * RESULTS_PER_PAGE, currentPage * RESULTS_PER_PAGE)
+  const pageHref = (n: number) =>
+    `/admin/tryouts/${tryoutId}?tab=results&page=${n}${resultsQuery ? `&q=${encodeURIComponent(resultsQuery)}` : ''}`
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -308,6 +361,26 @@ export default async function TryoutDetailPage({
       {/* TAB CONTENT: RESULTS */}
       {tab === 'results' && (
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm overflow-x-auto">
+          {attemptsList.length > 0 && (
+            <form method="get" className="flex items-center gap-2 mb-4">
+              <input type="hidden" name="tab" value="results" />
+              <input
+                type="text"
+                name="q"
+                defaultValue={resultsQuery}
+                placeholder="Cari nama atau email siswa..."
+                className="flex-1 max-w-sm p-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-blue bg-white"
+              />
+              <button type="submit" className="px-4 py-2.5 bg-brand-darkblue text-white rounded-xl text-xs font-bold hover:bg-brand-dark transition">
+                Cari
+              </button>
+              {resultsQuery && (
+                <Link href={`/admin/tryouts/${tryoutId}?tab=results`} className="px-3 py-2.5 text-xs font-bold text-gray-500 hover:text-brand-dark">
+                  Reset
+                </Link>
+              )}
+            </form>
+          )}
           {attemptsList.length === 0 ? (
             <div className="text-center py-12 text-gray-400 text-sm">
               Belum ada siswa yang mengerjakan atau men-submit tryout ini.
@@ -318,7 +391,7 @@ export default async function TryoutDetailPage({
                 <tr className="border-b border-gray-100 text-[11px] font-extrabold uppercase text-gray-400 tracking-wider">
                   <th className="pb-3 pl-2">Peringkat</th>
                   <th className="pb-3">Nama Siswa</th>
-                  <th className="pb-3">Attempt Ke</th>
+                  <th className="pb-3">Percobaan</th>
                   <th className="pb-3">Benar / Total</th>
                   <th className="pb-3">Skor Akhir</th>
                   <th className="pb-3">Status</th>
@@ -326,52 +399,36 @@ export default async function TryoutDetailPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 font-medium">
-                {attemptsList.map((att: any, rank: number) => {
-                  const isTop3 = rank < 3
-                  return (
-                    <tr key={att.id} className="hover:bg-gray-50/70 transition">
-                      <td className="py-4 pl-2">
-                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-extrabold text-xs ${
-                          rank === 0 ? 'bg-amber-400 text-white shadow-sm' :
-                          rank === 1 ? 'bg-gray-300 text-gray-700' :
-                          rank === 2 ? 'bg-amber-700/60 text-white' : 'text-gray-400'
-                        }`}>
-                          #{rank + 1}
-                        </span>
-                      </td>
-                      <td className="py-4">
-                        <p className="font-bold text-brand-dark">
-                          {att.profiles?.full_name || 'Siswa'}
-                        </p>
-                        <p className="text-xs text-gray-400 font-normal">
-                          {att.profiles?.email}
-                        </p>
-                      </td>
-                      <td className="py-4 text-xs text-gray-600">
-                        Ke-{att.attempt_number || 1}
-                      </td>
-                      <td className="py-4 text-xs font-bold text-brand-dark">
-                        {att.total_correct} / {questionsList.length} Soal
-                      </td>
-                      <td className="py-4 font-extrabold text-base text-brand-pink">
-                        {att.score != null ? `${Number(att.score).toFixed(1)}%` : '-'}
-                      </td>
-                      <td className="py-4">
-                        <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full ${
-                          att.status === 'completed' ? 'bg-emerald-50 text-emerald-700' :
-                          att.status === 'timed_out' ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {att.status}
-                        </span>
-                      </td>
-                      <td className="py-4 text-xs text-gray-400">
-                        {att.finished_at ? new Date(att.finished_at).toLocaleString('id-ID') : '-'}
-                      </td>
-                    </tr>
-                  )
-                })}
+                {pagedAttempts.map((r) => (
+                  <StudentResultRow key={r.studentId} student={r} totalQuestions={questionsList.length} />
+                ))}
               </tbody>
             </table>
+          )}
+
+          {attemptsList.length > 0 && filteredAttempts.length === 0 && (
+            <p className="text-center py-8 text-sm text-gray-400">Tidak ada siswa yang cocok dengan pencarian.</p>
+          )}
+
+          {filteredAttempts.length > RESULTS_PER_PAGE && (
+            <div className="flex items-center justify-between pt-4 mt-2 border-t border-gray-100 text-xs font-bold text-gray-500">
+              <span>
+                {(currentPage - 1) * RESULTS_PER_PAGE + 1}–{Math.min(currentPage * RESULTS_PER_PAGE, filteredAttempts.length)} dari {filteredAttempts.length}
+              </span>
+              <div className="flex items-center gap-2">
+                {currentPage > 1 ? (
+                  <Link href={pageHref(currentPage - 1)} className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-brand-dark transition">Sebelumnya</Link>
+                ) : (
+                  <span className="px-3 py-2 rounded-lg bg-gray-50 text-gray-300">Sebelumnya</span>
+                )}
+                <span>Halaman {currentPage} / {totalPages}</span>
+                {currentPage < totalPages ? (
+                  <Link href={pageHref(currentPage + 1)} className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-brand-dark transition">Berikutnya</Link>
+                ) : (
+                  <span className="px-3 py-2 rounded-lg bg-gray-50 text-gray-300">Berikutnya</span>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}

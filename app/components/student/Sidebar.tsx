@@ -8,8 +8,10 @@ import {
   CalendarCheck, 
   History,
   FileCheck,
+  X,
 } from 'lucide-react'
 import SignOutButton from '../SignOutButton'
+import { useStudentNav } from './StudentNavProvider'
 
 type MenuItem = {
   label: string
@@ -47,14 +49,34 @@ const menuGroups: MenuGroup[] = [
 
 export default function StudentSidebar() {
   const pathname = usePathname()
+  const { isSidebarOpen, setSidebarOpen } = useStudentNav()
 
   return (
-    <aside className="w-64 bg-white border-r border-brand-yellow/30 h-screen flex flex-col fixed left-0 top-0 z-50">
+    <>
+    {/* Overlay (mobile) */}
+    {isSidebarOpen && (
+      <div
+        className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+    )}
+
+    <aside className={`w-64 max-w-[80vw] bg-white border-r border-brand-yellow/30 h-screen flex flex-col fixed left-0 top-0 z-50 transition-transform duration-300 lg:translate-x-0 ${
+      isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+    }`}>
       {/* Logo Area */}
-      <div className="h-24 flex items-center px-8 shrink-0">
+      <div className="h-20 lg:h-24 flex items-center justify-between px-6 lg:px-8 shrink-0">
         <Link href="/student/dashboard" className="flex items-center gap-5 group">
             <img src="/images/logos/logo_5.png" alt="Teman Farmasi" className="w-32 h-auto object-contain group-hover:scale-105 transition-transform" />
         </Link>
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden p-1.5 text-gray-400 hover:text-brand-dark rounded-lg hover:bg-gray-100 transition-colors"
+          aria-label="Tutup menu"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Navigation Menu */}
@@ -98,5 +120,6 @@ export default function StudentSidebar() {
         </div>
       </nav>
     </aside>
+    </>
   )
 }

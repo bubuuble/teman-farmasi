@@ -1,6 +1,38 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
+import { unstable_cache } from "next/cache"
+import { createAdminClient } from "@/lib/supabase/admin"
 import CBTExamClient from "./CBTExamClient"
+
+// Daftar soal + opsi sama untuk semua siswa: di-cache 2 menit supaya 100+ siswa yang mulai
+// bersamaan hanya memicu satu query besar ke database (bukan satu per siswa).
+const getAssignedQuestions = unstable_cache(
+  async (tryoutId: string) => {
+    const admin = createAdminClient()
+    const { data } = await admin
+      .from('tryout_questions')
+      .select(`
+        question_id,
+        question_order,
+        questions(
+          id,
+          question_text,
+          question_image_url,
+          question_options(
+            id,
+            label,
+            option_text,
+            is_correct
+          )
+        )
+      `)
+      .eq('tryout_id', tryoutId)
+      .order('question_order', { ascending: true })
+    return data || []
+  },
+  ['exam-assigned-questions'],
+  { revalidate: 120 }
+)
 
 export const dynamic = 'force-dynamic'
 
@@ -11,9 +43,11 @@ export default async function ExamPage({
 }) {
   const { tryoutId } = await params
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // getClaims: verifikasi JWT lokal, tanpa round-trip ke Supabase Auth
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub as string | undefined
 
-  if (!user) redirect('/login')
+  if (!userId) redirect('/login')
 
   // 1. Fetch tryout details
   const { data: tryout } = await supabase
@@ -24,56 +58,42 @@ export default async function ExamPage({
 
   if (!tryout || !tryout.is_active) return notFound()
 
-  // 1b. Validasi akses kelas / sub-kelas
+  // 1b-3. Enrollment, attempt aktif, dan daftar soal diambil paralel
+  const [enrRes, attemptRes, assignedRows] = await Promise.all([
+    tryout.class_id
+      ? supabase
+          .from('enrollments')
+          .select('id, sub_class_id')
+          .eq('class_id', tryout.class_id)
+          .eq('student_id', userId)
+          .eq('status', 'active')
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from('tryout_attempts')
+      .select('*')
+      .eq('tryout_id', tryoutId)
+      .eq('student_id', userId)
+      .eq('status', 'in_progress')
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    getAssignedQuestions(tryoutId),
+  ])
+
+  // Validasi akses kelas / sub-kelas
   if (tryout.class_id) {
-    const { data: enr } = await supabase
-      .from('enrollments')
-      .select('id, sub_class_id')
-      .eq('class_id', tryout.class_id)
-      .eq('student_id', user.id)
-      .eq('status', 'active')
-      .maybeSingle()
+    const enr = enrRes.data
     if (!enr || (tryout.sub_class_id && enr.sub_class_id !== tryout.sub_class_id)) {
       redirect(`/student/tryouts/${tryoutId}`)
     }
   }
 
-  // 2. Fetch active attempt for this student
-  const { data: attempt } = await supabase
-    .from('tryout_attempts')
-    .select('*')
-    .eq('tryout_id', tryoutId)
-    .eq('student_id', user.id)
-    .eq('status', 'in_progress')
-    .order('started_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
   // Jika belum ada attempt aktif, redirect ke info tryout
+  const attempt = attemptRes.data
   if (!attempt) {
     redirect(`/student/tryouts/${tryoutId}`)
   }
-
-  // 3. Fetch all assigned questions & options
-  const { data: assignedRows = [] } = await supabase
-    .from('tryout_questions')
-    .select(`
-      question_id,
-      question_order,
-      questions(
-        id,
-        question_text,
-        question_image_url,
-        question_options(
-          id,
-          label,
-          option_text,
-          is_correct
-        )
-      )
-    `)
-    .eq('tryout_id', tryoutId)
-    .order('question_order', { ascending: true })
 
   const assignedList = assignedRows || []
 

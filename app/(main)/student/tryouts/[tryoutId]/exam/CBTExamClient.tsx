@@ -252,18 +252,18 @@ export default function CBTExamClient({
   return (
     <div className="fixed inset-0 z-50 bg-[#F8FAFC] flex flex-col font-sans select-none overflow-hidden">
       {/* ── TOPBAR CBT ── */}
-      <header className="h-16 bg-gradient-to-r from-brand-cream via-white to-white border-b-[3px] border-brand-pink px-4 sm:px-8 flex items-center justify-between shrink-0 shadow-sm">
-        <div className="flex items-center gap-4">
+      <header className="h-16 bg-gradient-to-r from-brand-cream via-white to-white border-b-[3px] border-brand-pink px-3 sm:px-8 flex items-center justify-between gap-2 shrink-0 shadow-sm">
+        <div className="flex items-center gap-4 min-w-0">
           <Image
             src="/images/logos/logo_5.png"
             alt="Teman Farmasi"
             width={120}
             height={40}
             priority
-            className="h-9 w-auto object-contain"
+            className="h-8 sm:h-9 w-auto object-contain shrink-0"
           />
           <span className="hidden sm:block w-px h-8 bg-brand-dark/15" />
-          <div>
+          <div className="hidden sm:block min-w-0">
             <h1 className="font-extrabold text-brand-dark text-sm sm:text-base line-clamp-1 max-w-xs sm:max-w-md">
               {tryout.title}
             </h1>
@@ -274,9 +274,9 @@ export default function CBTExamClient({
         </div>
 
         {/* TIMER & CONTROLS */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           {timeRemaining !== null && (
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-xl font-mono text-sm sm:text-base font-extrabold tracking-wider transition ${
+            <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 rounded-xl font-mono text-sm sm:text-base font-extrabold tracking-wider transition ${
               timeRemaining < 300
                 ? 'bg-red-500 text-white animate-pulse'
                 : 'bg-brand-dark text-white'
@@ -300,7 +300,7 @@ export default function CBTExamClient({
 
           <button
             onClick={() => setIsNavDrawerOpen(!isNavDrawerOpen)}
-            className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition flex items-center gap-1.5 text-xs font-bold"
+            className="lg:hidden px-2.5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition flex items-center gap-1.5 text-xs font-bold whitespace-nowrap"
           >
             <Layers className="w-4 h-4" /> Daftar Soal
           </button>
@@ -310,10 +310,10 @@ export default function CBTExamClient({
       {/* ── MAIN WORKSPACE ── */}
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT / CENTER: QUESTION AREA */}
-        <main className="tf-scroll flex-1 flex flex-col overflow-y-auto p-4 sm:p-6 max-w-5xl mx-auto w-full" style={{ zoom: 0.85 }}>
+        <main className="tf-scroll cbt-zoom flex-1 flex flex-col overflow-y-auto p-4 sm:p-6 max-w-5xl mx-auto w-full">
           {/* QUESTION HEADER */}
           <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-6 shrink-0">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="text-xs font-extrabold uppercase tracking-widest text-gray-400">
                 Soal Nomor
               </span>
@@ -413,27 +413,28 @@ export default function CBTExamClient({
 
           {/* BOTTOM CONTROLS — 3-column layout */}
           <div className="pt-8 mt-auto shrink-0">
-            <div className="grid grid-cols-3 items-center gap-4">
-              {/* LEFT: empty / progress info */}
-              <div className="flex justify-start">
+            <div className="grid grid-cols-2 sm:grid-cols-3 items-center gap-3 sm:gap-4">
+              {/* LEFT: progress info (di HP tampil di atas tombol) */}
+              <div className="col-span-2 sm:col-span-1 flex justify-center sm:justify-start">
                 <span className="text-xs text-gray-400 font-semibold">
                   {answeredCount}/{totalQuestions} terjawab
                 </span>
               </div>
 
               {/* CENTER: Ragu-ragu */}
-              <div className="flex justify-center">
+              <div className="flex justify-start sm:justify-center">
                 {!isCurrentLocked && (
                   <button
                     onClick={handleToggleFlag}
-                    className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-extrabold transition active:scale-95 ${
+                    className={`inline-flex items-center gap-2 px-4 sm:px-6 py-3 rounded-2xl text-xs font-extrabold transition active:scale-95 ${
                       currentAnswer.isFlagged
                         ? 'bg-amber-400 text-amber-950 shadow-md shadow-amber-400/20'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
                     <Flag className={`w-4 h-4 ${currentAnswer.isFlagged ? 'fill-current' : ''}`} />
-                    {currentAnswer.isFlagged ? 'Ditandai Ragu-ragu' : 'Tandai Ragu'}
+                    <span className="sm:hidden">{currentAnswer.isFlagged ? 'Ragu' : 'Tandai Ragu'}</span>
+                    <span className="hidden sm:inline">{currentAnswer.isFlagged ? 'Ditandai Ragu-ragu' : 'Tandai Ragu'}</span>
                   </button>
                 )}
               </div>
@@ -443,7 +444,7 @@ export default function CBTExamClient({
                 <button
                   onClick={handleNext}
                   disabled={!canNext}
-                  className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-extrabold transition shadow-sm active:scale-95 ${
+                  className={`inline-flex items-center gap-2 px-4 sm:px-5 py-3 rounded-2xl text-xs font-extrabold transition shadow-sm active:scale-95 whitespace-nowrap ${
                     !canNext
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                       : 'bg-brand-dark text-white hover:bg-brand-pink shadow-brand-dark/20'

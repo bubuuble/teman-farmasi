@@ -50,7 +50,7 @@ export default async function TryoutIntroPage({
 
     if (!enrollment || (tryout.sub_class_id && enrollment.sub_class_id !== tryout.sub_class_id)) {
       return (
-        <div className="max-w-xl mx-auto my-12 bg-white rounded-3xl p-8 border border-red-100 text-center space-y-4 shadow-sm">
+        <div className="max-w-xl mx-auto my-12 bg-white rounded-3xl p-5 sm:p-8 border border-red-100 text-center space-y-4 shadow-sm">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
           <h2 className="text-xl font-bold text-brand-dark">Akses Terbatas</h2>
           <p className="text-sm text-gray-500 leading-relaxed">
@@ -136,6 +136,7 @@ export default async function TryoutIntroPage({
             Petunjuk & Tata Tertib CBT:
           </h3>
           <ul className="text-xs text-gray-600 space-y-2 leading-relaxed list-disc list-inside">
+            <li>Disarankan menggunakan <strong>Laptop</strong> agar pengerjaan lebih optimal.</li>
             <li>Pastikan koneksi internet stabil selama pelaksanaan ujian simulasi.</li>
             <li>Jawaban Anda akan <strong>tersimpan otomatis</strong> setiap kali Anda memilih salah satu opsi.</li>
             <li>Gunakan tombol <strong>Ragu-ragu</strong> untuk menandai nomor soal yang ingin Anda tinjau kembali.</li>

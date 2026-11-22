@@ -4,6 +4,7 @@ import path from 'path'
 
 /**
  * Konfigurasi GDCPay dari Environment
+ * Docs: https://neo-docs.gdc.co.id/documentation
  */
 export const gdcpayConfig = {
   baseUrl: process.env.GDCPAY_BASE_URL || 'https://neo-sandbox-api.gdc.co.id/snap',
@@ -12,6 +13,9 @@ export const gdcpayConfig = {
   partnerId: process.env.GDCPAY_PARTNER_ID || '',
   apiKey: process.env.GDCPAY_API_KEY || '',
   secretKey: process.env.GDCPAY_SECRET_KEY || '',
+  // Nomor rekening deposit partner (format contoh: 000219913419) dan merchant ID QRIS (opsional)
+  accountNumber: process.env.GDCPAY_ACCOUNT_NUMBER || '',
+  merchantId: process.env.GDCPAY_MERCHANT_ID || '',
   getPrivateKey: () => {
     // Coba baca dari file jika ada
     const keyPath = process.env.GDCPAY_PRIVATE_KEY_PATH || 'credentials/gdcpay/gdcpay_private_key.pem'
@@ -31,17 +35,15 @@ export const gdcpayConfig = {
  * Format timestamp ISO 8601 dengan timezone offset (+07:00 WIB)
  * Standar SNAP BI: YYYY-MM-DDTHH:mm:ss+07:00
  */
-export function getSnapTimestamp(): string {
-  const now = new Date()
+export function getSnapTimestamp(now: Date = new Date()): string {
   const offsetMinutes = 7 * 60 // WIB UTC+7
   const localTime = new Date(now.getTime() + offsetMinutes * 60 * 1000)
-  const iso = localTime.toISOString().replace('Z', '+07:00')
-  return iso
+  return localTime.toISOString().replace('Z', '+07:00')
 }
 
 /**
  * Generate Asymmetric Signature (SHA256withRSA)
- * String to sign: stringToSign = client_id + "|" + X-TIMESTAMP
+ * String to sign: client_key + "|" + X-TIMESTAMP
  */
 export function generateAsymmetricSignature(clientId: string, timestamp: string, privateKeyPem: string): string {
   const stringToSign = `${clientId}|${timestamp}`
@@ -53,7 +55,7 @@ export function generateAsymmetricSignature(clientId: string, timestamp: string,
 
 /**
  * Generate Symmetric Signature (HMAC-SHA512)
- * String to sign: HTTPMethod + ":" + EndpointUrl + ":" + AccessToken + ":" + Lowercase(Hex(SHA256(Minify(RequestBody)))) + ":" + X-TIMESTAMP
+ * String to sign: METHOD:PATH:ACCESS_TOKEN:lowercase(hex(sha256(minify(body)))):X-TIMESTAMP
  */
 export function generateSymmetricSignature({
   httpMethod,
@@ -70,16 +72,13 @@ export function generateSymmetricSignature({
   timestamp: string
   clientSecret: string
 }): string {
-  // Minify JSON body
+  // JSON.stringify tanpa spasi = minified
   const bodyString = typeof requestBody === 'string' ? requestBody : JSON.stringify(requestBody || {})
   const bodyHashHex = crypto.createHash('sha256').update(bodyString).digest('hex').toLowerCase()
 
   const stringToSign = `${httpMethod.toUpperCase()}:${endpointUrl}:${accessToken}:${bodyHashHex}:${timestamp}`
 
-  return crypto
-    .createHmac('sha512', clientSecret)
-    .update(stringToSign)
-    .digest('base64')
+  return crypto.createHmac('sha512', clientSecret).update(stringToSign).digest('base64')
 }
 
 /**
@@ -95,180 +94,40 @@ export async function getB2BAccessToken(customClientId?: string): Promise<{
 }> {
   const clientId = customClientId || gdcpayConfig.clientId
   const timestamp = getSnapTimestamp()
-  const privateKey = gdcpayConfig.getPrivateKey()
-  const signature = generateAsymmetricSignature(clientId, timestamp, privateKey)
+  const signature = generateAsymmetricSignature(clientId, timestamp, gdcpayConfig.getPrivateKey())
 
-  const url = `${gdcpayConfig.baseUrl.replace(/\/$/, '')}/v1.0/access-token/b2b`
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'X-TIMESTAMP': timestamp,
-    'X-CLIENT-KEY': clientId,
-    'Client-Key': clientId,
-    'X-SIGNATURE': signature
-  }
-
-  const body = {
-    grantType: 'client_credentials'
-  }
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body)
-  })
-
-  const json = await res.json()
-  return json
-}
-
-/**
- * 2. Generate QRIS Dynamic
- * Endpoint: POST /v1.0/qr/qr-mpm-generate
- */
-export async function generateQRIS({
-  partnerReferenceNo,
-  amount,
-  validityPeriod = 1800, // 30 menit
-  merchantName = 'Teman Farmasi'
-}: {
-  partnerReferenceNo: string
-  amount: number
-  validityPeriod?: number
-  merchantName?: string
-}) {
-  const tokenData = await getB2BAccessToken()
-  if (!tokenData.accessToken) {
-    throw new Error(`Gagal mendapatkan token GDCPay: ${tokenData.responseMessage}`)
-  }
-
-  const endpointUrl = '/v1.0/qr/qr-mpm-generate'
-  const timestamp = getSnapTimestamp()
-  const externalId = Date.now().toString()
-
-  const requestBody = {
-    partnerReferenceNo,
-    amount: {
-      value: amount.toFixed(2),
-      currency: 'IDR'
-    },
-    merchantName,
-    validityPeriod: new Date(Date.now() + validityPeriod * 1000).toISOString()
-  }
-
-  const signature = generateSymmetricSignature({
-    httpMethod: 'POST',
-    endpointUrl,
-    accessToken: tokenData.accessToken,
-    requestBody,
-    timestamp,
-    clientSecret: gdcpayConfig.clientSecret
-  })
-
-  const url = `${gdcpayConfig.baseUrl.replace(/\/$/, '')}${endpointUrl}`
-
-  const res = await fetch(url, {
+  const res = await fetch(`${gdcpayConfig.baseUrl.replace(/\/$/, '')}/v1.0/access-token/b2b`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${tokenData.accessToken}`,
       'X-TIMESTAMP': timestamp,
-      'X-SIGNATURE': signature,
-      'X-PARTNER-ID': gdcpayConfig.partnerId,
-      'X-EXTERNAL-ID': externalId
+      'X-CLIENT-KEY': clientId,
+      'Client-Key': clientId,
+      'X-SIGNATURE': signature
     },
-    body: JSON.stringify(requestBody)
+    body: JSON.stringify({ grantType: 'client_credentials' })
   })
 
   return await res.json()
 }
 
 /**
- * 3. Create Virtual Account
- * Endpoint: POST /v1.0/transfer-va/create-va
+ * Helper: header + signature untuk endpoint transaksional SNAP
  */
-export async function createVirtualAccount({
-  partnerReferenceNo,
-  customerName,
-  customerEmail,
-  amount,
-  bankCode = 'BCA', // BCA, MANDIRI, BRI, BNI
-  validityHours = 24
-}: {
-  partnerReferenceNo: string
-  customerName: string
-  customerEmail?: string
-  amount: number
-  bankCode?: string
-  validityHours?: number
-}) {
+async function snapPost(endpointUrl: string, requestBody: any) {
   const tokenData = await getB2BAccessToken()
   if (!tokenData.accessToken) {
     throw new Error(`Gagal mendapatkan token GDCPay: ${tokenData.responseMessage}`)
   }
 
-  const endpointUrl = '/v1.0/transfer-va/create-va'
   const timestamp = getSnapTimestamp()
-  const externalId = Date.now().toString()
-
-  const expiryDate = new Date(Date.now() + validityHours * 3600 * 1000).toISOString()
-
-  const requestBody = {
-    partnerReferenceNo,
-    customerName,
-    customerEmail,
-    bankCode,
-    totalAmount: {
-      value: amount.toFixed(2),
-      currency: 'IDR'
-    },
-    expiredDate: expiryDate
-  }
-
+  const externalId = crypto.randomUUID()
+  const bodyString = JSON.stringify(requestBody)
   const signature = generateSymmetricSignature({
     httpMethod: 'POST',
     endpointUrl,
     accessToken: tokenData.accessToken,
-    requestBody,
-    timestamp,
-    clientSecret: gdcpayConfig.clientSecret
-  })
-
-  const url = `${gdcpayConfig.baseUrl.replace(/\/$/, '')}${endpointUrl}`
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${tokenData.accessToken}`,
-      'X-TIMESTAMP': timestamp,
-      'X-SIGNATURE': signature,
-      'X-PARTNER-ID': gdcpayConfig.partnerId,
-      'X-EXTERNAL-ID': externalId
-    },
-    body: JSON.stringify(requestBody)
-  })
-
-  return await res.json()
-}
-
-/**
- * 4. Check Status QRIS
- * Endpoint: POST /v1.0/qr/qr-mpm-query
- */
-export async function checkQRISStatus(partnerReferenceNo: string) {
-  const tokenData = await getB2BAccessToken()
-  if (!tokenData.accessToken) throw new Error('Token error')
-
-  const endpointUrl = '/v1.0/qr/qr-mpm-query'
-  const timestamp = getSnapTimestamp()
-  const requestBody = { partnerReferenceNo }
-
-  const signature = generateSymmetricSignature({
-    httpMethod: 'POST',
-    endpointUrl,
-    accessToken: tokenData.accessToken,
-    requestBody,
+    requestBody: bodyString,
     timestamp,
     clientSecret: gdcpayConfig.clientSecret
   })
@@ -281,19 +140,97 @@ export async function checkQRISStatus(partnerReferenceNo: string) {
       'X-TIMESTAMP': timestamp,
       'X-SIGNATURE': signature,
       'X-PARTNER-ID': gdcpayConfig.partnerId,
-      'X-EXTERNAL-ID': Date.now().toString()
+      'X-EXTERNAL-ID': externalId,
+      'CHANNEL-ID': '95223'
     },
-    body: JSON.stringify(requestBody)
+    body: bodyString
   })
 
-  return await res.json()
+  const json = await res.json()
+  // externalId dikembalikan karena dibutuhkan untuk query status QRIS (originalExternalId)
+  return { ...json, _externalId: externalId }
 }
 
+/**
+ * 2. Generate QRIS Dynamic
+ * Endpoint: POST /v1.0/qr/qr-mpm-generate
+ */
+export async function generateQRIS({ partnerReferenceNo, amount }: { partnerReferenceNo: string; amount: number }) {
+  return snapPost('/v1.0/qr/qr-mpm-generate', {
+    partnerReferenceNo,
+    amount: { value: amount.toFixed(2), currency: 'IDR' },
+    ...(gdcpayConfig.merchantId ? { merchantId: gdcpayConfig.merchantId } : {}),
+    additionalInfo: { accountNumber: gdcpayConfig.accountNumber }
+  })
+}
+
+/**
+ * 3. Create Virtual Account (Close Payment / dynamic)
+ * Endpoint: POST /v1.0/transfer-va/create-va
+ */
+export async function createVirtualAccount({
+  trxId,
+  customerName,
+  amount,
+  bankCode = '014', // 014 = BCA
+  validityHours = 24
+}: {
+  trxId: string // UUID dari sistem partner (pakai orders.id)
+  customerName: string
+  amount: number
+  bankCode?: string
+  validityHours?: number
+}) {
+  return snapPost('/v1.0/transfer-va/create-va', {
+    virtualAccountName: customerName,
+    expiredDate: getSnapTimestamp(new Date(Date.now() + validityHours * 3600 * 1000)),
+    trxId,
+    virtualAccountTrxType: 'C',
+    totalAmount: { value: amount.toFixed(2), currency: 'IDR' },
+    additionalInfo: { accountNumber: gdcpayConfig.accountNumber, bankCode }
+  })
+}
+
+/**
+ * 4. Check Status QRIS
+ * Endpoint: POST /v1.0/qr/qr-mpm-query
+ */
+export async function checkQRISStatus({
+  originalReferenceNo,
+  originalPartnerReferenceNo,
+  originalExternalId
+}: {
+  originalReferenceNo: string
+  originalPartnerReferenceNo: string
+  originalExternalId: string
+}) {
+  return snapPost('/v1.0/qr/qr-mpm-query', {
+    originalReferenceNo,
+    originalPartnerReferenceNo,
+    originalExternalId,
+    serviceCode: '47',
+    additionalInfo: {}
+  })
+}
+
+/**
+ * 5. Check Status Virtual Account
+ * Endpoint: POST /v1.0/transfer-va/status
+ */
+export async function checkVAStatus({
+  virtualAccountNo,
+  paymentRequestId
+}: {
+  virtualAccountNo: string
+  paymentRequestId: string // = virtualAccountData.additionalInfo.referenceNo dari response create VA
+}) {
+  return snapPost('/v1.0/transfer-va/status', { virtualAccountNo, paymentRequestId, inquiryRequestId: '' })
+}
 
 /**
  * Generic SNAP caller yang mengembalikan request + response lengkap (untuk dokumentasi UAT).
- * - skipAuth      : untuk endpoint access-token (tanpa Bearer / symmetric signature)
- * - signatureOverride / accessTokenOverride : untuk skenario negatif (signature salah, token expired)
+ * - skipAuth                             : untuk endpoint access-token (tanpa Bearer / symmetric signature)
+ * - signatureOverride / clientIdOverride : untuk skenario negatif (signature salah, client ID salah)
  */
 export async function callSnap({
   endpoint,
@@ -301,8 +238,7 @@ export async function callSnap({
   accessToken,
   signatureOverride,
   clientIdOverride,
-  skipAuth = false,
-  signEndpointPrefix = ''
+  skipAuth = false
 }: {
   endpoint: string
   body: any
@@ -310,7 +246,6 @@ export async function callSnap({
   signatureOverride?: string
   clientIdOverride?: string
   skipAuth?: boolean
-  signEndpointPrefix?: string
 }) {
   const url = `${gdcpayConfig.baseUrl.replace(/\/$/, '')}${endpoint}`
   const timestamp = getSnapTimestamp()
@@ -319,19 +254,20 @@ export async function callSnap({
 
   if (skipAuth) {
     const clientId = clientIdOverride || gdcpayConfig.clientId
+    headers['Client-Key'] = clientId
     headers['X-CLIENT-KEY'] = clientId
     headers['X-SIGNATURE'] =
       signatureOverride ?? generateAsymmetricSignature(clientId, timestamp, gdcpayConfig.getPrivateKey())
   } else {
     headers['Authorization'] = `Bearer ${accessToken}`
     headers['X-PARTNER-ID'] = gdcpayConfig.partnerId
-    headers['X-EXTERNAL-ID'] = Date.now().toString() + Math.floor(Math.random() * 1000)
-    headers['CHANNEL-ID'] = '95221'
+    headers['X-EXTERNAL-ID'] = crypto.randomUUID()
+    headers['CHANNEL-ID'] = '95223'
     headers['X-SIGNATURE'] =
       signatureOverride ??
       generateSymmetricSignature({
         httpMethod: 'POST',
-        endpointUrl: signEndpointPrefix + endpoint,
+        endpointUrl: endpoint,
         accessToken: accessToken || '',
         requestBody: bodyString,
         timestamp,
@@ -342,7 +278,11 @@ export async function callSnap({
   const res = await fetch(url, { method: 'POST', headers, body: bodyString })
   const text = await res.text()
   let json: any
-  try { json = JSON.parse(text) } catch { json = text }
+  try {
+    json = JSON.parse(text)
+  } catch {
+    json = text
+  }
 
   return {
     request: { method: 'POST', url, headers, body },

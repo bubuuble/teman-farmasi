@@ -53,36 +53,50 @@ export default async function TryoutResultPage({
     )
   }
 
-  // 3. For each attempt, fetch answers with question details & options
+  // 3. Daftar semua soal tryout (sekali, dibagi ke semua attempt). Baris jawaban hanya ada untuk
+  // soal yang dijawab / ditandai ragu, jadi soal tanpa baris dianggap belum dijawab.
+  const { data: assignedRows = [] } = await supabase
+    .from('tryout_questions')
+    .select(`
+      question_id,
+      question_order,
+      questions(
+        id,
+        question_text,
+        question_image_url,
+        explanation,
+        question_categories(name),
+        question_options(
+          id,
+          label,
+          option_text,
+          is_correct
+        )
+      )
+    `)
+    .eq('tryout_id', tryoutId)
+    .order('question_order', { ascending: true })
+
   const attemptsWithAnswers = await Promise.all(
     attempts.map(async (attempt: any) => {
       const { data: answersData = [] } = await supabase
         .from('tryout_answers')
-        .select(`
-          question_id,
-          selected_option_id,
-          is_correct,
-          is_flagged,
-          questions(
-            id,
-            question_text,
-            question_image_url,
-            explanation,
-            question_categories(name),
-            question_options(
-              id,
-              label,
-              option_text,
-              is_correct
-            )
-          )
-        `)
+        .select('question_id, selected_option_id, is_correct, is_flagged')
         .eq('attempt_id', attempt.id)
 
-      return {
-        attempt,
-        answers: (answersData || []) as any[]
-      }
+      const byQuestion = new Map((answersData || []).map((a: any) => [a.question_id, a]))
+      const answers = (assignedRows || []).map((row: any) => {
+        const a: any = byQuestion.get(row.question_id)
+        return {
+          question_id: row.question_id,
+          selected_option_id: a?.selected_option_id ?? null,
+          is_correct: a?.is_correct ?? null,
+          is_flagged: a?.is_flagged ?? false,
+          questions: row.questions
+        }
+      })
+
+      return { attempt, answers: answers as any[] }
     })
   )
 

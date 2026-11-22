@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     console.log('[GDCPay Webhook QRIS Received]:', JSON.stringify(body))
 
-    const partnerReferenceNo = body.partnerReferenceNo || body.originalPartnerReferenceNo
+    // Format callback QRIS GDC: originalPartnerReferenceNo + latestTransactionStatus (00 = SUCCESS, 06 = FAILED)
+    // Lihat https://neo-docs.gdc.co.id/documentation#snap-callback-qris
+    const partnerReferenceNo = body.originalPartnerReferenceNo || body.partnerReferenceNo
     const latestTransactionStatus = body.latestTransactionStatus || body.transactionStatusDesc
 
     if (!partnerReferenceNo) {
@@ -21,7 +23,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    const isSuccess = latestTransactionStatus === '00' || latestTransactionStatus === 'SUCCESS' || body.responseCode === '2005200'
+    const isSuccess = latestTransactionStatus === '00' || latestTransactionStatus === 'SUCCESS'
 
     if (isSuccess) {
       const supabase = createAdminClient()
@@ -56,8 +58,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      responseCode: '2005200',
-      responseMessage: 'Success'
+      responseCode: '2000000',
+      responseMessage: 'Successful'
     }, { status: 200 })
 
   } catch (error: any) {

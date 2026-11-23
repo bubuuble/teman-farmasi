@@ -19,6 +19,7 @@ import {
   getFeaturedTestimonials,
   getHeroContent,
   getUkaiBanner,
+  getProgramPriceByCategory,
 } from "@/lib/sanity-queries";
 
 export const revalidate = 60; // Revalidate setiap 60 detik
@@ -39,13 +40,18 @@ async function HomeContent() {
     featuredTestimonials,
     popularBlogs,
     ukaiBanner,
+    pharmacorePrice,
   ] = await Promise.all([
     getHeroContent(),
     getFeaturedMentors(),
     getFeaturedTestimonials(),
     getPopularBlogPosts(),
     getUkaiBanner(),
+    getProgramPriceByCategory("pharmacore"),
   ]);
+
+  // Harga PharmaCore dari Sanity (mis. "Rp 120.000 / Mata Kuliah") -> tampilkan angkanya saja
+  const pharmacoreStartPrice = pharmacorePrice?.split("/")[0].trim() || "Rp 99.900";
 
   // Fallback data jika belum diisi di Sanity Studio
   const ukaiData = {
@@ -140,7 +146,7 @@ async function HomeContent() {
               <div className="bg-white rounded-3xl p-6 shadow-sm border border-brand-dark/5">
                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Mulai Dari</p>
                  <div className="flex justify-between items-end">
-                    <p className="text-xl font-extrabold text-brand-dark leading-none">Rp 99.900</p>
+                    <p className="text-xl font-extrabold text-brand-dark leading-none">{pharmacoreStartPrice}</p>
                     <Link href="/programs?cat=pharmacore" className="p-3 bg-brand-dark text-white rounded-xl hover:bg-brand-pink transition-all shadow-md active:scale-95">
                        <FaArrowRight size={14} />
                     </Link>

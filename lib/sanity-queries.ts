@@ -36,6 +36,11 @@ export async function getBlogPost(slug: string) {
   return await client.fetch(query, { slug });
 }
 
+export async function getProgramPriceByCategory(category: string): Promise<string | null> {
+  const query = `*[_type == "program" && category == $category][0].price`;
+  return (await client.fetch(query, { category })) ?? null;
+}
+
 export async function getAllPrograms() {
   const query = `*[_type == "program"] | order(order asc) {
     _id,

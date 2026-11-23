@@ -41,6 +41,8 @@ async function HomeContent() {
     popularBlogs,
     ukaiBanner,
     pharmacorePrice,
+    researchPrice,
+    publishPrice,
   ] = await Promise.all([
     getHeroContent(),
     getFeaturedMentors(),
@@ -48,10 +50,16 @@ async function HomeContent() {
     getPopularBlogPosts(),
     getUkaiBanner(),
     getProgramPriceByCategory("pharmacore"),
+    getProgramPriceByCategory("research"),
+    getProgramPriceByCategory("publish"),
   ]);
 
-  // Harga PharmaCore dari Sanity (mis. "Rp 120.000 / Mata Kuliah") -> tampilkan angkanya saja
-  const pharmacoreStartPrice = pharmacorePrice?.split("/")[0].trim() || "Rp 99.900";
+  // Harga dari Sanity (mis. "Mulai Rp 165.000" / "Rp 120.000 / Mata Kuliah") -> tampilkan angkanya saja
+  const startPrice = (raw: string | null, fallback: string) =>
+    raw?.replace(/^Mulai\s*/i, "").split("/")[0].trim() || fallback;
+  const pharmacoreStartPrice = startPrice(pharmacorePrice, "Rp 99.900");
+  const researchStartPrice = startPrice(researchPrice, "Rp 165.000");
+  const publishStartPrice = startPrice(publishPrice, "Rp 350.000");
 
   // Fallback data jika belum diisi di Sanity Studio
   const ukaiData = {
@@ -168,7 +176,7 @@ async function HomeContent() {
               <div className="bg-white rounded-3xl p-6 shadow-sm relative z-10">
                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Mulai Dari</p>
                  <div className="flex justify-between items-end">
-                    <p className="text-xl font-extrabold text-brand-dark leading-none">Rp. 165.000</p>
+                    <p className="text-xl font-extrabold text-brand-dark leading-none">{researchStartPrice}</p>
                     <Link href="/programs?cat=research" className="p-3 bg-brand-pink text-white rounded-xl hover:bg-brand-dark transition-all shadow-lg shadow-brand-pink/30 active:scale-95">
                        <FaArrowRight size={14} />
                     </Link>
@@ -190,7 +198,7 @@ async function HomeContent() {
               <div className="bg-white rounded-3xl p-6 shadow-sm relative z-10">
                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Mulai Dari</p>
                  <div className="flex justify-between items-end">
-                    <p className="text-xl font-extrabold text-brand-dark leading-none">Rp. 300.000</p>
+                    <p className="text-xl font-extrabold text-brand-dark leading-none">{publishStartPrice}</p>
                     <Link href="/programs?cat=publish" className="p-3 bg-brand-darkblue text-white rounded-xl hover:bg-brand-pink transition-all shadow-md active:scale-95">
                        <FaArrowRight size={14} />
                     </Link>

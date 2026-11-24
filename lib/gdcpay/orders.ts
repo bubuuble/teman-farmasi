@@ -62,6 +62,21 @@ export async function markOrderPaid(orderId: string, paidAmount?: number) {
   return { ok: true as const, already: false }
 }
 
+/**
+ * Dipakai webhook: konfirmasi pembayaran langsung ke GDC (bukan percaya isi callback), lalu tandai lunas.
+ * Mengembalikan 'paid' bila terkonfirmasi, selain itu status order saat ini ('unknown' bila order tidak ada).
+ */
+export async function confirmOrderPaymentWithGdc(orderId: string): Promise<string> {
+  const db = createAdminClient()
+  const { data: order } = await db
+    .from('orders')
+    .select('id, status, amount, student_id, class_id, notes, payment_method, gdc_reference_no, gdc_external_id, va_number')
+    .eq('id', orderId)
+    .maybeSingle()
+  if (!order) return 'unknown'
+  return syncOrderPayment(order as OrderRow)
+}
+
 /** Cek status ke GDC untuk order pending, dan tandai lunas bila sudah dibayar. Mengembalikan status order terbaru. */
 export async function syncOrderPayment(order: OrderRow): Promise<string> {
   if (order.status !== 'pending') return order.status

@@ -17,6 +17,7 @@ import {
   X,
   FileQuestion,
   ClipboardCheck,
+  Banknote,
 } from 'lucide-react'
 import SignOutButton from '../SignOutButton'
 import { useAdmin } from './AdminProvider'
@@ -70,6 +71,7 @@ const menuGroups: MenuGroup[] = [
       { label: 'Rekap Absensi', href: '/admin/attendances', icon: FileSpreadsheet },
       { label: 'Rekap Mentor', href: '/admin/mentor-summary', icon: BarChart2 },
       { label: 'Keuangan / Order', href: '/admin/orders', icon: CreditCard },
+      { label: 'Honor Mentor', href: '/admin/disbursements', icon: Banknote },
     ]
   },
   {

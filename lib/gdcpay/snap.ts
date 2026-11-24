@@ -294,3 +294,78 @@ export async function callSnap({
     response: { httpStatus: res.status, body: json }
   }
 }
+
+/* ───────────── Disbursement (akun DEPOSIT) ───────────── */
+
+/** Saldo akun deposit. Endpoint: POST /v1.0/balance-inquiry */
+export async function getDepositBalance() {
+  return snapPost('/v1.0/balance-inquiry', {
+    partnerReferenceNo: crypto.randomUUID(),
+    accountNo: gdcpayConfig.depositAccount,
+    additionalInfo: {}
+  })
+}
+
+/** Cek rekening tujuan sebelum transfer. Endpoint: POST /v1.0/emoney/bank-account-inquiry */
+export async function bankAccountInquiry({
+  partnerReferenceNo,
+  bankCode,
+  accountNumber,
+  amount
+}: {
+  partnerReferenceNo: string
+  bankCode: string
+  accountNumber: string
+  amount: number
+}) {
+  return snapPost('/v1.0/emoney/bank-account-inquiry', {
+    partnerReferenceNo,
+    customerNumber: gdcpayConfig.depositAccount,
+    amount: { value: amount.toFixed(2), currency: 'IDR' },
+    beneficiaryAccountNumber: accountNumber,
+    additionalInfo: { beneficiaryBankCode: bankCode, remarks: 'Inquiry honor mentor' }
+  })
+}
+
+/** Transfer ke rekening bank. Endpoint: POST /v1.0/emoney/transfer-bank */
+export async function transferBank({
+  partnerReferenceNo,
+  bankCode,
+  accountNumber,
+  amount,
+  sessionId = '',
+  remarks = ''
+}: {
+  partnerReferenceNo: string // UUID unik per transfer; dipakai sebagai kunci idempotensi
+  bankCode: string
+  accountNumber: string
+  amount: number
+  sessionId?: string
+  remarks?: string
+}) {
+  return snapPost('/v1.0/emoney/transfer-bank', {
+    partnerReferenceNo,
+    customerNumber: gdcpayConfig.depositAccount,
+    accountType: '',
+    beneficiaryAccountNumber: accountNumber,
+    beneficiaryBankCode: bankCode,
+    amount: { value: amount.toFixed(2), currency: 'IDR' },
+    sessionId,
+    additionalInfo: { remarks }
+  })
+}
+
+/** Detail transaksi keluar (WITHDRAWAL). Endpoint: POST /v1.0/transaction-history-detail */
+export async function getTransferDetail({
+  originalReferenceNo,
+  originalPartnerReferenceNo
+}: {
+  originalReferenceNo: string
+  originalPartnerReferenceNo: string
+}) {
+  return snapPost('/v1.0/transaction-history-detail', {
+    originalReferenceNo,
+    originalPartnerReferenceNo,
+    additionalInfo: { accountNumber: gdcpayConfig.depositAccount, accountType: 'active_account', type: 'WITHDRAWAL' }
+  })
+}

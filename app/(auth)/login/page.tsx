@@ -19,6 +19,10 @@ export default function LoginPage() {
 
   if (!isHydrated) return <LoadingSpinner />
 
+  // Tujuan setelah login (mis. /checkout?...). Dibaca setelah hydrate; divalidasi ulang di server.
+  const next = new URLSearchParams(window.location.search).get('next') || ''
+  const registerHref = next ? `/register?next=${encodeURIComponent(next)}` : '/register'
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-brand-cream">
       {/* ... Bagian Kiri (Logo) sama seperti sebelumnya ... */}
@@ -28,6 +32,7 @@ export default function LoginPage() {
           {/* ... Header text sama ... */}
 
           <form action={formAction} className="space-y-6">
+            <input type="hidden" name="next" value={next} />
             <div>
               <label 
                 htmlFor="identifier" 
@@ -91,8 +96,8 @@ export default function LoginPage() {
           <div className="mt-8 text-center">
             <p className="text-brand-gray text-sm">
               Belum punya akun?{' '}
-              <a href="/register" className="text-brand-pink font-semibold hover:underline">
-                Hubungi Admin
+              <a href={registerHref} className="text-brand-pink font-semibold hover:underline">
+                Daftar Sekarang
               </a>
             </p>
           </div>

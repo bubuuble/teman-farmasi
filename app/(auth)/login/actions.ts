@@ -55,7 +55,11 @@ export async function login(prevState: LoginState, formData: FormData): Promise<
     if (role === 'superadmin') redirect('/admin/dashboard')
     if (role === 'admin') redirect('/admin/dashboard')
     if (role === 'mentor') redirect('/mentor/dashboard')
-    if (role === 'student') redirect('/student/dashboard')
+    if (role === 'student') {
+      // Hanya path internal (mis. /checkout?...) — tolak URL eksternal / protocol-relative.
+      const next = (formData.get('next') as string) || ''
+      redirect(next.startsWith('/') && !next.startsWith('//') ? next : '/student/dashboard')
+    }
   }
 
   redirect('/')

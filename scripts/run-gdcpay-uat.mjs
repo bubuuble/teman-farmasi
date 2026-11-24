@@ -6,7 +6,10 @@
  * Hasil lengkap (request + response) disimpan ke credentials/gdcpay/uat-results.json
  *
  * Env tambahan yang dibutuhkan:
- *   GDCPAY_ACCOUNT_NUMBER  nomor rekening deposit partner (mis. 000219913419)
+ *   GDCPAY_PAYMENT_ACCOUNT akun payment (dashboard partner) -> VA, QRIS, OTC, history
+ *   GDCPAY_DEPOSIT_ACCOUNT akun deposit (dashboard partner) -> balance, bank inquiry, transfer bank
+ *   GDCPAY_MERCHANT_ID     MID dari NMID yang sudah di-ACC GDC -> QRIS
+ *   UAT_BENEF_BANK         kode bank dummy sandbox: 013 / 002 / 008 / 014
  *   UAT_BENEF_ACCOUNT      rekening tujuan uji (default 123123123, sesuai contoh docs)
  *   UAT_BENEF_BANK         kode bank tujuan (default 014 = BCA)
  */
@@ -20,7 +23,8 @@ const uuid = () => crypto.randomUUID()
 const amt = (n) => ({ value: n.toFixed(2), currency: 'IDR' })
 const inHours = (h) => getSnapTimestamp(new Date(Date.now() + h * 3600 * 1000))
 
-const ACCOUNT = gdcpayConfig.accountNumber
+const PAYMENT = gdcpayConfig.paymentAccount // VA, QRIS, OTC, history
+const DEPOSIT = gdcpayConfig.depositAccount // balance, bank inquiry, transfer bank
 const BENEF_ACCOUNT = process.env.UAT_BENEF_ACCOUNT || '123123123'
 const BENEF_BANK = process.env.UAT_BENEF_BANK || '014'
 
@@ -42,7 +46,9 @@ async function tc(id, expected, fn) {
 
 async function main() {
   console.log('Base URL:', gdcpayConfig.baseUrl)
-  if (!ACCOUNT) console.warn('⚠️  GDCPAY_ACCOUNT_NUMBER belum di-set; banyak endpoint akan menolak request.')
+  if (!PAYMENT) console.warn('⚠️  GDCPAY_PAYMENT_ACCOUNT belum di-set (VA/QRIS/OTC/history).')
+  if (!DEPOSIT) console.warn('⚠️  GDCPAY_DEPOSIT_ACCOUNT belum di-set (balance/inquiry/transfer).')
+  if (!gdcpayConfig.merchantId) console.warn('⚠️  GDCPAY_MERCHANT_ID belum di-set (QRIS butuh NMID yang sudah di-ACC).')
 
   let accessToken
   const tokenBody = { grantType: 'client_credentials' }
@@ -54,12 +60,12 @@ async function main() {
   const call = (endpoint, body, extra = {}) => callSnap({ endpoint, body, accessToken, ...extra })
 
   // TC.004 Balance inquiry
-  await tc('TC.004', '2001100', () => call('/v1.0/balance-inquiry', { partnerReferenceNo: uuid(), accountNo: ACCOUNT, additionalInfo: {} }))
+  await tc('TC.004', '2001100', () => call('/v1.0/balance-inquiry', { partnerReferenceNo: uuid(), accountNo: DEPOSIT, additionalInfo: {} }))
 
   // TC.005-007 Bank account inquiry
   const inquiry = (bank) => ({
     partnerReferenceNo: uuid(),
-    customerNumber: ACCOUNT,
+    customerNumber: DEPOSIT,
     amount: amt(10000),
     beneficiaryAccountNumber: BENEF_ACCOUNT,
     additionalInfo: { beneficiaryBankCode: bank, remarks: 'UAT inquiry' }
@@ -71,7 +77,7 @@ async function main() {
   // TC.008-011 Transfer bank
   const transfer = (n, bank = BENEF_BANK) => ({
     partnerReferenceNo: uuid(),
-    customerNumber: ACCOUNT,
+    customerNumber: DEPOSIT,
     accountType: '',
     beneficiaryAccountNumber: BENEF_ACCOUNT,
     beneficiaryBankCode: bank,
@@ -80,7 +86,7 @@ async function main() {
     additionalInfo: { remarks: 'UAT transfer' }
   })
   await tc('TC.008', '2004300', () => call('/v1.0/emoney/transfer-bank', transfer(10000)))
-  await tc('TC.009', '4004300', () => call('/v1.0/emoney/transfer-bank', transfer(1)))
+  await tc('TC.009', '4034302', () => call('/v1.0/emoney/transfer-bank', transfer(1)))
   await tc('TC.010', '5004301', () => call('/v1.0/emoney/transfer-bank', transfer(10000, '999')))
   await tc('TC.011', '4034314', () => call('/v1.0/emoney/transfer-bank', transfer(999999999999)))
 
@@ -90,7 +96,7 @@ async function main() {
     partnerReferenceNo: qrRef,
     amount: amt(10000),
     ...(gdcpayConfig.merchantId ? { merchantId: gdcpayConfig.merchantId } : {}),
-    additionalInfo: { accountNumber: ACCOUNT }
+    additionalInfo: { accountNumber: PAYMENT }
   }
   const qrExternalId = uuid()
   const qr = await tc('TC.012', '2004700', () => call('/v1.0/qr/qr-mpm-generate', qrBody))
@@ -110,14 +116,14 @@ async function main() {
     virtualAccountName: 'Siswa Test Farmasi',
     expiredDate: inHours(24),
     trxId: vaTrx,
-    virtualAccountTrxType: 'C',
+    virtualAccountTrxType: process.env.GDCPAY_VA_TYPE || 'O', // layanan kami: VA Static (O)
     totalAmount: amt(50000),
-    additionalInfo: { accountNumber: ACCOUNT, bankCode: '014' },
+    additionalInfo: { accountNumber: PAYMENT, bankCode: process.env.UAT_VA_BANK || '002' },
     ...over
   })
   const va = await tc('TC.014', '2002700', () => call('/v1.0/transfer-va/create-va', vaBody()))
-  // Gagal: field wajib kosong + nominal tidak valid
-  await tc('TC.015', '4002700', () => call('/v1.0/transfer-va/create-va', vaBody({ virtualAccountName: '', trxId: uuid(), totalAmount: amt(0) })))
+  // Gagal: additionalInfo (akun payment) tidak dikirim -> 4002700 Bad Request [AccountNumber]
+  await tc('TC.015', '4002700', () => call('/v1.0/transfer-va/create-va', vaBody({ trxId: uuid(), additionalInfo: undefined })))
   const vaData = va?.response?.body?.virtualAccountData || {}
   await tc('TC.016', '2002600', () =>
     call('/v1.0/transfer-va/status', {
@@ -134,7 +140,7 @@ async function main() {
       toDateTime: getSnapTimestamp(now),
       pageSize: 25,
       pageNumber: 1,
-      additionalInfo: { accountNumber: ACCOUNT, accountType: 'account', type: 'RECEIVE_MONEY', status: '' }
+      additionalInfo: { accountNumber: PAYMENT, accountType: 'account', type: 'RECEIVE_MONEY', status: '' }
     }))
 
   // TC.018 (endpoint di Excel: v1.0/otc/payment/status) -> butuh OTC dibuat dulu (langkah pendukung, bukan TC)
@@ -145,7 +151,7 @@ async function main() {
     billName: 'Siswa Test Farmasi',
     amount: amt(50000),
     expiredDate: inHours(24),
-    additionalInfo: { accountNumber: ACCOUNT }
+    additionalInfo: { accountNumber: PAYMENT }
   })
   results['_prereq_otc_create'] = otcCreate
   await tc('TC.018', '2001300', () =>

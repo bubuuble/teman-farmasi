@@ -2,9 +2,11 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
+import { UKAI_DEFAULT_PLANS } from "@/lib/ukai-plans";
 
 // Optimasi Ikon (Satu per satu)
 import { FaWhatsapp, FaCheck, FaBookOpen, FaLayerGroup, FaStar, FaLaptopCode, FaGraduationCap, FaAward, FaCircleCheck } from "react-icons/fa6";
@@ -113,55 +115,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
           unit: p.unit || '/ orang',
           popular: p.popular || false,
           features: p.features || []
-        })) : [
-          {
-            type: 'bimbel_private',
-            name: 'Kelas Bimbel Private',
-            subtitle: '2 - 5 Orang per Kelompok',
-            price: 'Rp 750.000',
-            unit: '/ orang',
-            popular: true,
-            features: [
-              'Kelompok eksklusif 2–5 orang (fokus maksimal)',
-              'Bebas request jadwal & materi target kampus',
-              'Pendampingan intensif mentor spesialis lolos masuk',
-              'Bank soal & pembahasan seleksi kampus terkait',
-              'Simulasi Tryout CBT Masuk Apoteker + Analisis Hasil',
-              'Konsultasi strategi pemilihan kampus & berkas',
-            ]
-          },
-          {
-            type: 'bimbel_reguler',
-            name: 'Kelas Bimbel Reguler',
-            subtitle: '10 - 15 Orang per Kelas',
-            price: 'Rp 350.000',
-            unit: '/ orang',
-            popular: false,
-            features: [
-              'Kelas interaktif 10–15 orang via Zoom',
-              'Kurikulum terstruktur bedah konsep & soal',
-              'Rekaman sesi pembelajaran & rangkuman materi',
-              'Akses Bank Soal seleksi masuk apoteker',
-              '1x Akses Simulasi Tryout CBT Masuk Apoteker',
-              'Grup diskusi & tanya jawab dengan mentor',
-            ]
-          },
-          {
-            type: 'tryout_cbt',
-            name: 'Tryout CBT Simulasi Masuk',
-            subtitle: 'Ujian Mandiri Berbasis CBT',
-            price: 'Rp 75.000',
-            unit: '/ paket tryout',
-            popular: false,
-            features: [
-              'Sistem CBT mirip ujian seleksi asli',
-              'Timer countdown & navigasi soal responsif',
-              'Kunci jawaban & pembahasan komprehensif',
-              'Skor instan, ranking, & statistik kelemahan materi',
-              'Bisa dikerjakan kapan saja (fleksibel)',
-            ]
-          }
-        ]
+        })) : UKAI_DEFAULT_PLANS.masuk_apoteker
       },
       ukmppai: {
         title: customSubUkmppai?.title || 'Kelas UKMPPAI',
@@ -176,55 +130,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
           unit: p.unit || '/ orang',
           popular: p.popular || false,
           features: p.features || []
-        })) : [
-          {
-            type: 'bimbel_private',
-            name: 'Kelas Bimbel Private UKMPPAI',
-            subtitle: '3 - 5 Orang per Kelompok',
-            price: 'Rp 950.000',
-            unit: '/ orang',
-            popular: true,
-            features: [
-              'Grup privat 3–5 orang bersama Top Mentor UKMPPAI',
-              'Bedah tuntas blueprint soal UKMPPAI terbaru',
-              'Drilling soal farmakoterapi, teknologi farmasi, sosial klinis',
-              'Akses Paket Tryout CBT UKMPPAI Terpadu',
-              'Review & evaluasi personal per peserta',
-              'Garansi bimbingan sampai siap ujian',
-            ]
-          },
-          {
-            type: 'bimbel_reguler',
-            name: 'Kelas Bimbel Reguler UKMPPAI',
-            subtitle: '10 - 15 Orang per Kelas',
-            price: 'Rp 450.000',
-            unit: '/ orang',
-            popular: false,
-            features: [
-              'Kelas komprehensif 10–15 orang via live Zoom',
-              'Materi lengkap 4 bidang utama blueprint UKMPPAI',
-              'Pembahasan trik cepat analisis kasus klinis & hitungan',
-              'Rekaman kelas + ringkasan materi PDF',
-              '1x Akses Tryout CBT Simulasi Nasional',
-              'Forum diskusi soal harian bersama mentor',
-            ]
-          },
-          {
-            type: 'tryout_cbt',
-            name: 'Tryout CBT Blueprint UKMPPAI',
-            subtitle: 'Simulasi Lengkap 200 Soal',
-            price: 'Rp 99.000',
-            unit: '/ paket tryout',
-            popular: false,
-            features: [
-              '200 Soal standar blueprint UKMPPAI nasional',
-              'Interface CBT presisi dengan durasi waktu riil',
-              'Pembahasan mendalam pada setiap opsi jawaban',
-              'Analisis performa per bidang kompetensi',
-              'Akses pembahasan tanpa batas setelah selesai',
-            ]
-          }
-        ]
+        })) : UKAI_DEFAULT_PLANS.ukmppai
       }
     };
 
@@ -356,12 +262,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleWaLink(`UKAI Series - ${currentSub.title} (${plan.name})`)}
-                    className="bg-green-500 text-white px-5 py-3 rounded-2xl font-extrabold text-xs flex items-center gap-1.5 hover:bg-brand-dark transition-all shadow-md active:scale-95 shrink-0 whitespace-nowrap"
-                  >
-                    <FaWhatsapp size={15} /> Daftar
-                  </button>
+                  <Link href={`/checkout?cat=ukai&item=ukai:${activeUkaiTab}:${i}`} className="bg-brand-dark text-white px-5 py-3 rounded-2xl font-extrabold text-xs flex items-center gap-2 hover:bg-brand-pink transition-all shadow-md active:scale-95 shrink-0 whitespace-nowrap">Beli Sekarang</Link>
                 </div>
               </div>
             );
@@ -453,12 +354,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
                   <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Harga</p>
                   <p className="text-xl font-extrabold text-brand-dark tracking-tighter">{programData.price || 'Rp 99.900 / Mata Kuliah'}</p>
                 </div>
-                <button 
-                  onClick={() => handleWaLink(title)}
-                  className="bg-green-500 text-white px-8 py-4 rounded-2xl font-extrabold text-xs flex items-center gap-2 hover:bg-brand-dark transition-all shadow-md active:scale-95"
-                >
-                  <FaWhatsapp size={16}/> Daftar
-                </button>
+                <Link href={`/checkout?cat=pharmacore&item=pharmacore:${i}`} className="bg-brand-dark text-white px-8 py-4 rounded-2xl font-extrabold text-xs flex items-center gap-2 hover:bg-brand-pink transition-all shadow-md active:scale-95 shrink-0 whitespace-nowrap">Beli Sekarang</Link>
               </div>
             </div>
           );
@@ -506,12 +402,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
                   <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Harga</p>
                   <p className="text-xl font-extrabold text-brand-dark tracking-tighter">{tier.price}</p>
                 </div>
-                <button 
-                  onClick={() => handleWaLink(tier.name)}
-                  className="bg-green-500 text-white px-8 py-4 rounded-2xl font-extrabold text-xs flex items-center gap-2 hover:bg-brand-dark transition-all shadow-md active:scale-95"
-                >
-                  <FaWhatsapp size={16}/> Daftar via WA
-                </button>
+                <Link href={`/checkout?cat=${programData.category}&item=${programData.category}:${i}`} className="bg-brand-dark text-white px-8 py-4 rounded-2xl font-extrabold text-xs flex items-center gap-2 hover:bg-brand-pink transition-all shadow-md active:scale-95 shrink-0 whitespace-nowrap">Beli Sekarang</Link>
               </div>
             </div>
           );

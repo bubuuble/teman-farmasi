@@ -13,8 +13,12 @@ export const gdcpayConfig = {
   partnerId: process.env.GDCPAY_PARTNER_ID || '',
   apiKey: process.env.GDCPAY_API_KEY || '',
   secretKey: process.env.GDCPAY_SECRET_KEY || '',
-  // Nomor rekening deposit partner (format contoh: 000219913419) dan merchant ID QRIS (opsional)
-  accountNumber: process.env.GDCPAY_ACCOUNT_NUMBER || '',
+  // Dua akun berbeda di dashboard partner GDC (format contoh: 000219913419):
+  // - paymentAccount : untuk transaksi masuk (VA, QRIS, OTC)
+  // - depositAccount : untuk disbursement (bank inquiry, transfer bank, balance)
+  paymentAccount: process.env.GDCPAY_PAYMENT_ACCOUNT || '',
+  depositAccount: process.env.GDCPAY_DEPOSIT_ACCOUNT || '',
+  // MID QRIS, didapat setelah NMID diajukan (Pengaturan > Bisnis Saya > NMID) dan di-ACC GDC
   merchantId: process.env.GDCPAY_MERCHANT_ID || '',
   getPrivateKey: () => {
     // Coba baca dari file jika ada
@@ -160,7 +164,7 @@ export async function generateQRIS({ partnerReferenceNo, amount }: { partnerRefe
     partnerReferenceNo,
     amount: { value: amount.toFixed(2), currency: 'IDR' },
     ...(gdcpayConfig.merchantId ? { merchantId: gdcpayConfig.merchantId } : {}),
-    additionalInfo: { accountNumber: gdcpayConfig.accountNumber }
+    additionalInfo: { accountNumber: gdcpayConfig.paymentAccount }
   })
 }
 
@@ -172,7 +176,7 @@ export async function createVirtualAccount({
   trxId,
   customerName,
   amount,
-  bankCode = '014', // 014 = BCA
+  bankCode = '014', // sandbox: 013 / 022 / 002 / 014
   validityHours = 24
 }: {
   trxId: string // UUID dari sistem partner (pakai orders.id)
@@ -185,9 +189,10 @@ export async function createVirtualAccount({
     virtualAccountName: customerName,
     expiredDate: getSnapTimestamp(new Date(Date.now() + validityHours * 3600 * 1000)),
     trxId,
-    virtualAccountTrxType: 'C',
+    // C = Close Payment (VA Dynamic), O = Open Payment (VA Static). Layanan kami: VA Static -> 'O'
+    virtualAccountTrxType: process.env.GDCPAY_VA_TYPE || 'O',
     totalAmount: { value: amount.toFixed(2), currency: 'IDR' },
-    additionalInfo: { accountNumber: gdcpayConfig.accountNumber, bankCode }
+    additionalInfo: { accountNumber: gdcpayConfig.paymentAccount, bankCode }
   })
 }
 

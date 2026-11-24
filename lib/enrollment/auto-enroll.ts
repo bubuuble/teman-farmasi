@@ -144,3 +144,33 @@ export async function enrollStudentToClass({
   }
 }
 
+
+/**
+ * Cari kelas berdasarkan judul PERSIS; jika belum ada, buat kelas + sub_class default.
+ * Dipakai checkout online karena orders.class_id wajib terisi saat order dibuat.
+ */
+export async function ensureClassByTitle(classTitle: string): Promise<string> {
+  const adminDb = createAdminClient()
+  const title = classTitle.trim()
+
+  const { data: existing } = await adminDb.from('classes').select('id').eq('title', title).limit(1)
+  if (existing && existing.length > 0) return existing[0].id
+
+  const { data: created, error } = await adminDb
+    .from('classes')
+    .insert({
+      title,
+      description: `Kelas dibuat otomatis dari checkout online untuk ${title}`,
+      level: 'All Level'
+    })
+    .select('id')
+    .single()
+  if (error || !created) throw new Error(`Gagal membuat kelas: ${error?.message}`)
+
+  await adminDb.from('sub_classes').insert({
+    class_id: created.id,
+    title: 'Batch 1 (Reguler)',
+    description: 'Sub-kelas aktif pertama'
+  })
+  return created.id
+}

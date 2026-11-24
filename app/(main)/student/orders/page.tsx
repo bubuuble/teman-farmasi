@@ -72,8 +72,8 @@ export default async function StudentOrdersPage() {
             <div className="flex-1 text-center lg:text-left relative z-10">
                <h3 className="font-bold text-2xl mb-2">Cara Melakukan Pembayaran</h3>
                <p className="text-blue-100 text-base leading-relaxed">
-                  Silakan lakukan transfer sesuai nominal tagihan ke rekening resmi <b className="text-brand-yellow">BCA 123456789 a/n Teman Farmasi</b>. 
-                  Kirim bukti transfer ke WhatsApp Admin untuk aktivasi kelas secara instan.
+                  Klik <b className="text-brand-yellow">Bayar Sekarang</b> pada tagihan untuk membayar via QRIS atau Virtual Account — kelas aktif otomatis setelah pembayaran terkonfirmasi.
+                  Butuh bantuan? Hubungi Admin lewat WhatsApp.
                </p>
             </div>
             <Link 
@@ -126,6 +126,22 @@ export default async function StudentOrdersPage() {
                   <span className="text-[10px] text-gray-400 italic bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
                      Note: {order.notes}
                   </span>
+               )}
+               {order.status === 'pending' && (
+                  <Link
+                     href={`/student/orders/${order.id}`}
+                     className="mt-2 bg-brand-dark text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-brand-pink transition-all shadow-md whitespace-nowrap"
+                  >
+                     Bayar Sekarang
+                  </Link>
+               )}
+               {order.status === 'paid' && (
+                  <Link
+                     href={`/student/orders/${order.id}`}
+                     className="mt-2 text-sm font-bold text-brand-pink hover:underline whitespace-nowrap"
+                  >
+                     Lihat Struk
+                  </Link>
                )}
             </div>
 

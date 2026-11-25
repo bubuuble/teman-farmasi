@@ -176,7 +176,7 @@ export async function createVirtualAccount({
   trxId,
   customerName,
   amount,
-  bankCode = '014', // sandbox: 013 / 022 / 002 / 014
+  bankCode = '022', // sandbox GDC: hanya 022 yang aktif untuk VA dynamic (auto-paid)
   validityHours = 24
 }: {
   trxId: string // UUID dari sistem partner (pakai orders.id)
@@ -189,8 +189,8 @@ export async function createVirtualAccount({
     virtualAccountName: customerName,
     expiredDate: getSnapTimestamp(new Date(Date.now() + validityHours * 3600 * 1000)),
     trxId,
-    // C = Close Payment (VA Dynamic), O = Open Payment (VA Static). Layanan kami: VA Static -> 'O'
-    virtualAccountTrxType: process.env.GDCPAY_VA_TYPE || 'O',
+    // C = Close Payment (VA Dynamic, nominal terkunci), O = Open Payment (VA Static). Auto-paid sandbox: C + bank 022
+    virtualAccountTrxType: process.env.GDCPAY_VA_TYPE || 'C',
     totalAmount: { value: amount.toFixed(2), currency: 'IDR' },
     additionalInfo: { accountNumber: gdcpayConfig.paymentAccount, bankCode }
   })

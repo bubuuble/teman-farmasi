@@ -116,9 +116,9 @@ async function main() {
     virtualAccountName: 'Siswa Test Farmasi',
     expiredDate: inHours(24),
     trxId: vaTrx,
-    virtualAccountTrxType: process.env.GDCPAY_VA_TYPE || 'O', // layanan kami: VA Static (O)
+    virtualAccountTrxType: process.env.GDCPAY_VA_TYPE || 'C', // VA Dynamic / Close amount (auto-paid di sandbox: bank 022)
     totalAmount: amt(50000),
-    additionalInfo: { accountNumber: PAYMENT, bankCode: process.env.UAT_VA_BANK || '002' },
+    additionalInfo: { accountNumber: PAYMENT, bankCode: process.env.UAT_VA_BANK || '022' },
     ...over
   })
   const va = await tc('TC.014', '2002700', () => call('/v1.0/transfer-va/create-va', vaBody()))

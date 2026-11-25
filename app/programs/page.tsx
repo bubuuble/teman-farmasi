@@ -10,7 +10,6 @@ import { UKAI_DEFAULT_PLANS } from "@/lib/ukai-plans";
 
 // Optimasi Ikon (Satu per satu)
 import { FaWhatsapp, FaCheck, FaBookOpen, FaLayerGroup, FaStar, FaLaptopCode, FaGraduationCap, FaAward, FaCircleCheck } from "react-icons/fa6";
-import { createClient } from 'next-sanity';
 
 // --- 1. TIPE DATA ---
 interface Tier { name: string; price: string; features: string[]; }
@@ -28,13 +27,6 @@ interface UkaiPlan {
   popular: boolean;
   features: string[];
 }
-
-const client = createClient({
-  projectId: 'dg157s6c', 
-  dataset: 'production',
-  useCdn: true,
-  apiVersion: '2023-01-01',
-});
 
 // --- 2. PALET WARNA & LOGIKA KONTRAS ---
 const colorPalette = [
@@ -72,7 +64,7 @@ function ProgramsContent({ categoryFilter }: { categoryFilter: string | null }) 
   useEffect(() => {
     if (!categoryFilter) return;
     let isMounted = true;
-    client.fetch(`*[_type == "program" && category == $cat][0]`, { cat: categoryFilter })
+    fetch(`/api/programs?cat=${encodeURIComponent(categoryFilter)}`).then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (isMounted) {
           if (categoryFilter === 'ukai') {

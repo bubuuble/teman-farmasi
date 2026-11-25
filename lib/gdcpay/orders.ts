@@ -90,15 +90,19 @@ export async function syncOrderPayment(order: OrderRow): Promise<string> {
       })
       if (r?.latestTransactionStatus === '00') {
         const paid = r.amount?.value ? Number(r.amount.value) : undefined
-        await markOrderPaid(order.id, paid)
-        return 'paid'
+        const res = await markOrderPaid(order.id, paid)
+        return res.ok ? 'paid' : order.status
       }
     } else if (order.payment_method === 'va' && order.va_number && order.gdc_reference_no) {
       const r = await checkVAStatus({ virtualAccountNo: order.va_number, paymentRequestId: order.gdc_reference_no })
-      if (r?.virtualAccountData?.paymentFlagStatus === '00') {
-        const paid = r.virtualAccountData?.totalAmount?.value ? Number(r.virtualAccountData.totalAmount.value) : undefined
-        await markOrderPaid(order.id, paid)
-        return 'paid'
+      const v = r?.virtualAccountData
+      if (v?.paymentFlagStatus === '00') {
+        // billAmount = nominal tagihan yang dibayar pelanggan. totalAmount = nominal bersih setelah biaya
+        // (mis. 75.000 - 2.500 = 72.500), jadi TIDAK boleh dibandingkan dengan tagihan.
+        const raw = v.billAmount?.value ?? v.totalAmount?.value
+        const paid = raw !== undefined ? Number(raw) : undefined
+        const res = await markOrderPaid(order.id, paid)
+        return res.ok ? 'paid' : order.status
       }
     }
   } catch (e: any) {

@@ -66,15 +66,25 @@ export async function markOrderPaid(orderId: string, paidAmount?: number) {
  * Dipakai webhook: konfirmasi pembayaran langsung ke GDC (bukan percaya isi callback), lalu tandai lunas.
  * Mengembalikan 'paid' bila terkonfirmasi, selain itu status order saat ini ('unknown' bila order tidak ada).
  */
-export async function confirmOrderPaymentWithGdc(orderId: string): Promise<string> {
+export async function confirmOrderPaymentWithGdc(refs: string | Array<string | null | undefined>): Promise<string> {
   const db = createAdminClient()
-  const { data: order } = await db
-    .from('orders')
-    .select('id, status, amount, student_id, class_id, notes, payment_method, gdc_reference_no, gdc_external_id, va_number')
-    .eq('id', orderId)
-    .maybeSingle()
-  if (!order) return 'unknown'
-  return syncOrderPayment(order as OrderRow)
+  const candidates = (Array.isArray(refs) ? refs : [refs]).filter((r): r is string => !!r)
+  const cols = 'id, status, amount, student_id, class_id, notes, payment_method, gdc_reference_no, gdc_external_id, va_number'
+
+  // Callback VA GDC menaruh ID order kita di `paymentRequestId` dan referensi GDC di `trxId`/`referenceNo`
+  // (tertukar dibanding dokumentasi), jadi cocokkan ke orders.id DAN orders.gdc_reference_no.
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  for (const ref of candidates) {
+    if (uuid.test(ref)) {
+      const { data } = await db.from('orders').select(cols).eq('id', ref).maybeSingle()
+      if (data) return syncOrderPayment(data as OrderRow)
+    }
+  }
+  for (const ref of candidates) {
+    const { data } = await db.from('orders').select(cols).eq('gdc_reference_no', ref).maybeSingle()
+    if (data) return syncOrderPayment(data as OrderRow)
+  }
+  return 'unknown'
 }
 
 /** Cek status ke GDC untuk order pending, dan tandai lunas bila sudah dibayar. Mengembalikan status order terbaru. */
